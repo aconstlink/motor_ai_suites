@@ -110,47 +110,57 @@ namespace sample
         void on_init() noexcept override
         {
             _started = std::chrono::steady_clock::now();
-            _triangle = make_geometry( false );
-            _square = make_geometry( true );
-            motor::graphics::msl_object_t shader( "shared_geometry_shader" );
-            shader.add( motor::graphics::msl_api_type::msl_4_0, R"(
-                config shared_geometry_shader
-                {
-                    vertex_shader
+            // geometry
+            {
+                _triangle = make_geometry( false );
+                _square = make_geometry( true );
+            }
+
+            // msl object
+            {
+                motor::graphics::msl_object_t shader( "shared_geometry_shader" );
+                shader.add( motor::graphics::msl_api_type::msl_4_0, R"(
+                    config shared_geometry_shader
                     {
-                        in vec3_t pos : position ;
-                        out vec4_t pos : position ;
-                        vec4_t u_offset ;
-                        void main()
+                        vertex_shader
                         {
-                            out.pos = vec4_t( in.pos + u_offset.xyz, 1.0 ) ;
+                            in vec3_t pos : position ;
+                            out vec4_t pos : position ;
+                            vec4_t u_offset ;
+                            void main()
+                            {
+                                out.pos = vec4_t( in.pos + u_offset.xyz, 1.0 ) ;
+                            }
+                        }
+                        pixel_shader
+                        {
+                            out vec4_t color : color ;
+                            vec4_t u_color ;
+                            void main() { out.color = u_color ; }
                         }
                     }
-                    pixel_shader
-                    {
-                        out vec4_t color : color ;
-                        vec4_t u_color ;
-                        void main() { out.color = u_color ; }
-                    }
-                }
-            )" );
-            _shader = motor::shared( std::move( shader ) );
-            _triangle_link = _shader->link_geometry( "fixed_triangle" );
-            make_set( _triangle_data );
+                )" );
+                _shader = motor::shared( std::move( shader ) );
+                _triangle_link = _shader->link_geometry( "fixed_triangle" );
+                make_set( _triangle_data );
+            }
 
-            motor::graphics::render_state_sets_t states;
-            states.depth_s.do_change = true;
-            states.depth_s.ss.do_activate = false;
-            states.depth_s.ss.do_depth_write = false;
-            states.polygon_s.do_change = true;
-            states.polygon_s.ss.do_activate = false;
-            states.clear_s.do_change = true;
-            states.clear_s.ss.do_activate = true;
-            states.clear_s.ss.do_color_clear = true;
-            states.clear_s.ss.do_depth_clear = true;
-            states.clear_s.ss.clear_color = motor::math::vec4f_t( 0.08f, 0.08f, 0.08f, 1.0f );
-            _state = motor::graphics::state_object_t( "dynamic geometry state" );
-            _state.add_render_state_set( states );
+            // render states
+            {
+                motor::graphics::render_state_sets_t states;
+                states.depth_s.do_change = true;
+                states.depth_s.ss.do_activate = false;
+                states.depth_s.ss.do_depth_write = false;
+                states.polygon_s.do_change = true;
+                states.polygon_s.ss.do_activate = false;
+                states.clear_s.do_change = true;
+                states.clear_s.ss.do_activate = true;
+                states.clear_s.ss.do_color_clear = true;
+                states.clear_s.ss.do_depth_clear = true;
+                states.clear_s.ss.clear_color = motor::math::vec4f_t( 0.08f, 0.08f, 0.08f, 1.0f );
+                _state = motor::graphics::state_object_t( "dynamic geometry state" );
+                _state.add_render_state_set( states );
+            }
 
             for( size_t i = 0; i < _window_count; ++i )
             {
@@ -235,12 +245,17 @@ namespace sample
                     fe->update_geometry_link( _shader, _changed_link );
                     window.revision = _revision;
                 }
-                motor::graphics::gen4::backend_t::render_detail_t detail;
-                detail.geo = _triangle_link;
-                detail.varset = _triangle_data.set_id;
-                fe->render( _shader, detail );
+                // triangle
+                {
+                    motor::graphics::gen4::backend_t::render_detail_t detail;
+                    detail.geo = _triangle_link;
+                    detail.varset = _triangle_data.set_id;
+                    fe->render( _shader, detail );
+                }
+
                 if( _square_link != invalid )
                 {
+                    motor::graphics::gen4::backend_t::render_detail_t detail;
                     detail.geo = _square_link;
                     detail.varset = _square_data.set_id;
                     fe->render( _shader, detail );

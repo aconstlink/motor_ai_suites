@@ -49,68 +49,79 @@ namespace sample
 
         void on_init() noexcept override
         {
-            auto vertices = motor::graphics::vertex_buffer_t()
-                .add_layout_element( motor::graphics::vertex_attribute::position,
-                    motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
-                .resize( 3 ).update<vertex>( []( vertex* data, size_t )
-                {
-                    data[0].position = motor::math::vec3f_t( -0.75f, -0.65f, 0.5f );
-                    data[1].position = motor::math::vec3f_t( 0.0f, 0.75f, 0.5f );
-                    data[2].position = motor::math::vec3f_t( 0.75f, -0.65f, 0.5f );
-                } );
-            auto indices = motor::graphics::index_buffer_t()
-                .set_layout_element( motor::graphics::type::tuint )
-                .resize( 3 ).update<unsigned int>( []( unsigned int* data, size_t )
-                {
-                    data[0] = 0; data[1] = 1; data[2] = 2;
-                } );
-            _geometry = motor::graphics::geometry_object_t( "triangle",
-                motor::graphics::primitive_type::triangles,
-                std::move( vertices ), std::move( indices ) );
-
-            motor::graphics::msl_object_t shader( "triangle_shader" );
-            shader.add( motor::graphics::msl_api_type::msl_4_0, R"(
-                config triangle_shader
-                {
-                    vertex_shader
+            // geometry
+            {
+                auto vertices = motor::graphics::vertex_buffer_t()
+                    .add_layout_element( motor::graphics::vertex_attribute::position,
+                        motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
+                    .resize( 3 ).update<vertex>( []( vertex* data, size_t )
                     {
-                        in vec3_t pos : position ;
-                        out vec4_t pos : position ;
-                        out vec2_t uv : texcoord0 ;
-                        void main()
+                        data[0].position = motor::math::vec3f_t( -0.75f, -0.65f, 0.5f );
+                        data[1].position = motor::math::vec3f_t( 0.0f, 0.75f, 0.5f );
+                        data[2].position = motor::math::vec3f_t( 0.75f, -0.65f, 0.5f );
+                    } );
+                auto indices = motor::graphics::index_buffer_t()
+                    .set_layout_element( motor::graphics::type::tuint )
+                    .resize( 3 ).update<unsigned int>( []( unsigned int* data, size_t )
+                    {
+                        data[0] = 0;
+                        data[1] = 1;
+                        data[2] = 2;
+                    } );
+                _geometry = motor::graphics::geometry_object_t( "triangle",
+                    motor::graphics::primitive_type::triangles,
+                    std::move( vertices ), std::move( indices ) );
+            }
+
+            // msl object
+            {
+                motor::graphics::msl_object_t shader( "triangle_shader" );
+                shader.add( motor::graphics::msl_api_type::msl_4_0, R"(
+                    config triangle_shader
+                    {
+                        vertex_shader
                         {
-                            out.pos = vec4_t( in.pos, 1.0 ) ;
-                            out.uv = in.pos.xy * 0.5 + vec2_t( 0.5, 0.5 ) ;
+                            in vec3_t pos : position ;
+                            out vec4_t pos : position ;
+                            out vec2_t uv : texcoord0 ;
+                            void main()
+                            {
+                                out.pos = vec4_t( in.pos, 1.0 ) ;
+                                out.uv = in.pos.xy * 0.5 + vec2_t( 0.5, 0.5 ) ;
+                            }
+                        }
+                        pixel_shader
+                        {
+                            in vec2_t uv : texcoord0 ;
+                            out vec4_t color : color ;
+                            void main()
+                            {
+                                out.color = vec4_t( in.uv.x, in.uv.y, 0.7, 1.0 ) ;
+                            }
                         }
                     }
-                    pixel_shader
-                    {
-                        in vec2_t uv : texcoord0 ;
-                        out vec4_t color : color ;
-                        void main()
-                        {
-                            out.color = vec4_t( in.uv.x, in.uv.y, 0.7, 1.0 ) ;
-                        }
-                    }
-                }
-            )" );
-            shader.link_geometry( "triangle" );
-            shader.add_variable_set( motor::shared( motor::graphics::variable_set_t() ) );
-            _shader = motor::shared( std::move( shader ), "triangle shader" );
+                )" );
+                shader.link_geometry( "triangle" );
+                shader.add_variable_set( motor::shared( motor::graphics::variable_set_t() ) );
+                _shader = motor::shared( std::move( shader ), "triangle shader" );
+            }
 
-            motor::graphics::render_state_sets_t states;
-            states.depth_s.do_change = true;
-            states.depth_s.ss.do_activate = false;
-            states.depth_s.ss.do_depth_write = false;
-            states.polygon_s.do_change = true;
-            states.polygon_s.ss.do_activate = false;
-            states.clear_s.do_change = true;
-            states.clear_s.ss.do_activate = true;
-            states.clear_s.ss.do_color_clear = true;
-            states.clear_s.ss.do_depth_clear = true;
-            states.clear_s.ss.clear_color = motor::math::vec4f_t( 0.08f, 0.08f, 0.08f, 1.0f );
-            _state = motor::graphics::state_object_t( "triangle state" );
-            _state.add_render_state_set( states );
+            // render states
+            {
+                motor::graphics::render_state_sets_t states;
+                states.depth_s.do_change = true;
+                states.depth_s.ss.do_activate = false;
+                states.depth_s.ss.do_depth_write = false;
+                states.polygon_s.do_change = true;
+                states.polygon_s.ss.do_activate = false;
+                states.clear_s.do_change = true;
+                states.clear_s.ss.do_activate = true;
+                states.clear_s.ss.do_color_clear = true;
+                states.clear_s.ss.do_depth_clear = true;
+                states.clear_s.ss.clear_color = motor::math::vec4f_t( 0.08f, 0.08f, 0.08f, 1.0f );
+                _state = motor::graphics::state_object_t( "triangle state" );
+                _state.add_render_state_set( states );
+            }
 
             open_window( motor::application::graphics_generation::gen4_gl4,
                 "motor | triangle | OpenGL 4", 60 );
@@ -137,9 +148,13 @@ namespace sample
                 return;
             }
             fe->push( &_state );
-            motor::graphics::gen4::backend_t::render_detail_t detail;
-            detail.varset = 0;
-            fe->render( _shader, detail );
+            // draw
+            {
+                motor::graphics::gen4::backend_t::render_detail_t detail;
+                detail.varset = 0;
+                fe->render( _shader, detail );
+            }
+
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
         }
 
