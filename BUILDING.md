@@ -1,4 +1,4 @@
-# Building the first sample
+# Building the samples
 
 Initialize the engine and its dependencies:
 
@@ -24,3 +24,33 @@ create another application target.
 
 The motor submodule pins an engine commit. This application does not modify
 the engine or use the separate development checkout in `motor_suites`.
+
+## Runtime window lifecycle (Windows)
+
+```sh
+cmake --build build --config Release --target 01_window_lifecycle --parallel
+```
+
+Run `build/bin/Release/01_window_lifecycle.exe`. The OpenGL window contains
+an ImGui checkbox for opening/closing a D3D11 window and a shared color editor.
+The D3D11 window can also be closed using its title-bar close button, then
+reopened from the checkbox. Closing the OpenGL window ends the application.
+Geometry, MSL and the color variable set are shared between the windows.
+
+UI edits are staged in application data and applied to the shader variable
+once in `on_graphics`, before either window's render commands are recorded.
+Each new frontend configures the shared objects on its first frame and
+requests their backend release on its last frame. The application retains
+the objects until shutdown.
+
+For a bounded automated lifecycle check:
+
+```sh
+build/bin/Release/01_window_lifecycle.exe --smoke
+```
+
+This opens/closes D3D11 twice, changes colors between steps, checks that the
+shader becomes ready after both openings, and exits. It returns a nonzero
+code if the sequence fails or times out after 30 seconds. It requires an
+interactive Windows desktop with OpenGL and D3D11 support; it does not compare
+rendered pixels or certify that native graphics resources are leak-free.

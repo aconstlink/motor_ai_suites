@@ -1,5 +1,6 @@
 set( sources
     "00_triangle.cpp"
+    "01_window_lifecycle.cpp"
 )
 
 foreach( source IN LISTS sources )
