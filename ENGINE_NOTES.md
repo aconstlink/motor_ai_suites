@@ -77,3 +77,33 @@ the sample does not attempt to repair either backend or hide those diagnostics.
 UI automation could operate the color picker, but synthetic numeric typing
 did not change its numeric fields in an earlier run. Physical keyboard input
 has not been verified; this is not established as an engine defect.
+
+## Dynamic geometry sample
+
+`02_dynamic_geometry` uses one MSL object, two geometries and independent
+variable sets. Initial triangle rendering, first square addition, and square
+removal worked visually. The dual-backend lifecycle smoke completed with exit
+code 0, without reconfiguring the shared shader, and with no final Motor
+memory-manager entries. This does not certify rendering correctness.
+
+### Reused variable-set ID retains old data
+
+Reproduced interactively on both OpenGL and D3D11 at motor `ff2211c`:
+
+1. Enable Square: it appears blue beside the orange triangle.
+2. Disable Square: its link is removed and its variable set dropped.
+3. Change Square color to magenta while it is absent.
+4. Enable Square again: it incorrectly remains blue in both windows.
+
+The application creates a new variable set and writes the new color before
+adding it to the MSL object. The free variable-set index is reused. Suspected
+cause from code inspection: backend caches detect missing sets, but do not
+reconnect an existing index when its variable-set hash changes. Relevant code:
+`graphics/object/render_object.cpp` (`add_variable_set`, `drop_variable_set`),
+`platform/graphics/gl/gl4.cpp` (`has_not_variable_set`, `update_variables`), and
+`platform/graphics/d3d/d3d11.cpp` (variable-set update path).
+
+No backend fix or full-reconfigure workaround was added. The sample is a small
+reproducer for investigating cache invalidation. The automated smoke's success
+message explicitly requires visual checking; it cannot detect this pixel error.
+The known WGL and D3D11 shutdown diagnostics also appeared during this test.

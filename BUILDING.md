@@ -54,3 +54,25 @@ shader becomes ready after both openings, and exits. It returns a nonzero
 code if the sequence fails or times out after 30 seconds. It requires an
 interactive Windows desktop with OpenGL and D3D11 support; it does not compare
 rendered pixels or certify that native graphics resources are leak-free.
+
+## Dynamic geometry and variable sets
+
+```sh
+cmake --build build --config Release --target 02_dynamic_geometry --parallel
+build/bin/Release/02_dynamic_geometry.exe --dual
+```
+
+One MSL object renders a triangle and an optional square with separate color
+and position variable sets. Toggle Square to link/unlink its geometry and
+create/drop its variable set at runtime. The shader is configured only once
+per backend. Square geometry remains allocated until shutdown; toggling tests
+links and variable sets, not repeated geometry allocation.
+
+Omit `--dual` for OpenGL only. `--smoke` performs two add/remove cycles and
+changes square parameters between cycles, with a 30-second timeout. Its exit
+code checks lifecycle progress only, not pixel correctness. Closing either
+window ends the application.
+
+Known failure on the pinned engine: after removing the square, change its
+color and add it again. Both backends still display the old color. See
+`ENGINE_NOTES.md`; the sample deliberately retains this regression case.
