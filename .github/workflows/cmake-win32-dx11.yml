@@ -1,0 +1,33 @@
+name: CMake on Windows with OpenGL and DirectX 11
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure CMake
+        run: cmake -S . -B build -A x64
+
+      - name: Build samples
+        run: cmake --build build --config ${{ matrix.build_type }} --parallel 4
+
+      # Graphics runtime tests require a suitable interactive desktop and drivers.
