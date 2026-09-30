@@ -11,7 +11,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 namespace sample
 {
@@ -193,14 +192,16 @@ int main( int argc, char** argv )
         }
         else
         {
-            std::cout << "Usage: 00_triangle [--dual] [--frames positive-count]\n";
+            motor::log::global_t::status( "Usage: 00_triangle [--dual] [--frames positive-count]" );
+            motor::log::global_t::deinit();
             return std::strcmp( argv[i], "--help" ) == 0 ? 0 : 2;
         }
     }
 #ifndef _WIN32
     if( dual )
     {
-        std::cerr << "The D3D11 comparison requires Windows.\n";
+        motor::log::global_t::error( "The D3D11 comparison requires Windows." );
+        motor::log::global_t::deinit();
         return 2;
     }
 #endif

@@ -1,5 +1,30 @@
 # First integration observations
 
+## Concurrent tests (2026-09-30)
+
+Added `suite_concurrent/00_threads_parallel_for.cpp`, based on the existing
+Motor suites' thread-pool and parallel-for usage, with bounded workloads and
+explicit correctness checks rather than timing assumptions or Release-disabled
+assertions. All five scenarios passed locally in Windows x64 Debug and Release.
+Linux execution is left to CI. No Motor source changes were made.
+
+### Remainder task borrows a range past its scope
+
+In the pinned `motor/concurrent/parallel_for.hpp`, the remainder branch creates
+`range_t lr` at line 61 and captures it with `[&]` in the scheduled task.
+The scope ends before the final wait. If the worker has not consumed the range
+by then, it accesses an object outside its lifetime. The other split tasks
+correctly capture their range by value with `[&, lr]`; the remainder needs the
+same lifetime guarantee. This is a source-level finding, not a reproduced
+runtime failure: the repeated remainder test passed on this machine.
+
+The test rejects `hardware_concurrency() == 0` with a diagnostic because the
+current pool and parallel-for implementations require a nonzero count. Tests
+do not assert how many workers actually ran: OS scheduling need not distribute
+short tasks evenly. Passing these tests does not establish race freedom.
+
+## Graphics integration
+
 Tested on 2026-09-28 with motor `ff2211c`, Visual Studio 2026 / MSVC 19.51,
 Windows x64, Release. No motor source changes were made.
 

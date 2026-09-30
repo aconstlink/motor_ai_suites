@@ -1,5 +1,50 @@
 # Building the samples
 
+## Wire console tests
+
+Build targets `00_wire_slots` and `01_wire_bridges`, then run:
+
+```sh
+ctest --test-dir build -C Release -L wire --output-on-failure --no-tests=error
+```
+
+The slot test covers initial values, fan-out, explicit exchange, independent
+change flags, disconnect/reconnect, type rejection and release. The bridge
+test covers input transfer, output-to-two-subsets transfer, staged updates,
+independent variable ownership and rebinding. Assertions remain active in
+Release through explicit checks, and remaining Motor allocations fail the run.
+
+The pinned Motor revision still has the original input-only bridge. Input
+coverage runs against it; output and rebinding return CTest's skip code 77.
+When the submodule contains the new input/output bridge headers, these tests
+activate automatically. No development-engine files are copied into the repo.
+Run `01_wire_bridges input`, `output` or `rebind` for an individual scenario.
+
+## Concurrent console tests
+
+```sh
+cmake --build build --config Release --target 00_threads_parallel_for --parallel 4
+ctest --test-dir build -C Release -L concurrent --output-on-failure --no-tests=error
+```
+
+The five scenarios cover four native threads, Motor's thread pool, empty/small/
+threshold/large parallel ranges with nonzero offsets, repeated remainder ranges,
+and nested `parallel_for` calls. Atomic visit counters and a serial checksum
+detect missing, duplicate and out-of-range work. Checks remain active in Release.
+Motor's final memory report must be empty. CTest enforces a 90-second timeout per
+scenario and runs them serially to avoid competing pools.
+
+No window, graphics backend, audio device or assets are used. Both CI workflows
+run these tests in Debug and Release. They are correctness smoke tests, not
+performance benchmarks or proof of race freedom. See the remainder-capture
+finding in `ENGINE_NOTES.md` even if all tests pass.
+
+To run one case directly, pass `threads`, `pool`, `ranges`, `remainder` or `nested`
+to `build/bin/Release/00_threads_parallel_for.exe` (CTest supplies the timeout;
+direct execution does not). Substitute Debug for Release to test a Debug build.
+
+## Initial setup
+
 Initialize the engine and its dependencies:
 
 ```sh

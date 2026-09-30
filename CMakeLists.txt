@@ -11,4 +11,7 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/motor/cmake/macros" 
 include( visual_studio_src_dir )
 
 add_subdirectory( suite_graphics )
+include( CTest )
+add_subdirectory( suite_concurrent )
+add_subdirectory( suite_wire )
 set_property( DIRECTORY PROPERTY VS_STARTUP_PROJECT 00_triangle )

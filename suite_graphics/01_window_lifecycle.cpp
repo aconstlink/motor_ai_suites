@@ -11,7 +11,6 @@
 #include <motor/tool/imgui/imgui.h>
 
 #include <cstring>
-#include <iostream>
 #include <chrono>
 
 namespace sample
@@ -327,12 +326,14 @@ int main( int argc, char** argv )
         if( std::strcmp( argv[i], "--smoke" ) == 0 ) smoke = true;
         else
         {
-            std::cout << "Usage: 01_window_lifecycle [--smoke]\n";
+            motor::log::global_t::status( "Usage: 01_window_lifecycle [--smoke]" );
+            motor::log::global_t::deinit();
             return std::strcmp( argv[i], "--help" ) == 0 ? 0 : 2;
         }
     }
 #ifndef _WIN32
-    std::cerr << "This D3D11 lifecycle sample requires Windows.\n";
+    motor::log::global_t::error( "This D3D11 lifecycle sample requires Windows." );
+    motor::log::global_t::deinit();
     return 2;
 #endif
     bool smoke_passed = false;

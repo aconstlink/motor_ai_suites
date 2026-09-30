@@ -13,7 +13,6 @@
 #include <array>
 #include <chrono>
 #include <cstring>
-#include <iostream>
 
 namespace sample
 {
@@ -342,12 +341,18 @@ int main( int argc, char** argv )
         else if( std::strcmp( argv[i], "--smoke" ) == 0 ) smoke = true;
         else
         {
-            std::cout << "Usage: 02_dynamic_geometry [--dual] [--smoke]\n";
+            motor::log::global_t::status( "Usage: 02_dynamic_geometry [--dual] [--smoke]" );
+            motor::log::global_t::deinit();
             return std::strcmp( argv[i], "--help" ) == 0 ? 0 : 2;
         }
     }
 #ifndef _WIN32
-    if( dual ) { std::cerr << "D3D11 requires Windows.\n"; return 2; }
+    if( dual )
+    {
+        motor::log::global_t::error( "D3D11 requires Windows." );
+        motor::log::global_t::deinit();
+        return 2;
+    }
 #endif
     motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
         motor::shared( sample::dynamic_geometry_app( dual, smoke, &passed ) ) );

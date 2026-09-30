@@ -39,4 +39,5 @@ jobs:
       - name: Build samples
         run: cmake --build build --config ${{ matrix.build_type }} --parallel 4
 
-      # Build coverage only; no graphics sessions are launched on hosted runners.
+      - name: Test console suites
+        run: ctest --test-dir build -C ${{ matrix.build_type }} -L "concurrent|wire" --output-on-failure --no-tests=error
