@@ -1,0 +1,12 @@
+set( source "00_document.cpp" )
+motor_vs_src_dir( "${source}" )
+add_executable( 00_document "${source}" )
+target_link_libraries( 00_document PRIVATE motor::core motor::memory motor::log )
+set_target_properties( 00_document PROPERTIES FOLDER "suites/suite_core" )
+
+if( BUILD_TESTING )
+    foreach( scenario basic blank_lines final_line whitespace )
+        add_test( NAME core_document_${scenario} COMMAND 00_document ${scenario} )
+        set_tests_properties( core_document_${scenario} PROPERTIES TIMEOUT 30 LABELS core )
+    endforeach()
+endif()

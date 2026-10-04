@@ -14,11 +14,17 @@ test covers input transfer, output-to-two-subsets transfer, staged updates,
 independent variable ownership and rebinding. Assertions remain active in
 Release through explicit checks, and remaining Motor allocations fail the run.
 
-The pinned Motor revision still has the original input-only bridge. Input
-coverage runs against it; output and rebinding return CTest's skip code 77.
-When the submodule contains the new input/output bridge headers, these tests
-activate automatically. No development-engine files are copied into the repo.
-Run `01_wire_bridges input`, `output` or `rebind` for an individual scenario.
+Motor is pinned to `52b0177`, with separate input/output bridges. All bridge
+tests run without a compatibility/skip path. Additional scenarios verify
+replacement of whole variable sets while preserving same-type connections,
+and float-to-int slot replacement with disconnection of old endpoints.
+Run `01_wire_bridges input`, `output`, `rebind`, `replacement`,
+`input_type_change` or `output_type_change` for an individual scenario.
+
+`00_wire_slots borrow` / `wire_sheet_borrow` checks that repeated `borrow_or_add`
+does not acquire an extra reference. At `52b0177` its existing-entry path calls
+`motor::share`, so this regression test is expected to report a memory leak.
+It remains a normal failing test, not a skipped or inverted test.
 
 ## Concurrent console tests
 

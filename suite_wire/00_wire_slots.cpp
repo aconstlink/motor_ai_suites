@@ -67,9 +67,20 @@ namespace this_file
     }
 }
 
-int main( motor::core::types::void_t )
+int main( int argc, char ** argv )
 {
-    bool const ok = this_file::run() ;
+    bool ok = false ;
+    {
+        if( argc == 1 ) ok = this_file::run() ;
+        else if( argc == 2 && motor::string_t( argv[1] ) == "borrow" )
+        {
+            motor::wire::named_outputs_t sheet ;
+            auto * first = sheet.borrow_or_add( "value", motor::shared( this_file::output_t( 1.0f ) ) ) ;
+            auto * again = sheet.borrow_or_add( "value", motor::shared( this_file::output_t( 2.0f ) ) ) ;
+            ok = this_file::check( first == again, "borrow_or_add returns existing slot" ) ;
+            // Neither borrowed pointer owns a reference. Sheet destruction must free it.
+        }
+    }
     motor::log::global_t::deinit() ;
     bool const clean = motor::memory::global_t::dump_to_std() == 0 ;
     return ok && clean ? 0 : 1 ;

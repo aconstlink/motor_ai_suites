@@ -2,6 +2,8 @@ set( sources
     "00_triangle.cpp"
     "01_window_lifecycle.cpp"
     "02_dynamic_geometry.cpp"
+    "03_shared_scene.cpp"
+    "04_reconfigure.cpp"
 )
 
 foreach( source IN LISTS sources )
