@@ -1,5 +1,59 @@
 # Document tokenization
 
+## Sponza OBJ via Motor IO
+
+`01_document_obj` loads `suite_core/working/sponza.obj` through
+`motor::io::database_t(path_t(DATAPATH), "./working", "data")`, followed by
+`load(location_t("sponza.obj")).wait_for_operation(...)`. No std::ifstream is
+used. DATAPATH is the source suite_core directory, so launching from a build
+directory also works. The OBJ is external test data; it is not copied or packed.
+
+```powershell
+cmake --build build --config Release --target 01_document_obj
+./build/bin/Release/01_document_obj.exe
+./build/bin/Release/01_document_obj.exe --verify-only
+./build/bin/Release/01_document_obj.exe --location another.obj
+ctest --test-dir build -C Release -R '^core_document_obj$' --output-on-failure
+```
+
+Locations are relative to the database's working directory and use Motor's
+location syntax. CTest registers the correctness-only test when sponza.obj
+exists at CMake configure time; no benchmark timing threshold is imposed.
+
+The test measures database initialization and load/wait/copy separately, then
+destroys the database before benchmarking. Disk timing is not a cold-cache
+measurement. Each tokenizer retains its own source copy and all tokens until
+traversal finishes. Standard-library baselines intentionally use std allocators.
+Document additionally normalizes whitespace and retains line metadata.
+The stream baseline also creates its own istringstream buffer.
+
+Construction/tokenization, traversal with a character-wise checksum, destruction
+and total time are measured separately. Count/reserve is inside construction.
+One warmup and five measured rounds rotate the implementation order; reported
+phase medians need not sum to the median total. These are repeated, warm runs.
+The independent whitespace scanner validates token count, bytes and checksum;
+document's for_each_line and for_each_token must also agree. Comments and face
+indices are tokenized as text, not interpreted as mesh data. Counts for v/vt/vn/f
+are reported, but this is not a complete OBJ importer benchmark.
+
+Lines reaching 4096 bytes are rejected before constructing document to avoid
+its current fixed scratch-buffer limit. No allocation-count or peak-memory
+measurement is claimed. The final Motor dump does not track std allocations.
+
+Local Windows/MSVC Release result (24,424,786 bytes, 2,187,283 tokens):
+
+| Implementation | Build | Traverse + hash | Destroy | Total |
+| --- | ---: | ---: | ---: | ---: |
+| document | 167.652 ms | 36.715 ms | 4.649 ms | 210.469 ms |
+| std::string + substr | 261.634 ms | 35.543 ms | 43.219 ms | 339.763 ms |
+| std::string + count/reserve + substr | 262.735 ms | 34.947 ms | 45.195 ms | 340.347 ms |
+| stringstream | 696.819 ms | 35.122 ms | 45.612 ms | 776.545 ms |
+
+Database init: 4.206 ms; load/wait/copy: 52.107 ms. Document reports 569,548
+lines, 145,185 vertex records, 87,715 UV records, 72,781 normal records and
+262,267 face records. All comparisons passed with an empty Motor memory dump.
+These numbers describe this one local run, not portable speed guarantees.
+
 ## Counting and reservation comparison
 
 `--benchmark` also runs count/reserve variants of all three STL implementations.
