@@ -1,6 +1,7 @@
 #include <motor/platform/global.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>
 #include <motor/graphics/object/geometry_object.h>
+#include <motor/graphics/object/image_object.h>
 #include <motor/graphics/object/msl_object.h>
 #include <motor/graphics/object/state_object.h>
 #include <motor/tool/imgui/imgui.h>
@@ -63,21 +64,30 @@ namespace sample
             size_t seen = 0 ;
             size_t completed = 0 ;
             size_t draws = 0 ;
-            status states[3] = {
+            size_t texture_revision = 0 ;
+            size_t texture_draws = 0 ;
+            status states[5] = {
+                { state::invalid, result::invalid },
+                { state::invalid, result::invalid },
                 { state::invalid, result::invalid },
                 { state::invalid, result::invalid },
                 { state::invalid, result::invalid } } ;
             std::chrono::steady_clock::time_point started ;
         } ;
-        struct vertex { motor::math::vec3f_t position ; } ;
+        struct vertex { motor::math::vec3f_t position ; motor::math::vec2f_t uv ; } ;
 
         options _options ;
         bool_t * _passed ;
         motor::graphics::geometry_object_t _geometry ;
+        motor::graphics::image_object_t _textures[2] ;
         motor::graphics::state_object_t _state ;
         motor::graphics::msl_object_mtr_t _shader = nullptr ;
         size_t _geo_id = size_t( -1 ) ;
-        size_t _var_id = size_t( -1 ) ;
+        size_t _var_ids[2] = { size_t( -1 ), size_t( -1 ) } ;
+        motor::graphics::texture_variable_t * _texture_vars[2] = { nullptr, nullptr } ;
+        int_t _texture_choice[2] = { 0, 1 } ;
+        int_t _applied_texture[2] = { 0, 1 } ;
+        size_t _texture_revision = 1 ;
         window_data _windows[2] ;
         size_t _generation = 1 ;
         bool_t _release_first = false ;
@@ -85,6 +95,7 @@ namespace sample
         int_t _request_scope = 0 ;
         size_t _stable_frames = 0 ;
         size_t _smoke_step = 0 ;
+        bool_t _smoke_texture_changed = false ;
         bool_t _quitting = false ;
         std::chrono::steady_clock::time_point _started ;
 
@@ -100,12 +111,14 @@ namespace sample
             w.states[0] = fe->decode( &_state ) ;
             w.states[1] = fe->decode( &_geometry ) ;
             w.states[2] = fe->decode( _shader ) ;
+            w.states[3] = fe->decode( &_textures[0] ) ;
+            w.states[4] = fe->decode( &_textures[1] ) ;
         }
 
         void_t report( window_data const & w ) noexcept
         {
-            char_cptr_t const labels[3] = { "state", "geometry", "msl" } ;
-            for( size_t i = 0 ; i < 3 ; ++i )
+            char_cptr_t const labels[5] = { "state", "geometry", "msl", "texture A", "texture B" } ;
+            for( size_t i = 0 ; i < 5 ; ++i )
             {
                 motor::log::global_t::status( motor::string_t( "[reconfigure][" ) + w.label + "] " +
                     labels[i] + ": " + name( w.states[i].first ) + " / " + name( w.states[i].second ) ) ;
@@ -134,13 +147,15 @@ namespace sample
 
         void_t configure( window_data & w, frontend fe ) noexcept
         {
-            // Queue geometry before MSL: shader input binding needs the geometry.
+            // Geometry and images must exist before MSL creates its bindings.
             bool_t const a = fe->configure<motor::graphics::state_object_t>( &_state ) ;
             bool_t const b = fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
+            bool_t const d = fe->configure<motor::graphics::image_object_t>( &_textures[0] ) ;
+            bool_t const e = fe->configure<motor::graphics::image_object_t>( &_textures[1] ) ;
             bool_t const c = fe->configure<motor::graphics::msl_object_t>( _shader ) ;
-            w.current = a && b && c ? phase::configuring : phase::failed ;
+            w.current = a && b && c && d && e ? phase::configuring : phase::failed ;
             w.started = std::chrono::steady_clock::now() ;
-            log( w, a && b && c ? "configure queued" : "configure enqueue rejected" ) ;
+            log( w, a && b && c && d && e ? "configure queued" : "configure enqueue rejected" ) ;
         }
 
         void_t release( window_data & w, frontend fe ) noexcept
@@ -148,10 +163,12 @@ namespace sample
             // Keep all CPU objects alive; this tests backend release, not ownership transfer.
             bool_t const a = fe->release<motor::graphics::msl_object_t>( _shader ) ;
             bool_t const b = fe->release<motor::graphics::geometry_object_t>( &_geometry ) ;
+            bool_t const d = fe->release<motor::graphics::image_object_t>( &_textures[0] ) ;
+            bool_t const e = fe->release<motor::graphics::image_object_t>( &_textures[1] ) ;
             bool_t const c = fe->release<motor::graphics::state_object_t>( &_state ) ;
-            w.current = a && b && c ? phase::releasing : phase::failed ;
+            w.current = a && b && c && d && e ? phase::releasing : phase::failed ;
             w.started = std::chrono::steady_clock::now() ;
-            log( w, a && b && c ? "release queued" : "release enqueue rejected" ) ;
+            log( w, a && b && c && d && e ? "release queued" : "release enqueue rejected" ) ;
         }
 
         void_t advance( window_data & w, frontend fe ) noexcept
@@ -206,18 +223,43 @@ namespace sample
                 auto vb = motor::graphics::vertex_buffer_t()
                     .add_layout_element( motor::graphics::vertex_attribute::position,
                         motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
-                    .resize( 3 ).update<vertex>( []( vertex * data, size_t )
+                    .add_layout_element( motor::graphics::vertex_attribute::texcoord0,
+                        motor::graphics::type::tfloat, motor::graphics::type_struct::vec2 )
+                    .resize( 4 ).update<vertex>( []( vertex * data, size_t )
                     {
-                        data[0].position = motor::math::vec3f_t( -0.65f, -0.80f, 0.5f ) ;
-                        data[1].position = motor::math::vec3f_t( 0.0f, 0.0f, 0.5f ) ;
-                        data[2].position = motor::math::vec3f_t( 0.65f, -0.80f, 0.5f ) ;
+                        data[0] = { motor::math::vec3f_t( -0.42f, -0.90f, 0.5f ), motor::math::vec2f_t( 0.0f, 0.0f ) } ;
+                        data[1] = { motor::math::vec3f_t( 0.42f, -0.90f, 0.5f ), motor::math::vec2f_t( 1.0f, 0.0f ) } ;
+                        data[2] = { motor::math::vec3f_t( 0.42f, -0.12f, 0.5f ), motor::math::vec2f_t( 1.0f, 1.0f ) } ;
+                        data[3] = { motor::math::vec3f_t( -0.42f, -0.12f, 0.5f ), motor::math::vec2f_t( 0.0f, 1.0f ) } ;
                     } ) ;
                 auto ib = motor::graphics::index_buffer_t()
                     .set_layout_element( motor::graphics::type::tuint )
-                    .resize( 3 ).update<uint_t>( []( uint_t * data, size_t )
-                    { data[0] = 0 ; data[1] = 1 ; data[2] = 2 ; } ) ;
-                _geometry = motor::graphics::geometry_object_t( "reconfigure_triangle",
+                    .resize( 6 ).update<uint_t>( []( uint_t * data, size_t )
+                    { uint_t const indices[6] = { 0, 1, 2, 0, 2, 3 } ;
+                        for( size_t i = 0 ; i < 6 ; ++i ) data[i] = indices[i] ; } ) ;
+                _geometry = motor::graphics::geometry_object_t( "reconfigure_quad",
                     motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
+            }
+            for( size_t t = 0 ; t < 2 ; ++t )
+            {
+                motor::graphics::image_t image( motor::graphics::image_t::dims_t( 128, 128 ) ) ;
+                image.update( [t]( motor::graphics::image_ptr_t, motor::graphics::image_t::dims_in_t dims, void_ptr_t raw )
+                {
+                    using rgba = motor::math::vector4<uint8_t> ;
+                    auto * pixels = static_cast<rgba *>( raw ) ;
+                    size_t const tile = t == 0 ? 16 : 8 ;
+                    rgba const ink = t == 0 ? rgba( 20, 150, 225, 255 ) : rgba( 240, 105, 30, 255 ) ;
+                    for( size_t y = 0 ; y < dims.y() ; ++y )
+                    {
+                        for( size_t x = 0 ; x < dims.x() ; ++x )
+                        {
+                            bool_t const odd = ( ( x / tile ) + ( y / tile ) ) % 2 != 0 ;
+                            pixels[y*dims.x()+x] = odd ? ink : rgba( 235, 235, 235, 255 ) ;
+                        }
+                    }
+                } ) ;
+                _textures[t] = motor::graphics::image_object_t(
+                    t == 0 ? "checker_A" : "checker_B", std::move( image ) ) ;
             }
             {
                 motor::graphics::msl_object_t shader( "reconfigure_shader" ) ;
@@ -227,22 +269,43 @@ namespace sample
                         vertex_shader
                         {
                             in vec3_t pos : position ;
+                            in vec2_t uv : texcoord0 ;
                             out vec4_t pos : position ;
-                            void main() { out.pos = vec4_t( in.pos, 1.0 ) ; }
+                            out vec2_t uv : texcoord0 ;
+                            vec4_t u_offset ;
+                            void main()
+                            {
+                                out.pos = vec4_t( in.pos, 1.0 ) + u_offset ;
+                                out.uv = in.uv ;
+                            }
                         }
                         pixel_shader
                         {
                             out vec4_t color : color ;
-                            vec4_t u_color ;
-                            void main() { out.color = u_color ; }
+                            in vec2_t uv : texcoord0 ;
+                            tex2d_t u_tex ;
+                            void main() { out.color = texture( u_tex, in.uv ) ; }
                         }
                     }
                 )" ) ;
-                _geo_id = shader.link_geometry( "reconfigure_triangle" ) ;
-                auto vars = motor::shared( motor::graphics::variable_set_t() ) ;
-                vars->data_variable<motor::math::vec4f_t>( "u_color" )->set(
-                    motor::math::vec4f_t( 0.15f, 0.75f, 0.45f, 1.0f ) ) ;
-                _var_id = shader.add_variable_set( motor::move( vars ) ) ;
+                _geo_id = shader.link_geometry( "reconfigure_quad" ) ;
+                for( size_t id = 0 ; id < 3 ; ++id )
+                {
+                    auto vars = motor::shared( motor::graphics::variable_set_t() ) ;
+                    vars->data_variable<motor::math::vec4f_t>( "u_offset" )->set(
+                        motor::math::vec4f_t( id == 0 ? -0.48f : 0.48f, 0.0f, 0.0f, 0.0f ) ) ;
+                    auto * texture = vars->texture_variable( "u_tex" ) ;
+                    texture->set( id == 0 ? "checker_A" : "checker_B" ) ;
+                    size_t const assigned = shader.add_variable_set( motor::move( vars ) ) ;
+                    if( id != 1 )
+                    {
+                        size_t const side = id == 0 ? 0 : 1 ;
+                        _var_ids[side] = assigned ;
+                        _texture_vars[side] = texture ;
+                    }
+                }
+                // The retained sets are 0 and 2; internal backend indices are not public IDs.
+                shader.drop_variable_set( 1 ) ;
                 _shader = motor::shared( std::move( shader ) ) ;
             }
             {
@@ -278,6 +341,26 @@ namespace sample
             }
         }
 
+        void_t on_graphics( motor::application::app::graphics_data_in_t ) noexcept override
+        {
+            if( _quitting ) return ;
+            bool_t changed = false ;
+            for( size_t side = 0 ; side < 2 ; ++side )
+            {
+                if( _applied_texture[side] == _texture_choice[side] ) continue ;
+                _texture_vars[side]->set( _textures[_texture_choice[side]].name() ) ;
+                _applied_texture[side] = _texture_choice[side] ;
+                changed = true ;
+            }
+            if( changed )
+            {
+                ++_texture_revision ;
+                _stable_frames = 0 ;
+                motor::log::global_t::status( "[reconfigure] texture variables changed without configure: left=" +
+                    _textures[_applied_texture[0]].name() + ", right=" + _textures[_applied_texture[1]].name() ) ;
+            }
+        }
+
         void_t on_render( window_id_t const id, frontend fe,
             motor::application::app::render_data_in_t data ) noexcept override
         {
@@ -308,8 +391,19 @@ namespace sample
             fe->push( &_state ) ;
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
-                detail.geo = _geo_id ; detail.varset = _var_id ;
-                fe->render( _shader, detail ) ;
+                detail.geo = _geo_id ;
+                for( size_t side = 2 ; side-- > 0 ; )
+                {
+                    detail.varset = _var_ids[side] ;
+                    fe->render( _shader, detail ) ;
+                }
+                if( w.texture_revision != _texture_revision )
+                {
+                    w.texture_revision = _texture_revision ;
+                    w.texture_draws = 0 ;
+                    log( w, "draws queued with current texture selection (sets 2, 0)" ) ;
+                }
+                ++w.texture_draws ;
                 ++w.draws ;
             }
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
@@ -326,6 +420,8 @@ namespace sample
                 if( ImGui::Button( "Configure again" ) ) request( false ) ;
                 ImGui::SameLine() ;
                 if( ImGui::Button( "Release -> Configure" ) ) request( true ) ;
+                ImGui::Combo( "Left texture", &_texture_choice[0], "A: blue, coarse\0B: orange, fine\0" ) ;
+                ImGui::Combo( "Right texture", &_texture_choice[1], "A: blue, coarse\0B: orange, fine\0" ) ;
                 ImGui::EndDisabled() ;
                 for( size_t i = 0 ; i < count() ; ++i )
                 {
@@ -334,8 +430,8 @@ namespace sample
                     ImGui::Text( "%s | completed: %llu | %s", w.label,
                         static_cast<unsigned long long>( w.completed ),
                         w.current == phase::failed ? "FAILED" : ( w.current == phase::idle ? "idle" : "pending" ) ) ;
-                    char_cptr_t const labels[3] = { "State", "Geometry", "MSL" } ;
-                    for( size_t j = 0 ; j < 3 ; ++j )
+                    char_cptr_t const labels[5] = { "State", "Geometry", "MSL", "Texture A", "Texture B" } ;
+                    for( size_t j = 0 ; j < 5 ; ++j )
                         ImGui::Text( "%s: %s / %s", labels[j], name( w.states[j].first ), name( w.states[j].second ) ) ;
                 }
             }
@@ -350,13 +446,24 @@ namespace sample
             {
                 if( _windows[i].current == phase::failed ) { _quitting = true ; close() ; return ; }
                 if( _windows[i].seen != _generation || _windows[i].current != phase::idle ||
-                    _windows[i].draws < 30 ) return ;
+                    _windows[i].draws < 30 || _windows[i].texture_revision != _texture_revision ||
+                    _windows[i].texture_draws < 30 ) return ;
             }
             if( ++_stable_frames < 30 ) return ;
+            // Change one set only, then allow each backend to draw it before any reconfigure.
+            if( !_smoke_texture_changed )
+            {
+                size_t const side = _smoke_step % 2 ;
+                _texture_choice[side] = 1 - _texture_choice[side] ;
+                _smoke_texture_changed = true ;
+                _stable_frames = 0 ;
+                return ;
+            }
             size_t const steps = _options.release_only || _options.reconfigure_only ? 2 : 4 ;
             if( _smoke_step < steps )
             {
                 request( _options.release_only || ( !_options.reconfigure_only && _smoke_step >= 2 ) ) ;
+                _smoke_texture_changed = false ;
                 ++_smoke_step ;
             }
             else
@@ -383,7 +490,11 @@ namespace sample
             if( event.close_changed ) { _quitting = true ; close() ; }
         }
 
-        void_t on_shutdown( void_t ) noexcept override { motor::release( motor::move( _shader ) ) ; }
+        void_t on_shutdown( void_t ) noexcept override
+        {
+            for( auto & texture : _texture_vars ) texture = nullptr ;
+            motor::release( motor::move( _shader ) ) ;
+        }
     } ;
 }
 

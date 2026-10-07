@@ -4,6 +4,7 @@
 #include <motor/graphics/object/msl_object.h>
 #include <motor/graphics/object/state_object.h>
 #include <motor/math/matrix/matrix4.hpp>
+#include <motor/gfx/camera/generic_camera.h>
 #include <motor/tool/imgui/imgui.h>
 #include <motor/concurrent/global.h>
 #include <motor/log/global.h>
@@ -54,6 +55,7 @@ namespace sample
         motor::graphics::geometry_object_t _cube ;
         motor::graphics::state_object_t _state ;
         motor::graphics::msl_object_mtr_t _shader = nullptr ;
+        motor::gfx::generic_camera_t _camera ;
         size_t _geometry_id = invalid ;
         object_data _objects[3] ;
         window_data _windows[2] ;
@@ -126,13 +128,10 @@ namespace sample
 
         void_t create_sets( void_t ) noexcept
         {
-            auto view = identity() ;
-            view.set_column( 3, motor::math::vec4f_t( 0.0f, 0.0f, -6.0f, 1.0f ) ) ;
-            auto projection = identity() ;
-            // Fixed orthographic camera; all cube depths lie in both APIs' clip ranges.
-            projection[0] = 0.28f ;
-            projection[5] = 0.28f * ( 640.0f / 480.0f ) ;
-            projection[10] = -0.08f ;
+            // Keep the original fixed 4:3 framing; both windows share these variable sets.
+            _camera.make_orthographic( 7.142857f, 5.357143f, 1.0f, 9.0f ) ;
+            _camera.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 6.0f ),
+                motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f ) ) ;
             motor::math::vec4f_t const colors[4] = {
                 { 0.15f, 0.80f, 0.35f, 1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f },
                 { 0.15f, 0.45f, 1.0f, 1.0f }, { 1.0f, 0.30f, 0.10f, 1.0f } } ;
@@ -140,8 +139,8 @@ namespace sample
             for( size_t id = 0 ; id < 4 ; ++id )
             {
                 auto vars = motor::shared( motor::graphics::variable_set_t() ) ;
-                vars->data_variable<motor::math::mat4f_t>( "u_view" )->set( view ) ;
-                vars->data_variable<motor::math::mat4f_t>( "u_proj" )->set( projection ) ;
+                vars->data_variable<motor::math::mat4f_t>( "u_view" )->set( _camera.get_view_matrix() ) ;
+                vars->data_variable<motor::math::mat4f_t>( "u_proj" )->set( _camera.get_proj_matrix() ) ;
                 vars->data_variable<motor::math::vec4f_t>( "u_color" )->set( colors[id] ) ;
                 auto * world = vars->data_variable<motor::math::mat4f_t>( "u_world" ) ;
                 world->set( identity() ) ;

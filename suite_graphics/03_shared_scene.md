@@ -1,6 +1,14 @@
 # Shared Scene Regression Test
 
-## Latest Retest
+## Motor Camera Update
+
+The manual view/projection construction has been replaced with
+`motor::gfx::generic_camera`. Release builds and dual-backend smoke runs
+with dynamic sets and with `--eager` passed, including secondary-window
+close/reopen. Both memory dumps were empty. The camera change has not been
+visually reverified; the smoke tests do not compare pixels.
+
+## Earlier Retest
 
 Motor 5f8f05b plus the user's local GL4/D3D11 MSL release implementations:
 Release build passes, and `--smoke` now completes the dual-window lifecycle
@@ -12,6 +20,11 @@ The earlier verification notes below are historical.
 Three cubes share one geometry and one MSL object. Each cube has its own
 variable set. Sets are drawn in order 3, 0, 2; set 1 is removed before use.
 Animation is updated once in on_graphics, then rendered in both windows.
+View and projection come from `motor::gfx::generic_camera`, using
+`make_orthographic` and `look_at` from (0, 0, 6) toward the origin.
+The fixed 4:3 framing is intentionally shared across windows, as are the
+per-object variable sets. Object rotation/translation matrices are separate
+from the camera and remain part of the regression's animation data.
 
 ## Run
 

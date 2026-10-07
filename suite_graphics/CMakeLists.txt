@@ -4,6 +4,12 @@ set( sources
     "02_dynamic_geometry.cpp"
     "03_shared_scene.cpp"
     "04_reconfigure.cpp"
+    "05_scene_benchmark.cpp"
+    "06_vertex_pulling.cpp"
+    "07_vertex_pulling_field.cpp"
+    "08_render_to_texture.cpp"
+    "09_geometry_shader.cpp"
+    "10_transform_feedback.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -16,3 +22,10 @@ foreach( source IN LISTS sources )
     set_target_properties( ${app_name} PROPERTIES
         FOLDER "suites/suite_graphics" )
 endforeach()
+
+target_link_libraries( 05_scene_benchmark PRIVATE motor::scene motor::gfx )
+target_link_libraries( 03_shared_scene PRIVATE motor::gfx )
+target_link_libraries( 07_vertex_pulling_field PRIVATE motor::gfx )
+target_link_libraries( 08_render_to_texture PRIVATE motor::gfx )
+target_link_libraries( 09_geometry_shader PRIVATE motor::gfx )
+target_link_libraries( 10_transform_feedback PRIVATE motor::gfx )
