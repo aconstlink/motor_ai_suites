@@ -13,7 +13,9 @@
 #include <motor/geometry/3d/cube.h>
 #include <motor/geometry/mesh/tri_mesh.h>
 #include <motor/gfx/camera/generic_camera.h>
+#include <motor/gfx/postprocess/hdr_postprocess_pipeline.h>
 #include <motor/tool/imgui/imgui.h>
+#include <motor/tool/imgui/imgui_property.h>
 #include <motor/concurrent/global.h>
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -98,6 +100,10 @@ namespace sample
             motor::gfx::generic_camera_t camera ;
             size_t frames = 0 ;
             bool_t ready = false ;
+            motor::math::vec2ui_t dimensions = motor::math::vec2ui_t(760,620) ;
+            motor::graphics::state_object_t present_state ;
+            bool_t viewport_dirty = true, post_ready = false ;
+            size_t post_frames = 0, direct_frames = 0 ;
         } ;
 
         options _opts ;
@@ -106,22 +112,56 @@ namespace sample
         motor::graphics::msl_object_mtr_t _shader = nullptr ;
         size_t _links[geometry_count] = {} ;
         motor::graphics::state_object_t _state ;
+        motor::graphics::state_object_t _hdr_state ;
+        motor::gfx::hdr_postprocess_pipeline_mtr_t _post = nullptr ;
+        motor::gfx::hdr_postprocess_pipeline_t::property_sheets_t _post_properties ; // borrowed
         motor::scene::logic_group_mtr_t _root = nullptr ;
         motor::scene::logic_group_mtr_t _exhibits = nullptr ; // borrowed
         lighting_controls * _controls = nullptr ; // borrowed
         motor::vector<object> _objects ;
         window_data _windows[2] ;
         bool_t _enabled[3] = {true,true,true} ;
-        float_t _intensity[3] = {0.65f,0.45f,0.6f} ;
+        float_t _intensity[3] = {6.0f,3.0f,5.0f} ;
         float_t _time = 0, _yaw = 25, _ambient = 0.09f, _specular = 0.22f ;
         float_t _group_height = 0, _tint = 1 ;
         bool_t _paused = false, _quitting = false, _separate_view = false, _scene_ready = false ;
+        bool_t _post_enabled = true ;
         size_t _phase = 0, _triangles = 0 ;
         std::chrono::steady_clock::time_point _started ;
 
         size_t window_count( void_t ) const noexcept { return _opts.dual ? 2 : 1 ; }
         bool_t all_ready( void_t ) const noexcept
         { return _windows[0].ready && ( window_count() == 1 || _windows[1].ready ) ; }
+
+        void_t prepare_presentation( size_t const w, motor::graphics::gen4::frontend_ptr_t fe ) noexcept
+        {
+            auto & window = _windows[w] ;
+            if( !window.viewport_dirty ) return ;
+            window.present_state.access_render_state(0,[&]( motor::graphics::render_state_sets_ref_t states )
+            {
+                states.view_s.ss.vp = motor::math::vec4ui_t(0,0,window.dimensions.x(),window.dimensions.y()) ;
+                return true ;
+            }) ;
+            fe->configure<motor::graphics::state_object_t>(&window.present_state) ;
+            window.viewport_dirty = false ;
+        }
+
+        bool_t verify_postprocess( void_t ) noexcept
+        {
+            using float_slot_t = motor::wire::input_slot<float_t> ;
+            auto * threshold = _post_properties.at("brightpass")->borrow_property<float_slot_t>("brightness_threshold") ;
+            auto * tone = _post_properties.at("tone_map")->borrow_property<motor::wire::input_slot<vec3_t>>("reinhard_offset") ;
+            auto * merge = _post_properties.at("merge")->borrow_property<float_slot_t>("strength_b") ;
+            auto * fxaa = _post_properties.at("fxaa")->borrow_property<float_slot_t>("subpixel_blending") ;
+            auto * bloom = _post_properties.at("bloom")->borrow_property<float_t>("upsample_radius") ;
+            float_t const expected = _phase == 4 ? 1.5f : (_phase == 5 ? 3.0f : 2.0f) ;
+            if( !threshold || !tone || !merge || !fxaa || !bloom ||
+                std::abs(threshold->get()-expected) > 0.0001f ) return false ;
+            for( size_t w = 0 ; w < window_count() ; ++w )
+                if( !_windows[w].post_ready || (_phase == 5 &&
+                    (_windows[w].post_frames == 0 || _windows[w].direct_frames == 0)) ) return false ;
+            return true ;
+        }
 
         void_t fail( char_cptr_t message ) noexcept
         {
@@ -480,6 +520,15 @@ namespace sample
         void_t on_init( void_t ) noexcept override
         {
             _started = std::chrono::steady_clock::now() ;
+            {
+                // Construct in place; keep the pipeline alive through all backend releases.
+                _post = motor::memory::global_t::create<motor::gfx::hdr_postprocess_pipeline_t>() ;
+                _post->init() ;
+                _post_properties = _post->property_sheets() ;
+                auto * threshold = _post_properties.at("brightpass")->borrow_property<motor::wire::input_slot<float_t>>("brightness_threshold") ;
+                if( threshold ) threshold->set(2.0f) ;
+                else fail("[scene wire] missing bright-pass property") ;
+            }
             make_geometry() ;
             make_shader() ;
             _root = motor::shared(motor::scene::logic_group_t()) ;
@@ -530,12 +579,36 @@ namespace sample
                 states.clear_s.ss.clear_color = vec4_t(0.055f,0.065f,0.08f,1) ;
                 _state = motor::graphics::state_object_t("scene_wire_state") ;
                 _state.add_render_state_set(states) ;
+
+                // A single forward pass writes color AND depth; no separate Z prepass.
+                states.view_s.do_change = true ;
+                states.view_s.ss.do_activate = true ;
+                states.view_s.ss.vp = motor::math::vec4ui_t(0,0,1920,1080) ;
+                _hdr_state = motor::graphics::state_object_t("scene_wire_hdr_state") ;
+                _hdr_state.add_render_state_set(states) ;
             }
             for( size_t w = 0 ; w < window_count() ; ++w )
             {
+                {
+                    motor::graphics::render_state_sets_t states ;
+                    states.depth_s.do_change = true ;
+                    states.depth_s.ss.do_activate = false ;
+                    states.depth_s.ss.do_depth_write = false ;
+                    states.polygon_s.do_change = true ;
+                    states.polygon_s.ss.do_activate = false ;
+                    states.blend_s.do_change = true ;
+                    states.blend_s.ss.do_activate = false ;
+                    states.clear_s.do_change = true ;
+                    states.clear_s.ss.do_activate = false ;
+                    states.view_s.do_change = true ;
+                    states.view_s.ss.do_activate = true ;
+                    states.view_s.ss.vp = motor::math::vec4ui_t(0,0,760,620) ;
+                    _windows[w].present_state = motor::graphics::state_object_t("scene_wire_present_"+motor::to_string(w)) ;
+                    _windows[w].present_state.add_render_state_set(states) ;
+                }
                 motor::application::window_info_t wi ;
                 bool_t const d3d = _opts.d3d_only || w == 1 ;
-                wi.window_name = d3d ? "Motor | scene + wire lighting | D3D11" : "Motor | scene + wire lighting | GL4" ;
+                wi.window_name = d3d ? "Motor | scene + wire + HDR | D3D11" : "Motor | scene + wire + HDR | GL4" ;
                 wi.x = int_t(30+w*780) ; wi.y = 60 ; wi.w = 760 ; wi.h = 620 ;
                 wi.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 :
                     motor::application::graphics_generation::gen4_gl4 ;
@@ -564,6 +637,9 @@ namespace sample
             size_t const w = id == _windows[0].id ? 0 : 1 ;
             if( data.last_frame )
             {
+                _post->release_render(fe) ;
+                fe->release<motor::graphics::state_object_t>(&_windows[w].present_state) ;
+                fe->release<motor::graphics::state_object_t>(&_hdr_state) ;
                 fe->release<motor::graphics::msl_object_t>(_shader) ;
                 for( auto & geo : _geometry ) fe->release<motor::graphics::geometry_object_t>(&geo) ;
                 fe->release<motor::graphics::state_object_t>(&_state) ;
@@ -573,12 +649,20 @@ namespace sample
             {
                 for( auto & geo : _geometry ) fe->configure<motor::graphics::geometry_object_t>(&geo) ;
                 fe->configure<motor::graphics::state_object_t>(&_state) ;
+                fe->configure<motor::graphics::state_object_t>(&_hdr_state) ;
                 fe->configure<motor::graphics::msl_object_t>(_shader) ;
+                _post->init_render(fe) ;
             }
+            prepare_presentation(w,fe) ;
             auto const status = fe->decode(_shader) ;
             _windows[w].ready = status.first == motor::graphics::object_state::ready &&
                 status.second == motor::graphics::result::ok ;
-            fe->push(&_state) ;
+            auto const post_status = fe->decode(_post->borrow_hdr_fb(0)) ;
+            _windows[w].post_ready = post_status.first == motor::graphics::object_state::ready &&
+                post_status.second == motor::graphics::result::ok ;
+            bool_t const use_post = _post_enabled && _windows[w].post_ready ;
+            if( use_post ) fe->use(_post->borrow_hdr_fb(0)) ;
+            fe->push(use_post ? &_hdr_state : &_state) ;
             if( _scene_ready && all_ready() && !_quitting )
             {
                 if( _opts.smoke )
@@ -590,30 +674,49 @@ namespace sample
                 motor::scene::render_visitor_t visitor(0,w,fe,&_windows[w].camera) ;
                 motor::scene::node_t::traverser(_root).apply(&visitor) ;
                 ++_windows[w].frames ;
+                if( use_post ) ++_windows[w].post_frames ;
+                else ++_windows[w].direct_frames ;
             }
             fe->pop(motor::graphics::gen4::backend::pop_type::render_state) ;
+            if( use_post )
+            {
+                fe->unuse(motor::graphics::gen4::backend::unuse_type::framebuffer) ;
+                // Fullscreen stages inherit disabled depth/blending and the window viewport.
+                fe->push(&_windows[w].present_state) ;
+                _post->render(fe) ;
+                fe->pop(motor::graphics::gen4::backend::pop_type::render_state) ;
+            }
         }
 
         bool_t on_tool( window_id_t const id, motor::application::app::tool_data_ref_t ) noexcept override
         {
             if( id != _windows[0].id || _quitting ) return false ;
             ImGui::SetNextWindowPos(ImVec2(12,44),ImGuiCond_FirstUseEver) ;
-            ImGui::SetNextWindowSize(ImVec2(275,355),ImGuiCond_FirstUseEver) ;
+            ImGui::SetNextWindowSize(ImVec2(300,440),ImGuiCond_FirstUseEver) ;
             if( ImGui::Begin("Scene + Wire",nullptr,ImGuiWindowFlags_NoSavedSettings) )
             {
                 ImGui::BeginDisabled(_opts.smoke) ;
                 ImGui::Checkbox("Key",&_enabled[0]) ;
-                ImGui::SliderFloat("Key intensity",&_intensity[0],0.0f,1.0f) ;
+                ImGui::SliderFloat("Key intensity",&_intensity[0],0.0f,12.0f) ;
                 ImGui::Checkbox("Fill",&_enabled[1]) ;
-                ImGui::SliderFloat("Fill intensity",&_intensity[1],0.0f,1.0f) ;
+                ImGui::SliderFloat("Fill intensity",&_intensity[1],0.0f,12.0f) ;
                 ImGui::Checkbox("Rim",&_enabled[2]) ;
-                ImGui::SliderFloat("Rim intensity",&_intensity[2],0.0f,1.0f) ;
+                ImGui::SliderFloat("Rim intensity",&_intensity[2],0.0f,12.0f) ;
                 ImGui::SliderFloat("Ambient",&_ambient,0.0f,0.3f) ;
                 ImGui::SliderFloat("Material tint",&_tint,0.2f,1.0f) ;
                 ImGui::SliderFloat("Exhibits height",&_group_height,0.0f,2.0f) ;
                 ImGui::SliderFloat("Camera",&_yaw,-70.0f,70.0f) ;
                 ImGui::Checkbox("Second viewpoint",&_separate_view) ;
                 ImGui::Checkbox("Pause",&_paused) ;
+                ImGui::Separator() ;
+                ImGui::Checkbox("HDR post processing",&_post_enabled) ;
+                if( ImGui::CollapsingHeader("Post processing") )
+                {
+                    bool_t changed = false ;
+                    for( auto const & name : {"brightpass","bloom","merge","tone_map","fxaa"} )
+                        changed |= motor::tool::imgui_property::handle(name,*_post_properties.at(name)) ;
+                    if( changed ) _post->update_properies() ;
+                }
                 ImGui::EndDisabled() ;
             }
             ImGui::End() ;
@@ -630,9 +733,15 @@ namespace sample
                 fail("[scene wire] hierarchy / bridge / camera subset verification failed") ;
                 return ;
             }
+            if( !verify_postprocess() )
+            {
+                fail("[scene wire] HDR framebuffer / stage property verification failed") ;
+                return ;
+            }
             for( size_t w = 0 ; w < window_count() ; ++w )
                 if( _windows[w].frames < 45 ) return ;
-            motor::log::global_t::status<256>("[scene wire] phase %zu passed: hierarchy, material, lights and camera subsets",_phase) ;
+            motor::log::global_t::status<256>("[scene wire] phase %zu passed: hierarchy, bridges, camera subsets, HDR properties (%s)",
+                _phase,_post_enabled ? "post processing" : "direct") ;
             if( ++_phase == 6 )
             {
                 *_passed = true ;
@@ -645,6 +754,9 @@ namespace sample
             _tint = _phase == 4 ? 0.45f : 1.0f ;
             _group_height = _phase >= 4 ? 1.2f : 0.0f ;
             _separate_view = _phase >= 4 ;
+            _post_enabled = _phase != 3 ;
+            _post_properties.at("brightpass")->borrow_property<motor::wire::input_slot<float_t>>("brightness_threshold")
+                ->set(_phase == 4 ? 1.5f : (_phase == 5 ? 3.0f : 2.0f)) ;
             if( _phase == 5 )
             {
                 _paused = true ;
@@ -665,7 +777,12 @@ namespace sample
             motor::application::window_message_listener::state_vector_cref_t s ) noexcept override
         {
             if( s.resize_changed && s.resize_msg.resize && s.resize_msg.w > 0 && s.resize_msg.h > 0 )
-                _windows[id == _windows[0].id ? 0 : 1].aspect = float_t(s.resize_msg.w)/float_t(s.resize_msg.h) ;
+            {
+                auto & window = _windows[id == _windows[0].id ? 0 : 1] ;
+                window.aspect = float_t(s.resize_msg.w)/float_t(s.resize_msg.h) ;
+                window.dimensions = motor::math::vec2ui_t(uint_t(s.resize_msg.w),uint_t(s.resize_msg.h)) ;
+                window.viewport_dirty = true ;
+            }
             if( s.close_changed ) { _quitting = true ; close() ; }
         }
 
@@ -677,6 +794,8 @@ namespace sample
             // Components disconnect their slots before releasing them.
             motor::release(motor::move(_root)) ;
             motor::release(motor::move(_shader)) ;
+            _post_properties.clear() ;
+            motor::release(motor::move(_post)) ;
         }
     } ;
 }
