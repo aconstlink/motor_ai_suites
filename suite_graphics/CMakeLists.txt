@@ -11,6 +11,7 @@ set( sources
     "09_geometry_shader.cpp"
     "10_transform_feedback.cpp"
     "11_lighting_scene.cpp"
+    "12_scene_wire_lighting.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -31,3 +32,4 @@ target_link_libraries( 08_render_to_texture PRIVATE motor::gfx )
 target_link_libraries( 09_geometry_shader PRIVATE motor::gfx )
 target_link_libraries( 10_transform_feedback PRIVATE motor::gfx )
 target_link_libraries( 11_lighting_scene PRIVATE motor::gfx motor::geometry )
+target_link_libraries( 12_scene_wire_lighting PRIVATE motor::scene motor::gfx motor::geometry motor::wire )
