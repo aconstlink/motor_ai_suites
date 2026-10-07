@@ -48,11 +48,6 @@ and scene-level integration. Most later samples support `--gl-only`,
 `--d3d-only`, `--still` and `--smoke`; consult the linked guide or source for the
 options of each application. D3D11 requires Windows.
 
-<!-- Screenshots: place PNG files in docs/screenshots/, using the exact target
-name as the filename, then uncomment the corresponding image line below.
-The image lines stay commented until the screenshots exist, avoiding broken
-images on GitHub. Use actual application captures, without unrelated windows. -->
-
 ### 00 Triangle
 
 A minimal geometry and MSL shader example. The optional second window renders
@@ -60,7 +55,7 @@ the same graphics objects through a different backend.
 
 [Source](suite_graphics/00_triangle.cpp) | [Run guide](BUILDING.md#initial-setup)
 
-<!-- ![Triangle sample](docs/screenshots/00_triangle.png) -->
+![Triangle sample](docs/screenshots/00_triangle.png)
 
 ### 01 Window Lifecycle
 
@@ -69,7 +64,7 @@ Geometry, shader and color data are shared across the windows.
 
 [Source](suite_graphics/01_window_lifecycle.cpp) | [Run guide](BUILDING.md#runtime-window-lifecycle-windows)
 
-<!-- ![Window lifecycle sample](docs/screenshots/01_window_lifecycle.png) -->
+![Window lifecycle sample](docs/screenshots/01_window_lifecycle.png)
 
 ### 02 Dynamic Geometry
 
@@ -78,7 +73,7 @@ without reconfiguring the entire shader for every change.
 
 [Source](suite_graphics/02_dynamic_geometry.cpp) | [Run guide](BUILDING.md#dynamic-geometry-and-variable-sets)
 
-<!-- ![Dynamic geometry sample](docs/screenshots/02_dynamic_geometry.png) -->
+![Dynamic geometry sample](docs/screenshots/02_dynamic_geometry.png)
 
 ### 03 Shared Scene
 
@@ -87,7 +82,7 @@ different draw order and secondary-window recreation.
 
 [Source](suite_graphics/03_shared_scene.cpp) | [Guide and verification](suite_graphics/03_shared_scene.md)
 
-<!-- ![Shared cubes sample](docs/screenshots/03_shared_scene.png) -->
+![Shared cubes sample](docs/screenshots/03_shared_scene.png)
 
 ### 04 Configure and Reconfigure
 
@@ -96,7 +91,7 @@ and release followed by configuration, on one or both backends.
 
 [Source](suite_graphics/04_reconfigure.cpp) | [Guide and verification](suite_graphics/04_reconfigure.md)
 
-<!-- ![Configure and reconfigure sample](docs/screenshots/04_reconfigure.png) -->
+![Configure and reconfigure sample](docs/screenshots/04_reconfigure.png)
 
 ### 05 Scene Benchmark
 
@@ -105,7 +100,7 @@ traversal, and multipass lighting with two or three lights evaluated in one pass
 
 [Source](suite_graphics/05_scene_benchmark.cpp) | [Methodology and results](suite_graphics/05_scene_benchmark.md) | [Benchmark runner](suite_graphics/run_scene_benchmark.ps1)
 
-<!-- ![Scene benchmark](docs/screenshots/05_scene_benchmark.png) -->
+![Scene benchmark](docs/screenshots/05_scene_benchmark.png)
 
 ### 06 Vertex Pulling
 
@@ -114,7 +109,7 @@ same geometry rendered through conventional vertex attributes.
 
 [Source](suite_graphics/06_vertex_pulling.cpp) | [Guide and verification](suite_graphics/06_vertex_pulling.md)
 
-<!-- ![Vertex pulling comparison](docs/screenshots/06_vertex_pulling.png) -->
+![Vertex pulling comparison](docs/screenshots/06_vertex_pulling.png)
 
 ### 07 Vertex Pulling Field
 
@@ -123,7 +118,7 @@ array buffers. The scene is submitted as one indexed draw per window.
 
 [Source](suite_graphics/07_vertex_pulling_field.cpp) | [Workloads and controls](suite_graphics/07_vertex_pulling_field.md)
 
-<!-- ![Vertex pulling cube field](docs/screenshots/07_vertex_pulling_field.png) -->
+![Vertex pulling cube field](docs/screenshots/07_vertex_pulling_field.png)
 
 ### 08 Render to Texture
 
@@ -132,7 +127,7 @@ a post-processing shader. Exercises target orientation, resizing and render stat
 
 [Source](suite_graphics/08_render_to_texture.cpp) | [Guide and verification](suite_graphics/08_render_to_texture.md)
 
-<!-- ![Render-to-texture sample](docs/screenshots/08_render_to_texture.png) -->
+![Render-to-texture sample](docs/screenshots/08_render_to_texture.png)
 
 ### 09 Geometry Shader
 
@@ -141,7 +136,7 @@ displacement and an additional shell.
 
 [Source and command-line options](suite_graphics/09_geometry_shader.cpp)
 
-<!-- ![Geometry shader sample](docs/screenshots/09_geometry_shader.png) -->
+![Geometry shader sample](docs/screenshots/09_geometry_shader.png)
 
 ### 10 Transform Feedback
 
@@ -150,7 +145,7 @@ points as cubes. A visible cutting plane illustrates the geometry-shader filter.
 
 [Source](suite_graphics/10_transform_feedback.cpp) | [Modes and verification](suite_graphics/10_transform_feedback.md)
 
-<!-- ![Transform feedback with a cutting plane](docs/screenshots/10_transform_feedback.png) -->
+![Transform feedback with a cutting plane](docs/screenshots/10_transform_feedback.png)
 
 ### 11 Lighting Gallery
 
@@ -159,7 +154,7 @@ colored directional lights. Compare single-pass and additive multipass lighting.
 
 [Source](suite_graphics/11_lighting_scene.cpp) | [Rendering paths and controls](suite_graphics/11_lighting_scene.md)
 
-<!-- ![Low-level lighting gallery](docs/screenshots/11_lighting_scene.png) -->
+![Low-level lighting gallery](docs/screenshots/11_lighting_scene.png)
 
 ### 12 Scene Graph + Wire Lighting + HDR
 
@@ -171,7 +166,7 @@ editable stage properties and a direct-rendering comparison switch.
 
 [Source](suite_graphics/12_scene_wire_lighting.cpp) | [Graph, data flow and verification](suite_graphics/12_scene_wire_lighting.md)
 
-<!-- ![Scene graph and Wire lighting gallery](docs/screenshots/12_scene_wire_lighting.png) -->
+![Scene graph and Wire lighting gallery](docs/screenshots/12_scene_wire_lighting.png)
 
 ## Console Tests
 
