@@ -40,8 +40,9 @@ detect missing, duplicate and out-of-range work. Checks remain active in Release
 Motor's final memory report must be empty. CTest enforces a 90-second timeout per
 scenario and runs them serially to avoid competing pools.
 
-No window, graphics backend, audio device or assets are used. Both CI workflows
-run these tests in Debug and Release. They are correctness smoke tests, not
+No window, graphics backend, audio device or assets are used. The Windows and Linux
+CTest workflows run these tests in Debug and Release, separately from the full
+build workflows. They are correctness smoke tests, not
 performance benchmarks or proof of race freedom. See the remainder-capture
 finding in `ENGINE_NOTES.md` even if all tests pass.
 

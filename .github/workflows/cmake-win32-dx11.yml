@@ -29,6 +29,3 @@ jobs:
 
       - name: Build samples
         run: cmake --build build --config ${{ matrix.build_type }} --parallel 4
-
-      - name: Test console suites
-        run: ctest --test-dir build -C ${{ matrix.build_type }} -L "concurrent|wire|core" --output-on-failure --no-tests=error

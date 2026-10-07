@@ -1,4 +1,4 @@
-name: CMake on Linux with OpenGL
+name: CTest Linux
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -29,12 +29,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgl-dev libx11-dev
 
-      - name: Configure CMake
+      - name: Configure console tests
         run: >-
           cmake -S . -B build
           -DCMAKE_C_COMPILER=gcc
           -DCMAKE_CXX_COMPILER=g++
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DBUILD_TESTING=ON
 
-      - name: Build samples
-        run: cmake --build build --config ${{ matrix.build_type }} --parallel 4
+      - name: Build console tests
+        run: >-
+          cmake --build build --config ${{ matrix.build_type }} --parallel 4
+          --target 00_threads_parallel_for 00_wire_slots 01_wire_bridges 00_document 01_document_obj
+
+      - name: Test console suites
+        run: ctest --test-dir build -C ${{ matrix.build_type }} -L "concurrent|wire|core" --output-on-failure --no-tests=error

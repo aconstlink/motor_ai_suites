@@ -2,8 +2,8 @@
 
 [![Windows build](https://github.com/aconstlink/motor_ai_suites/actions/workflows/cmake-win32-dx11.yml/badge.svg?branch=main)](https://github.com/aconstlink/motor_ai_suites/actions/workflows/cmake-win32-dx11.yml)
 [![Linux build](https://github.com/aconstlink/motor_ai_suites/actions/workflows/cmake-lin-gcc-gl.yml/badge.svg?branch=main)](https://github.com/aconstlink/motor_ai_suites/actions/workflows/cmake-lin-gcc-gl.yml)
-[![CTest Windows](https://img.shields.io/github/actions/workflow/status/aconstlink/motor_ai_suites/cmake-win32-dx11.yml?branch=main&label=CTest%20Windows)](https://github.com/aconstlink/motor_ai_suites/actions/workflows/cmake-win32-dx11.yml)
-[![CTest Linux](https://img.shields.io/github/actions/workflow/status/aconstlink/motor_ai_suites/cmake-lin-gcc-gl.yml?branch=main&label=CTest%20Linux)](https://github.com/aconstlink/motor_ai_suites/actions/workflows/cmake-lin-gcc-gl.yml)
+[![CTest Windows](https://github.com/aconstlink/motor_ai_suites/actions/workflows/ctest-win32.yml/badge.svg?branch=main)](https://github.com/aconstlink/motor_ai_suites/actions/workflows/ctest-win32.yml)
+[![CTest Linux](https://github.com/aconstlink/motor_ai_suites/actions/workflows/ctest-linux.yml/badge.svg?branch=main)](https://github.com/aconstlink/motor_ai_suites/actions/workflows/ctest-linux.yml)
 
 Applications, integration tests and benchmarks built with
 [Motor](https://github.com/aconstlink/motor), my C++ engine/framework.
@@ -190,10 +190,17 @@ cmake --build build --config Release --parallel 4
 ctest --test-dir build -C Release -L "concurrent|wire|core" --output-on-failure --no-tests=error
 ```
 
-The [Windows workflow](.github/workflows/cmake-win32-dx11.yml) and
-[Linux workflow](.github/workflows/cmake-lin-gcc-gl.yml) build Debug and Release
-and execute these console tests. The badges above reflect the combined build
-and test workflow status, not separate graphics-runtime or pixel-verification jobs.
+The [Windows build](.github/workflows/cmake-win32-dx11.yml) and
+[Linux build](.github/workflows/cmake-lin-gcc-gl.yml) compile all targets in Debug
+and Release. Separate [Windows CTest](.github/workflows/ctest-win32.yml) and
+[Linux CTest](.github/workflows/ctest-linux.yml) workflows build only the console
+test targets and their dependencies, then execute these tests in both configurations.
+Each badge reports its own workflow: a test failure does not fail the build workflow.
+The CTest status includes its configure/build prerequisites, not just test assertions.
+The workflows run independently on pushes and pull requests to main, or manually;
+they do not transfer build artifacts between jobs. This repeats compilation of
+the console tests and their dependencies, but does not rebuild the graphics samples
+in the CTest workflows. Graphics-runtime and pixel verification are not covered.
 The OBJ test is registered only when its external test asset is present at
 CMake configuration time.
 
