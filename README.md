@@ -61,9 +61,10 @@ the same graphics objects through a different backend.
 ### 01 Window Lifecycle
 
 Open and close a D3D11 window while the OpenGL window continues running.
-Geometry, shader and color data are shared across the windows.
+On Linux, the secondary window uses OpenGL as well. Geometry, shader and color
+data are shared across the windows.
 
-[Source](suite_graphics/01_window_lifecycle.cpp) | [Run guide](BUILDING.md#runtime-window-lifecycle-windows)
+[Source](suite_graphics/01_window_lifecycle.cpp) | [Run guide](BUILDING.md#runtime-window-lifecycle)
 
 ![Window lifecycle sample](docs/screenshots/01_window_lifecycle.png)
 
