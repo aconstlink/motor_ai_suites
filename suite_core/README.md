@@ -44,7 +44,7 @@ Local Windows/MSVC Release result (24,424,786 bytes, 2,187,283 tokens):
 
 | Implementation | Build | Traverse + hash | Destroy | Total |
 | --- | ---: | ---: | ---: | ---: |
-| document | 167.652 ms | 36.715 ms | 4.649 ms | 210.469 ms |
+| motor::document | 167.652 ms | 36.715 ms | 4.649 ms | 210.469 ms |
 | std::string + substr | 261.634 ms | 35.543 ms | 43.219 ms | 339.763 ms |
 | std::string + count/reserve + substr | 262.735 ms | 34.947 ms | 45.195 ms | 340.347 ms |
 | stringstream | 696.819 ms | 35.122 ms | 45.612 ms | 776.545 ms |
