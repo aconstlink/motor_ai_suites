@@ -77,7 +77,7 @@ create another application target.
 The motor submodule pins an engine commit. This application does not modify
 the engine or use the separate development checkout in `motor_suites`.
 
-## Runtime window lifecycle (Windows)
+## Runtime window lifecycle
 
 ```sh
 cmake --build build --config Release --target 01_window_lifecycle --parallel
@@ -89,6 +89,10 @@ The D3D11 window can also be closed using its title-bar close button, then
 reopened from the checkbox. Closing the OpenGL window ends the application.
 Geometry, MSL and the color variable set are shared between the windows.
 
+On Linux, run `build/bin/01_window_lifecycle`. Both windows use GL4 with
+independent GLX contexts. An X11 display (including XWayland/WSLg) with OpenGL 4
+support is required.
+
 UI edits are staged in application data and applied to the shader variable
 once in `on_graphics`, before either window's render commands are recorded.
 Each new frontend configures the shared objects on its first frame and
@@ -99,13 +103,17 @@ For a bounded automated lifecycle check:
 
 ```sh
 build/bin/Release/01_window_lifecycle.exe --smoke
+
+# Linux, single-configuration build
+build/bin/01_window_lifecycle --smoke
 ```
 
-This opens/closes D3D11 twice, changes colors between steps, checks that the
+This opens/closes the secondary window twice, changes colors between steps, checks that the
 shader becomes ready after both openings, and exits. It returns a nonzero
-code if the sequence fails or times out after 30 seconds. It requires an
-interactive Windows desktop with OpenGL and D3D11 support; it does not compare
-rendered pixels or certify that native graphics resources are leak-free.
+code if the sequence fails, times out after 30 seconds, or leaves entries in
+Motor's memory manager. On Windows it requires OpenGL and D3D11 support;
+on Linux only OpenGL is used. It does not compare rendered pixels or certify
+that native graphics resources are leak-free.
 
 ## Dynamic geometry and variable sets
 

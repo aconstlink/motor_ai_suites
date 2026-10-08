@@ -15,6 +15,16 @@
 
 namespace sample
 {
+    #ifdef _WIN32
+    constexpr auto secondary_backend = motor::application::graphics_generation::gen4_d3d11 ;
+    motor::core::types::char_cptr_t const secondary_title = "motor | lifecycle | D3D11" ;
+    motor::core::types::char_cptr_t const secondary_label = "D3D11 window" ;
+    #else
+    constexpr auto secondary_backend = motor::application::graphics_generation::gen4_gl4 ;
+    motor::core::types::char_cptr_t const secondary_title = "motor | lifecycle | OpenGL 4 secondary" ;
+    motor::core::types::char_cptr_t const secondary_label = "Second OpenGL 4 window" ;
+    #endif
+
     class window_lifecycle_app : public motor::application::app
     {
         motor::graphics::geometry_object_t _geometry;
@@ -159,11 +169,10 @@ namespace sample
             if( _want_secondary && _secondary_window == invalid_window && !_quitting )
             {
                 _secondary_window = open_window(
-                    motor::application::graphics_generation::gen4_d3d11,
-                    "motor | lifecycle | D3D11", 740 );
+                    secondary_backend, secondary_title, 740 );
                 _secondary_ready = false;
                 ++_open_count;
-                motor::log::global::status( "[lifecycle] D3D11 window requested" );
+                motor::log::global::status( "[lifecycle] secondary window requested" );
             }
             else if( !_want_secondary && _secondary_window != invalid_window && !_closing_secondary )
             {
@@ -197,7 +206,7 @@ namespace sample
                     _closing_secondary = false;
                     _secondary_ready = false;
                     ++_close_count;
-                    motor::log::global::status( "[lifecycle] D3D11 last frame; OpenGL remains active" );
+                    motor::log::global::status( "[lifecycle] secondary last frame; main window remains active" );
                 }
                 return;
             }
@@ -211,7 +220,7 @@ namespace sample
                 {
                     _secondary_ready = true;
                     ++_ready_count;
-                    motor::log::global::status( "[lifecycle] D3D11 shader ready" );
+                    motor::log::global::status( "[lifecycle] secondary shader ready" );
                 }
                 motor::graphics::gen4::backend_t::render_detail_t detail;
                 detail.varset = 0;
@@ -229,7 +238,7 @@ namespace sample
             if( ImGui::Begin( "Window lifecycle", nullptr, ImGuiWindowFlags_NoSavedSettings ) )
             {
                 ImGui::BeginDisabled( _smoke || _closing_secondary );
-                ImGui::Checkbox( "D3D11 window", &_want_secondary );
+                ImGui::Checkbox( secondary_label, &_want_secondary );
                 ImGui::ColorEdit3( "Color", _color );
                 ImGui::EndDisabled();
                 ImGui::Text( "Opened: %u   Closed: %u", _open_count, _close_count );
@@ -331,11 +340,6 @@ int main( int argc, char** argv )
             return std::strcmp( argv[i], "--help" ) == 0 ? 0 : 2;
         }
     }
-#ifndef _WIN32
-    motor::log::global_t::error( "This D3D11 lifecycle sample requires Windows." );
-    motor::log::global_t::deinit();
-    return 2;
-#endif
     bool smoke_passed = false;
     motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
         motor::shared( sample::window_lifecycle_app( smoke, &smoke_passed ) ) );
@@ -345,6 +349,6 @@ int main( int argc, char** argv )
     motor::log::global::deinit();
     motor::profiling::global::deinit();
     motor::io::global::deinit();
-    motor::memory::global::dump_to_std();
-    return result != 0 ? result : ( smoke && !smoke_passed ? 1 : 0 );
+    auto const remaining = motor::memory::global::dump_to_std();
+    return result != 0 ? result : ( remaining != 0 || ( smoke && !smoke_passed ) ? 1 : 0 );
 }
