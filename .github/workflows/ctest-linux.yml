@@ -41,6 +41,7 @@ jobs:
         run: >-
           cmake --build build --config ${{ matrix.build_type }} --parallel 4
           --target 00_threads_parallel_for 00_wire_slots 01_wire_bridges 00_document 01_document_obj
+          00_vector 01_matrix 02_transformation 03_util 04_quaternion
 
       - name: Test console suites
-        run: ctest --test-dir build -C ${{ matrix.build_type }} -L "concurrent|wire|core" --output-on-failure --no-tests=error
+        run: ctest --test-dir build -C ${{ matrix.build_type }} -L "concurrent|wire|core|math" --output-on-failure --no-tests=error

@@ -24,6 +24,7 @@ processing. Each application is a separate CMake target.
 - [Lighting Gallery](suite_graphics/11_lighting_scene.md): the corresponding low-level rendering sample.
 - [Scene Benchmark](suite_graphics/05_scene_benchmark.md): workloads, measurements and their limitations.
 - [Document Tokenization](suite_core/README.md): core tests, Motor IO and tokenizer comparisons.
+- [Math Tests](suite_math/README.md): vectors, matrices, transformations, utilities and quaternions.
 - [Integration Notes](ENGINE_NOTES.md): historical findings and observations, with dates and tested revisions.
 
 ## Build
@@ -180,6 +181,11 @@ diagnostics and, where applicable, benchmark measurements.
 | Wire | [01_wire_bridges](suite_wire/01_wire_bridges.cpp) | Input/output bridges, rebinding and variable-set replacement | [Wire tests](BUILDING.md#wire-console-tests) |
 | Core | [00_document](suite_core/00_document.cpp) | Token correctness and comparison with standard-library approaches | [Document tests](suite_core/README.md) |
 | Core / IO | [01_document_obj](suite_core/01_document_obj.cpp) | Load OBJ text through Motor's database and compare tokenization | [OBJ benchmark](suite_core/README.md#sponza-obj-via-motor-io) |
+| Math | [00_vector](suite_math/00_vector.cpp) | Arithmetic, normalization and cross products | [Math tests](suite_math/README.md) |
+| Math | [01_matrix](suite_math/01_matrix.cpp) | Products, transpose, homogeneous coordinates and 2D rotation | [Math tests](suite_math/README.md) |
+| Math | [02_transformation](suite_math/02_transformation.cpp) | TRS, hierarchy, cameras and projection | [Math tests](suite_math/README.md) |
+| Math | [03_util](suite_math/03_util.cpp) | Scalar functions, angles, time, indices and orthonormal bases | [Math tests](suite_math/README.md) |
+| Math | [04_quaternion](suite_math/04_quaternion.cpp) | Axis rotations, composition, matrix conversion and SLERP | [Math tests](suite_math/README.md) |
 
 ## Testing and CI
 
@@ -187,7 +193,7 @@ Build all targets, then run the console suites:
 
 ```sh
 cmake --build build --config Release --parallel 4
-ctest --test-dir build -C Release -L "concurrent|wire|core" --output-on-failure --no-tests=error
+ctest --test-dir build -C Release -L "concurrent|wire|core|math" --output-on-failure --no-tests=error
 ```
 
 The [Windows build](.github/workflows/cmake-win32-dx11.yml) and
