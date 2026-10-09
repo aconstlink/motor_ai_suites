@@ -295,23 +295,26 @@ namespace sample
             update_variables() ;
         }
 
+        void_t on_first_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->configure<motor::graphics::state_object_t>( &_state ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
+            for( auto shader : _shaders ) fe->configure<motor::graphics::msl_object_t>( shader ) ;
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            for( auto shader : _shaders ) fe->release<motor::graphics::msl_object_t>( shader ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_geometry ) ;
+            fe->release<motor::graphics::state_object_t>( &_state ) ;
+        }
+
         void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t const index = id == _windows[0].id ? 0 : 1 ;
-            if( data.last_frame )
-            {
-                for( auto shader : _shaders ) fe->release<motor::graphics::msl_object_t>( shader ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_geometry ) ;
-                fe->release<motor::graphics::state_object_t>( &_state ) ;
-                return ;
-            }
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &_state ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
-                for( auto shader : _shaders ) fe->configure<motor::graphics::msl_object_t>( shader ) ;
-            }
             fe->push( &_state ) ;
             bool_t ready = true ;
             for( auto shader : _shaders )

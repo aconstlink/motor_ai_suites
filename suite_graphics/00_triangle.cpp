@@ -14,6 +14,8 @@
 
 namespace sample
 {
+    using motor::core::types::void_t;
+
     class triangle_app : public motor::application::app
     {
         motor::graphics::geometry_object_t _geometry;
@@ -128,24 +130,29 @@ namespace sample
                 "motor | triangle | D3D11", 740 );
         }
 
-        void on_render( window_id_t const,
+        void_t on_first_frame( window_id_t const,
             motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+            motor::application::app::render_data_in_t ) noexcept override
         {
             // Each frontend configures the same objects for its own backend.
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &_state );
-                fe->configure<motor::graphics::geometry_object_t>( &_geometry );
-                fe->configure<motor::graphics::msl_object_t>( _shader );
-            }
-            if( data.last_frame )
-            {
-                fe->release<motor::graphics::msl_object_t>( _shader );
-                fe->release<motor::graphics::geometry_object_t>( &_geometry );
-                fe->release<motor::graphics::state_object_t>( &_state );
-                return;
-            }
+            fe->configure<motor::graphics::state_object_t>( &_state );
+            fe->configure<motor::graphics::geometry_object_t>( &_geometry );
+            fe->configure<motor::graphics::msl_object_t>( _shader );
+        }
+
+        void_t on_last_frame( window_id_t const,
+            motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->release<motor::graphics::msl_object_t>( _shader );
+            fe->release<motor::graphics::geometry_object_t>( &_geometry );
+            fe->release<motor::graphics::state_object_t>( &_state );
+        }
+
+        void on_render( window_id_t const,
+            motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
             fe->push( &_state );
             // draw
             {

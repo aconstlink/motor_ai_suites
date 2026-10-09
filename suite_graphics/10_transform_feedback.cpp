@@ -436,31 +436,34 @@ namespace sample
             update_variables() ;
         }
 
+        void_t on_first_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->configure<motor::graphics::state_object_t>( &_state ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &_input ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &_plane_geometry ) ;
+            fe->configure<motor::graphics::streamout_object_t>( &_output ) ;
+            for( auto shader : _writers ) fe->configure<motor::graphics::msl_object_t>( shader ) ;
+            fe->configure<motor::graphics::msl_object_t>( _display ) ;
+            fe->configure<motor::graphics::msl_object_t>( _plane_shader ) ;
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->release<motor::graphics::msl_object_t>( _plane_shader ) ;
+            fe->release<motor::graphics::msl_object_t>( _display ) ;
+            for( auto shader : _writers ) fe->release<motor::graphics::msl_object_t>( shader ) ;
+            fe->release<motor::graphics::streamout_object_t>( &_output ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_input ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_plane_geometry ) ;
+            fe->release<motor::graphics::state_object_t>( &_state ) ;
+        }
+
         void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t const w = id == _windows[0].id ? 0 : 1 ;
-            if( data.last_frame )
-            {
-                fe->release<motor::graphics::msl_object_t>( _plane_shader ) ;
-                fe->release<motor::graphics::msl_object_t>( _display ) ;
-                for( auto shader : _writers ) fe->release<motor::graphics::msl_object_t>( shader ) ;
-                fe->release<motor::graphics::streamout_object_t>( &_output ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_input ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_plane_geometry ) ;
-                fe->release<motor::graphics::state_object_t>( &_state ) ;
-                return ;
-            }
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &_state ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &_input ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &_plane_geometry ) ;
-                fe->configure<motor::graphics::streamout_object_t>( &_output ) ;
-                for( auto shader : _writers ) fe->configure<motor::graphics::msl_object_t>( shader ) ;
-                fe->configure<motor::graphics::msl_object_t>( _display ) ;
-                fe->configure<motor::graphics::msl_object_t>( _plane_shader ) ;
-            }
             fe->push( &_state ) ;
             bool_t ready = true ;
             motor::graphics::msl_object_mtr_t const shaders[4] = { _writers[0], _writers[1], _display, _plane_shader } ;

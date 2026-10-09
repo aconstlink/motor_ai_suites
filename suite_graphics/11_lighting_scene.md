@@ -75,7 +75,8 @@ the active mode are prepared in `on_graphics`, never rewritten between async
 draws in `on_render`. The sample updates both active and inactive paths for easy
 interactive switching; do not use its CPU cost as an optimized lighting baseline.
 
-`last_frame` releases MSL before geometry/state resources and returns immediately.
+`on_last_frame` releases MSL before geometry/state resources. `on_render` is not
+called for that window's final frame.
 `on_shutdown` clears borrowed bindings before releasing the owning MSL references.
 Render states are explicitly applied each frame. After the additive state is
 popped there are no further scene draws, avoiding reliance on the previously

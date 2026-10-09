@@ -361,18 +361,23 @@ namespace sample
             }
         }
 
-        void_t on_render( window_id_t const id, frontend fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+        void_t on_last_frame( window_id_t const id, frontend fe,
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t i = 0 ;
             while( i < count() && _windows[i].id != id ) ++i ;
             if( i == count() ) return ;
             auto & w = _windows[i] ;
-            if( data.last_frame )
-            {
-                release( w, fe ) ;
-                return ;
-            }
+            release( w, fe ) ;
+        }
+
+        void_t on_render( window_id_t const id, frontend fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            size_t i = 0 ;
+            while( i < count() && _windows[i].id != id ) ++i ;
+            if( i == count() ) return ;
+            auto & w = _windows[i] ;
             snapshot( w, fe ) ;
             if( w.seen != _generation )
             {

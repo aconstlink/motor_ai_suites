@@ -368,28 +368,31 @@ namespace sample
             }
         }
 
+        void_t on_first_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->configure<motor::graphics::state_object_t>( &_state ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
+            fe->configure<motor::graphics::array_object_t>( &_mesh ) ;
+            fe->configure<motor::graphics::array_object_t>( &_objects ) ;
+            fe->configure<motor::graphics::msl_object_t>( _shader ) ;
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->release<motor::graphics::msl_object_t>( _shader ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_geometry ) ;
+            fe->release<motor::graphics::array_object_t>( &_mesh ) ;
+            fe->release<motor::graphics::array_object_t>( &_objects ) ;
+            fe->release<motor::graphics::state_object_t>( &_state ) ;
+        }
+
         void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t const index = id == _windows[0].id ? 0 : 1 ;
             auto & window = _windows[index] ;
-            if( data.last_frame )
-            {
-                fe->release<motor::graphics::msl_object_t>( _shader ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_geometry ) ;
-                fe->release<motor::graphics::array_object_t>( &_mesh ) ;
-                fe->release<motor::graphics::array_object_t>( &_objects ) ;
-                fe->release<motor::graphics::state_object_t>( &_state ) ;
-                return ;
-            }
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &_state ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
-                fe->configure<motor::graphics::array_object_t>( &_mesh ) ;
-                fe->configure<motor::graphics::array_object_t>( &_objects ) ;
-                fe->configure<motor::graphics::msl_object_t>( _shader ) ;
-            }
             fe->push( &_state ) ;
             auto const status = fe->decode( _shader ) ;
             if( !_quitting && status.first == motor::graphics::object_state::ready &&

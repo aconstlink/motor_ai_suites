@@ -68,12 +68,14 @@ namespace sample
         output_t<trafo_t> * pose = nullptr ;
         output_t<mat4_t> * normal = nullptr ;
         output_t<vec4_t> * material = nullptr ;
+        output_t<vec3_t> * emissive = nullptr ;
 
         object_controls( void_t ) noexcept
         {
             pose = create_output_slot<trafo_t>( trafo_t() ) ;
             normal = create_output_slot<mat4_t>( mat4_t::make_identity() ) ;
             material = create_output_slot<vec4_t>( vec4_t(1) ) ;
+            emissive = create_output_slot<vec3_t>( vec3_t(0) ) ;
         }
     } ;
 
@@ -85,7 +87,7 @@ namespace sample
         static constexpr float_t pi = 3.14159265359f ;
         struct object
         {
-            vec3_t position, scale, rotation, color ;
+            vec3_t position, scale, rotation, color, emission ;
             float_t spin, gloss ;
             // All component pointers are borrowed from the scene graph.
             object_controls * controls = nullptr ;
@@ -126,6 +128,8 @@ namespace sample
         float_t _group_height = 0, _tint = 1 ;
         bool_t _paused = false, _quitting = false, _separate_view = false, _scene_ready = false ;
         bool_t _post_enabled = true ;
+        bool_t _emissive_enabled = true ;
+        float_t _emissive_intensity = 8.0f ;
         size_t _phase = 0, _triangles = 0 ;
         std::chrono::steady_clock::time_point _started ;
 
@@ -155,8 +159,16 @@ namespace sample
             auto * fxaa = _post_properties.at("fxaa")->borrow_property<float_slot_t>("subpixel_blending") ;
             auto * bloom = _post_properties.at("bloom")->borrow_property<float_t>("upsample_radius") ;
             float_t const expected = _phase == 4 ? 1.5f : (_phase == 5 ? 3.0f : 2.0f) ;
-            if( !threshold || !tone || !merge || !fxaa || !bloom ||
-                std::abs(threshold->get()-expected) > 0.0001f ) return false ;
+            if( !threshold || !tone || !merge || !fxaa || !bloom )
+            {
+                motor::log::global_t::error("[scene wire] missing HDR stage property") ;
+                return false ;
+            }
+            if( std::abs(threshold->get()-expected) > 0.0001f )
+            {
+                motor::log::global_t::error("[scene wire] unexpected bright-pass threshold") ;
+                return false ;
+            }
             for( size_t w = 0 ; w < window_count() ; ++w )
                 if( !_windows[w].post_ready || (_phase == 5 &&
                     (_windows[w].post_frames == 0 || _windows[w].direct_frames == 0)) ) return false ;
@@ -328,6 +340,7 @@ namespace sample
                         in vec3_t tint : color0 ;
                         out vec4_t color : color ;
                         vec4_t u_material ;
+                        vec3_t u_emissive ;
                         vec3_t u_eye : camera_position ;
                         float_t u_ambient ;
             )" ;
@@ -355,7 +368,7 @@ namespace sample
                 code += "result = result + ( albedo * d" + suffix + " + as_vec3( s" + suffix +
                     " ) ) ' u_energy_" + suffix + " ;\n" ;
             }
-            code += "out.color = vec4_t( result, 1.0 ) ; } } }" ;
+            code += "out.color = vec4_t( result + u_emissive, 1.0 ) ; } } }" ;
             motor::graphics::msl_object_t shader("scene_wire_lighting",true) ;
             shader.add(motor::graphics::msl_api_type::msl_4_0,code) ;
             for( size_t g = 0 ; g < geometry_count ; ++g )
@@ -364,11 +377,13 @@ namespace sample
         }
 
         void_t add_object( size_t const geometry, vec3_t const position, vec3_t const scale,
-            vec3_t const rotation, vec3_t const color, float_t const spin, float_t const gloss ) noexcept
+            vec3_t const rotation, vec3_t const color, float_t const spin, float_t const gloss,
+            vec3_t const emission = vec3_t(0) ) noexcept
         {
             object o{} ;
             o.position = position ; o.scale = scale ; o.rotation = rotation ;
             o.color = color ; o.spin = spin ; o.gloss = gloss ;
+            o.emission = emission ;
             auto leaf = motor::shared(motor::scene::logic_leaf_t()) ;
             auto controls = motor::shared(object_controls()) ;
             o.controls = controls ;
@@ -388,6 +403,7 @@ namespace sample
             auto comp = motor::shared(motor::scene::msl_component_t(motor::share(_shader),base,_links[geometry])) ;
             o.msl = comp ;
             connect_shader(comp,vars,"u_material",o.controls->material) ;
+            connect_shader(comp,vars,"u_emissive",o.controls->emissive) ;
             connect_shader(comp,vars,"u_normal",o.controls->normal) ;
             connect_shader(comp,vars,"u_ambient",_controls->ambient) ;
             for( size_t l = 0 ; l < 3 ; ++l )
@@ -424,6 +440,8 @@ namespace sample
                 o.controls->normal->set_and_exchange(trafo_t(
                     vec3_t(1.0f/o.scale.x(),1.0f/o.scale.y(),1.0f/o.scale.z()),rotation,vec3_t(0)).get_transformation()) ;
                 o.controls->material->set_and_exchange(vec4_t(o.color*_tint,o.gloss*_specular)) ;
+                o.controls->emissive->set_and_exchange(o.emission *
+                    (_emissive_enabled ? _emissive_intensity : 0.0f)) ;
             }
             for( size_t w = 0 ; w < window_count() ; ++w )
             {
@@ -498,6 +516,8 @@ namespace sample
                         !matches(set,"u_proj",_windows[w].camera.get_proj_matrix()) ||
                         !matches(set,"u_eye",_windows[w].camera.get_position()) ||
                         !matches(set,"u_material",o.controls->material->get_value()) ||
+                        !matches(set,"u_emissive",o.emission *
+                            (_emissive_enabled ? _emissive_intensity : 0.0f)) ||
                         !matches(set,"u_normal",o.controls->normal->get_value()) ||
                         !matches(set,"u_ambient",_controls->ambient->get_value()) ) return false ;
                     for( size_t l = 0 ; l < 3 ; ++l )
@@ -560,6 +580,11 @@ namespace sample
                 add_object( 0, vec3_t(3.2f,0.6f,2.5f), vec3_t(0.75f,1.2f,0.75f), vec3_t(0,0.5f,0), vec3_t(0.78f,0.74f,0.62f), 0, 0.2f ) ;
                 add_object( 0, vec3_t(0,1.8f,-4.7f), vec3_t(12.0f,3.6f,0.35f), vec3_t(0), vec3_t(0.32f,0.36f,0.4f), 0, 0 ) ;
                 add_object( 0, vec3_t(-5.7f,0.8f,-1.0f), vec3_t(0.4f,1.6f,7.0f), vec3_t(0), vec3_t(0.4f,0.44f,0.47f), 0, 0.1f ) ;
+                {
+                    // Linear HDR emission is independent of light intensity and material tint.
+                    add_object( 1, vec3_t(1.8f,0.45f,3.6f), vec3_t(0.45f), vec3_t(0),
+                        vec3_t(0.025f,0.08f,0.1f), 0, 0.2f, vec3_t(0.12f,0.75f,1.0f) ) ;
+                }
             }
 
             {
@@ -631,35 +656,48 @@ namespace sample
             update_scene() ;
         }
 
-        void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+        void_t on_first_frame( window_id_t const, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            for( auto & geo : _geometry ) fe->configure<motor::graphics::geometry_object_t>(&geo) ;
+            fe->configure<motor::graphics::state_object_t>(&_state) ;
+            fe->configure<motor::graphics::state_object_t>(&_hdr_state) ;
+            fe->configure<motor::graphics::msl_object_t>(_shader) ;
+            _post->init_render(fe) ;
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t const w = id == _windows[0].id ? 0 : 1 ;
-            if( data.last_frame )
-            {
-                _post->release_render(fe) ;
-                fe->release<motor::graphics::state_object_t>(&_windows[w].present_state) ;
-                fe->release<motor::graphics::state_object_t>(&_hdr_state) ;
-                fe->release<motor::graphics::msl_object_t>(_shader) ;
-                for( auto & geo : _geometry ) fe->release<motor::graphics::geometry_object_t>(&geo) ;
-                fe->release<motor::graphics::state_object_t>(&_state) ;
-                return ;
-            }
-            if( data.first_frame )
-            {
-                for( auto & geo : _geometry ) fe->configure<motor::graphics::geometry_object_t>(&geo) ;
-                fe->configure<motor::graphics::state_object_t>(&_state) ;
-                fe->configure<motor::graphics::state_object_t>(&_hdr_state) ;
-                fe->configure<motor::graphics::msl_object_t>(_shader) ;
-                _post->init_render(fe) ;
-            }
+            _post->release_render(fe) ;
+            fe->release<motor::graphics::state_object_t>(&_windows[w].present_state) ;
+            fe->release<motor::graphics::state_object_t>(&_hdr_state) ;
+            fe->release<motor::graphics::msl_object_t>(_shader) ;
+            for( auto & geo : _geometry ) fe->release<motor::graphics::geometry_object_t>(&geo) ;
+            fe->release<motor::graphics::state_object_t>(&_state) ;
+        }
+
+        void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            size_t const w = id == _windows[0].id ? 0 : 1 ;
             prepare_presentation(w,fe) ;
             auto const status = fe->decode(_shader) ;
             _windows[w].ready = status.first == motor::graphics::object_state::ready &&
                 status.second == motor::graphics::result::ok ;
             auto const post_status = fe->decode(_post->borrow_hdr_fb(0)) ;
+            auto const pipeline_status = _post->check_status(fe) ;
+            if( pipeline_status.state == motor::gfx::postprocess_status_t::state_type::failed )
+            {
+                motor::log::global_t::error(motor::string_t("[scene wire] HDR shader failed: ") +
+                    (pipeline_status.stage ? pipeline_status.stage : "unknown stage")) ;
+                fail("[scene wire] HDR pipeline configuration failed") ;
+                return ;
+            }
             _windows[w].post_ready = post_status.first == motor::graphics::object_state::ready &&
-                post_status.second == motor::graphics::result::ok ;
+                post_status.second == motor::graphics::result::ok &&
+                pipeline_status.state == motor::gfx::postprocess_status_t::state_type::ready ;
             bool_t const use_post = _post_enabled && _windows[w].post_ready ;
             if( use_post ) fe->use(_post->borrow_hdr_fb(0)) ;
             fe->push(use_post ? &_hdr_state : &_state) ;
@@ -692,7 +730,7 @@ namespace sample
         {
             if( id != _windows[0].id || _quitting ) return false ;
             ImGui::SetNextWindowPos(ImVec2(12,44),ImGuiCond_FirstUseEver) ;
-            ImGui::SetNextWindowSize(ImVec2(300,440),ImGuiCond_FirstUseEver) ;
+            ImGui::SetNextWindowSize(ImVec2(300,490),ImGuiCond_FirstUseEver) ;
             if( ImGui::Begin("Scene + Wire",nullptr,ImGuiWindowFlags_NoSavedSettings) )
             {
                 ImGui::BeginDisabled(_opts.smoke) ;
@@ -703,6 +741,8 @@ namespace sample
                 ImGui::Checkbox("Rim",&_enabled[2]) ;
                 ImGui::SliderFloat("Rim intensity",&_intensity[2],0.0f,12.0f) ;
                 ImGui::SliderFloat("Ambient",&_ambient,0.0f,0.3f) ;
+                ImGui::Checkbox("Emissive sphere",&_emissive_enabled) ;
+                ImGui::SliderFloat("Emission intensity",&_emissive_intensity,0.0f,20.0f) ;
                 ImGui::SliderFloat("Material tint",&_tint,0.2f,1.0f) ;
                 ImGui::SliderFloat("Exhibits height",&_group_height,0.0f,2.0f) ;
                 ImGui::SliderFloat("Camera",&_yaw,-70.0f,70.0f) ;
@@ -727,7 +767,10 @@ namespace sample
         {
             if( !_opts.smoke || _quitting ) return ;
             for( size_t w = 0 ; w < window_count() ; ++w )
-                if( _windows[w].frames < 5 ) return ;
+            {
+                // Scene compilation can finish before the asynchronous HDR initialization.
+                if( _windows[w].frames < 5 || (_phase == 0 && _windows[w].post_frames < 5) ) return ;
+            }
             if( !verify_frame() )
             {
                 fail("[scene wire] hierarchy / bridge / camera subset verification failed") ;
@@ -740,7 +783,7 @@ namespace sample
             }
             for( size_t w = 0 ; w < window_count() ; ++w )
                 if( _windows[w].frames < 45 ) return ;
-            motor::log::global_t::status<256>("[scene wire] phase %zu passed: hierarchy, bridges, camera subsets, HDR properties (%s)",
+            motor::log::global_t::status<256>("[scene wire] phase %zu passed: hierarchy, bridges, emission, camera subsets, HDR properties (%s)",
                 _phase,_post_enabled ? "post processing" : "direct") ;
             if( ++_phase == 6 )
             {
@@ -755,6 +798,12 @@ namespace sample
             _group_height = _phase >= 4 ? 1.2f : 0.0f ;
             _separate_view = _phase >= 4 ;
             _post_enabled = _phase != 3 ;
+            {
+                float_t const strengths[6] = {8.0f,8.0f,4.0f,8.0f,12.0f,6.0f} ;
+                _emissive_enabled = _phase != 1 ;
+                _emissive_intensity = strengths[_phase] ;
+                _ambient = _phase == 3 ? 0.0f : 0.09f ;
+            }
             _post_properties.at("brightpass")->borrow_property<motor::wire::input_slot<float_t>>("brightness_threshold")
                 ->set(_phase == 4 ? 1.5f : (_phase == 5 ? 3.0f : 2.0f)) ;
             if( _phase == 5 )

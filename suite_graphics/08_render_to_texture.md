@@ -72,7 +72,7 @@ The three viewport sizes are immutable entries in one state object; another
 three entries provide the no-clear explicit-state reference.
 
 CPU resources and borrowed variable pointers remain alive through the window
-release callbacks. `last_frame` queues backend releases; MSL CPU ownership is
+release callbacks. `on_last_frame` queues backend releases; MSL CPU ownership is
 released in `on_shutdown`. This follows the existing suite's application lifetime.
 
 ## Smoke coverage

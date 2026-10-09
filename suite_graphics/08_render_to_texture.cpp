@@ -417,43 +417,50 @@ namespace sample
             }
         }
 
-        void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+        void_t on_first_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t const index = id == _windows[0].id ? 0 : 1 ;
             auto & window = _windows[index] ;
-            if( data.last_frame )
+            fe->configure<motor::graphics::state_object_t>( &_scene_state ) ;
+            fe->configure<motor::graphics::state_object_t>( &_flat_state ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &_cube ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &_quad ) ;
+            fe->configure<motor::graphics::framebuffer_object_t>( &_framebuffer ) ;
+            fe->configure<motor::graphics::msl_object_t>( _scene ) ;
+            fe->configure<motor::graphics::msl_object_t>( _markers ) ;
+            fe->configure<motor::graphics::msl_object_t>( _post ) ;
+            window.revision = _revision ;
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            size_t const index = id == _windows[0].id ? 0 : 1 ;
+            auto & window = _windows[index] ;
+            fe->release<motor::graphics::msl_object_t>( _post ) ;
+            fe->release<motor::graphics::msl_object_t>( _markers ) ;
+            fe->release<motor::graphics::msl_object_t>( _scene ) ;
+            fe->release<motor::graphics::framebuffer_object_t>( &_framebuffer ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_quad ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_cube ) ;
+            fe->release<motor::graphics::state_object_t>( &_flat_state ) ;
+            fe->release<motor::graphics::state_object_t>( &_scene_state ) ;
+            if( index == 1 )
             {
-                fe->release<motor::graphics::msl_object_t>( _post ) ;
-                fe->release<motor::graphics::msl_object_t>( _markers ) ;
-                fe->release<motor::graphics::msl_object_t>( _scene ) ;
-                fe->release<motor::graphics::framebuffer_object_t>( &_framebuffer ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_quad ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_cube ) ;
-                fe->release<motor::graphics::state_object_t>( &_flat_state ) ;
-                fe->release<motor::graphics::state_object_t>( &_scene_state ) ;
-                if( index == 1 )
-                {
-                    window = window_data{} ;
-                    _closing_secondary = false ;
-                    ++_closes ;
-                    motor::log::global_t::status( "[RTT] secondary last frame; releases queued" ) ;
-                }
-                return ;
+                window = window_data{} ;
+                _closing_secondary = false ;
+                ++_closes ;
+                motor::log::global_t::status( "[RTT] secondary last frame; releases queued" ) ;
             }
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &_scene_state ) ;
-                fe->configure<motor::graphics::state_object_t>( &_flat_state ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &_cube ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &_quad ) ;
-                fe->configure<motor::graphics::framebuffer_object_t>( &_framebuffer ) ;
-                fe->configure<motor::graphics::msl_object_t>( _scene ) ;
-                fe->configure<motor::graphics::msl_object_t>( _markers ) ;
-                fe->configure<motor::graphics::msl_object_t>( _post ) ;
-                window.revision = _revision ;
-            }
-            else if( window.revision != _revision )
+        }
+
+        void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            size_t const index = id == _windows[0].id ? 0 : 1 ;
+            auto & window = _windows[index] ;
+            if( window.revision != _revision )
             {
                 // Only the framebuffer changes; the shader and its texture name stay intact.
                 if( !fe->configure<motor::graphics::framebuffer_object_t>( &_framebuffer ) )

@@ -237,25 +237,28 @@ namespace sample
             update_vertices() ;
         }
 
+        void_t on_first_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->configure<motor::graphics::state_object_t>( &_state ) ;
+            for( auto & geometry : _geometry ) fe->configure<motor::graphics::geometry_object_t>( &geometry ) ;
+            fe->configure<motor::graphics::array_object_t>( &_vertices ) ;
+            for( auto shader : _shaders ) fe->configure<motor::graphics::msl_object_t>( shader ) ;
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            for( auto shader : _shaders ) fe->release<motor::graphics::msl_object_t>( shader ) ;
+            for( auto & geometry : _geometry ) fe->release<motor::graphics::geometry_object_t>( &geometry ) ;
+            fe->release<motor::graphics::array_object_t>( &_vertices ) ;
+            fe->release<motor::graphics::state_object_t>( &_state ) ;
+        }
+
         void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+            motor::application::app::render_data_in_t ) noexcept override
         {
             auto & window = _windows[id == _windows[0].id ? 0 : 1] ;
-            if( data.last_frame )
-            {
-                for( auto shader : _shaders ) fe->release<motor::graphics::msl_object_t>( shader ) ;
-                for( auto & geometry : _geometry ) fe->release<motor::graphics::geometry_object_t>( &geometry ) ;
-                fe->release<motor::graphics::array_object_t>( &_vertices ) ;
-                fe->release<motor::graphics::state_object_t>( &_state ) ;
-                return ;
-            }
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &_state ) ;
-                for( auto & geometry : _geometry ) fe->configure<motor::graphics::geometry_object_t>( &geometry ) ;
-                fe->configure<motor::graphics::array_object_t>( &_vertices ) ;
-                for( auto shader : _shaders ) fe->configure<motor::graphics::msl_object_t>( shader ) ;
-            }
             fe->push( &_state ) ;
             bool_t ready = true ;
             for( auto shader : _shaders )

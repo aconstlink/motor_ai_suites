@@ -16,6 +16,8 @@
 
 namespace sample
 {
+    using motor::core::types::void_t;
+
     class dynamic_geometry_app : public motor::application::app
     {
         static constexpr size_t invalid = size_t( -1 );
@@ -209,24 +211,28 @@ namespace sample
             _square_data.write();
         }
 
-        void on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+        void_t on_first_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->configure<motor::graphics::state_object_t>( &_state );
+            fe->configure<motor::graphics::geometry_object_t>( &_triangle );
+            fe->configure<motor::graphics::msl_object_t>( _shader );
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
         {
             auto& window = _windows[id == _windows[0].id ? 0 : 1];
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &_state );
-                fe->configure<motor::graphics::geometry_object_t>( &_triangle );
-                fe->configure<motor::graphics::msl_object_t>( _shader );
-            }
-            if( data.last_frame )
-            {
-                fe->release<motor::graphics::msl_object_t>( _shader );
-                if( window.square_configured ) fe->release<motor::graphics::geometry_object_t>( &_square );
-                fe->release<motor::graphics::geometry_object_t>( &_triangle );
-                fe->release<motor::graphics::state_object_t>( &_state );
-                return;
-            }
+            fe->release<motor::graphics::msl_object_t>( _shader );
+            if( window.square_configured ) fe->release<motor::graphics::geometry_object_t>( &_square );
+            fe->release<motor::graphics::geometry_object_t>( &_triangle );
+            fe->release<motor::graphics::state_object_t>( &_state );
+        }
+
+        void on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            auto& window = _windows[id == _windows[0].id ? 0 : 1];
             auto const status = fe->decode( _shader );
             window.ready = status.first == motor::graphics::object_state::ready &&
                 status.second == motor::graphics::result::ok;

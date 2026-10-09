@@ -15,6 +15,8 @@
 
 namespace sample
 {
+    using motor::core::types::void_t;
+
     #ifdef _WIN32
     constexpr auto secondary_backend = motor::application::graphics_generation::gen4_d3d11 ;
     motor::core::types::char_cptr_t const secondary_title = "motor | lifecycle | D3D11" ;
@@ -184,32 +186,37 @@ namespace sample
             }
         }
 
-        void on_render( window_id_t const id,
+        void_t on_first_frame( window_id_t const id,
             motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+            motor::application::app::render_data_in_t ) noexcept override
         {
             // Each frontend configures the same objects for its own backend.
-            if( data.first_frame )
+            fe->configure<motor::graphics::state_object_t>( &_state );
+            fe->configure<motor::graphics::geometry_object_t>( &_geometry );
+            fe->configure<motor::graphics::msl_object_t>( _shader );
+        }
+
+        void_t on_last_frame( window_id_t const id,
+            motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->release<motor::graphics::msl_object_t>( _shader );
+            fe->release<motor::graphics::geometry_object_t>( &_geometry );
+            fe->release<motor::graphics::state_object_t>( &_state );
+            if( id == _secondary_window )
             {
-                fe->configure<motor::graphics::state_object_t>( &_state );
-                fe->configure<motor::graphics::geometry_object_t>( &_geometry );
-                fe->configure<motor::graphics::msl_object_t>( _shader );
+                _secondary_window = invalid_window;
+                _closing_secondary = false;
+                _secondary_ready = false;
+                ++_close_count;
+                motor::log::global::status( "[lifecycle] secondary last frame; main window remains active" );
             }
-            if( data.last_frame )
-            {
-                fe->release<motor::graphics::msl_object_t>( _shader );
-                fe->release<motor::graphics::geometry_object_t>( &_geometry );
-                fe->release<motor::graphics::state_object_t>( &_state );
-                if( id == _secondary_window )
-                {
-                    _secondary_window = invalid_window;
-                    _closing_secondary = false;
-                    _secondary_ready = false;
-                    ++_close_count;
-                    motor::log::global::status( "[lifecycle] secondary last frame; main window remains active" );
-                }
-                return;
-            }
+        }
+
+        void on_render( window_id_t const id,
+            motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
             fe->push( &_state );
             // Readiness is backend-specific; compilation is asynchronous.
             auto const status = fe->decode( _shader );

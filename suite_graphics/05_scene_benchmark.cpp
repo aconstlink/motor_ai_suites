@@ -371,23 +371,26 @@ namespace sample
             _current.trafo = ms(synced,clock_t::now()) ;
         }
 
+        void_t on_first_frame( window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
+            fe->configure<motor::graphics::state_object_t>( &_state ) ;
+            fe->configure<motor::graphics::msl_object_t>( _shader ) ;
+        }
+
+        void_t on_last_frame( window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->release<motor::graphics::msl_object_t>( _shader ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_geometry ) ;
+            fe->release<motor::graphics::state_object_t>( &_state ) ;
+        }
+
         void_t on_render( window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t const index = wid == _windows[0] ? 0 : 1 ;
-            if( data.first_frame )
-            {
-                fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
-                fe->configure<motor::graphics::state_object_t>( &_state ) ;
-                fe->configure<motor::graphics::msl_object_t>( _shader ) ;
-            }
-            if( data.last_frame )
-            {
-                fe->release<motor::graphics::msl_object_t>( _shader ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_geometry ) ;
-                fe->release<motor::graphics::state_object_t>( &_state ) ;
-                return ;
-            }
             auto const status = fe->decode( _shader ) ;
             _ready[index] = status.first == motor::graphics::object_state::ready && status.second == motor::graphics::result::ok ;
             if( !all_ready() || _closing ) return ;

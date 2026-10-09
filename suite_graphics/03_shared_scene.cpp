@@ -293,31 +293,36 @@ namespace sample
             }
         }
 
-        void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t data ) noexcept override
+        void_t on_first_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            fe->configure<motor::graphics::state_object_t>( &_state ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &_cube ) ;
+            fe->configure<motor::graphics::msl_object_t>( _shader ) ;
+        }
+
+        void_t on_last_frame( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
         {
             size_t const index = id == _windows[0].id ? 0 : 1 ;
             auto & window = _windows[index] ;
-            if( data.first_frame )
+            fe->release<motor::graphics::msl_object_t>( _shader ) ;
+            fe->release<motor::graphics::geometry_object_t>( &_cube ) ;
+            fe->release<motor::graphics::state_object_t>( &_state ) ;
+            if( index == 1 )
             {
-                fe->configure<motor::graphics::state_object_t>( &_state ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &_cube ) ;
-                fe->configure<motor::graphics::msl_object_t>( _shader ) ;
+                window = window_data{} ;
+                _closing_secondary = false ;
+                ++_closes ;
+                motor::log::global_t::status( "[shared scene] secondary last frame; resource releases queued for this backend" ) ;
             }
-            if( data.last_frame )
-            {
-                fe->release<motor::graphics::msl_object_t>( _shader ) ;
-                fe->release<motor::graphics::geometry_object_t>( &_cube ) ;
-                fe->release<motor::graphics::state_object_t>( &_state ) ;
-                if( index == 1 )
-                {
-                    window = window_data{} ;
-                    _closing_secondary = false ;
-                    ++_closes ;
-                    motor::log::global_t::status( "[shared scene] secondary last frame; resource releases queued for this backend" ) ;
-                }
-                return ;
-            }
+        }
+
+        void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept override
+        {
+            size_t const index = id == _windows[0].id ? 0 : 1 ;
+            auto & window = _windows[index] ;
 
             auto const status = fe->decode( _shader ) ;
             bool_t const ready = status.first == motor::graphics::object_state::ready &&

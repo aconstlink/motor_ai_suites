@@ -1,7 +1,8 @@
 # Scene Graph, Wire Lighting and HDR
 
 Target: `12_scene_wire_lighting`. The low-level `11_lighting_scene` remains
-unchanged as a comparison. This sample uses the same 12-object gallery, four
+unchanged as a comparison. This sample extends the 12-object gallery with a small
+emissive sphere in the foreground (13 objects total), using the same four
 shared meshes and three directional lighting terms, but renders through Motor's
 scene graph and supplies animation/material/light data through Wire slots.
 The existing `gfx::hdr_postprocess_pipeline` handles HDR, Bloom, tone mapping
@@ -35,6 +36,22 @@ can clip on the backbuffer. The expandable Post processing section exposes the
 pipeline's own property sheets for brightpass, bloom, merge, tone_map and fxaa.
 Light-intensity sliders now range from 0 to 12. The initial bright-pass threshold
 is 2, with light intensities 6/3/5, so lit surfaces can exceed SDR white.
+
+## Emissive Material
+
+The small cyan sphere in the foreground has a separate linear-HDR `u_emissive`
+value. The shader adds it once to the lit surface color, before bright-pass,
+Bloom and tone mapping. The initial emission is `(0.12, 0.75, 1.0) * 8`.
+`Emissive sphere` toggles emission without removing the geometry;
+`Emission intensity` ranges from 0 to 20. Material tint and the three light
+intensities do not modulate emission.
+
+An individual `output_slot<vec3>` publishes each object's emission through the
+same base/subset bridges as its material. All other objects emit zero.
+The existing sphere mesh and shared MSL object are reused.
+
+This is a self-lit material with screen-space Bloom, not a point light or global
+illumination: the sphere does not illuminate the floor or neighboring objects.
 
 ## Post-Processing Flow
 
@@ -100,7 +117,7 @@ shared lighting / individual material output slots
 Connections are established once during construction. The sample pre-creates
 typed shader input slots, so compilation can subsequently populate the bridge
 without requiring the application to reconnect them. Light outputs fan out to
-all 12 objects. No shader variable is directly rewritten by application code
+all 13 objects. No shader variable is directly rewritten by application code
 after its initial creation; runtime changes are published through Wire.
 
 `on_graphics` updates outputs, cameras, compilation-dependent bindings and then
@@ -112,7 +129,8 @@ Compilation readiness is gated before the first visible scene traversal.
 
 Graphics geometry, state and MSL configure/release remain explicit in the
 application. The MSL object is marked managed because this application owns
-that lifecycle. The graph stays alive until all last-frame releases have been
+that lifecycle, using `on_first_frame` and `on_last_frame` for graphics resources.
+The graph stays alive until all last-frame releases have been
 submitted and application shutdown is reached.
 
 ## Scope
@@ -137,16 +155,22 @@ Smoke runs six phases with 45 rendered frames per window: three/two/one/no
 enabled lights, then changed material and group translation with a second
 viewpoint, and finally paused animation with changed ambient/fill intensity.
 The overall timeout is 90 seconds.
+The initial verification waits for at least five HDR frames per window, since
+the scene shader may become ready before the asynchronous pipeline initialization.
+The post path waits for both the HDR framebuffer and `check_status(frontend)`
+to report readiness for all pipeline shaders; failed stages are logged by name.
 Phase 3 bypasses post processing; phases 4 and 5 re-enable it and change the
 bright-pass threshold to 1.5 and 3 respectively.
+Emission is disabled in phase 1, then tested at intensities 4, 8, 12 and 6.
+Phase 3 also disables ambient, so emission remains with all three lights off.
 
 After startup, assertions inspect CPU-side render subsets and verify:
 
 - Composed world transforms against parent * local.
 - World, view, projection and camera-position shader values.
-- Material, normal matrix, ambient and all three direction/energy pairs.
+- Material, emission, normal matrix, ambient and all three direction/energy pairs.
 - Distinct subset IDs for the two views.
-- Stable active-set count: 12 base sets plus 12 per view.
+- Stable active-set count: 13 base sets plus 13 per view.
 - HDR framebuffer readiness on each backend, availability of all five stage
   property sheets and the expected bright-pass threshold.
 - Both post-processed and direct rendering paths have executed.

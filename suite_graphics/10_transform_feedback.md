@@ -68,7 +68,8 @@ the streamout count while feeding a different geometry.
 
 All windows share the logical resources but have separate variable sets and
 backend storage. Variables are prepared in `on_graphics`, not overwritten
-between asynchronous draws. Release runs in `last_frame` and immediately returns.
+between asynchronous draws. Release runs in `on_last_frame`; `on_render` is not
+called for that window's final frame.
 
 ## Verification
 
