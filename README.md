@@ -178,6 +178,10 @@ diagnostics and, where applicable, benchmark measurements.
 | Area | Application | Purpose | Documentation |
 | --- | --- | --- | --- |
 | Concurrency | [00_threads_parallel_for](suite_concurrent/00_threads_parallel_for.cpp) | Native threads, Motor's pool, ranges and nested parallel work | [Concurrent tests](BUILDING.md#concurrent-console-tests) |
+| Concurrency | [01_sync_primitives](suite_concurrent/01_sync_primitives.cpp) | Semaphore, signals, shared readers and writer exclusion | [Synchronization tests](suite_concurrent/README.md) |
+| Concurrency | [02_task_graph](suite_concurrent/02_task_graph.cpp) | Chain, diamond and fan-out graphs with both schedulers | [Task-graph tests](suite_concurrent/README.md) |
+| Memory | [00_memory_ownership](suite_memory/00_memory_ownership.cpp) | Share, borrow, move, release guards and concurrent reference counting | [Memory tests](suite_memory/README.md) |
+| Memory | [01_memory_allocations](suite_memory/01_memory_allocations.cpp) | Allocation accounting, array destruction, containers and malloc guards | [Memory tests](suite_memory/README.md) |
 | Wire | [00_wire_slots](suite_wire/00_wire_slots.cpp) | Fan-out, exchange, type checks and connection lifetime | [Wire tests](BUILDING.md#wire-console-tests) |
 | Wire | [01_wire_bridges](suite_wire/01_wire_bridges.cpp) | Input/output bridges, rebinding and variable-set replacement | [Wire tests](BUILDING.md#wire-console-tests) |
 | Core | [00_document](suite_core/00_document.cpp) | Token correctness and comparison with standard-library approaches | [Document tests](suite_core/README.md) |
@@ -194,7 +198,7 @@ Build all targets, then run the console suites:
 
 ```sh
 cmake --build build --config Release --parallel 4
-ctest --test-dir build -C Release -L "concurrent|wire|core|math" --output-on-failure --no-tests=error
+ctest --test-dir build -C Release -L "concurrent|wire|core|math|memory" --output-on-failure --no-tests=error
 ```
 
 The [Windows build](.github/workflows/cmake-win32-dx11.yml) and

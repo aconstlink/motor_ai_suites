@@ -1,5 +1,7 @@
 set( sources
     "00_threads_parallel_for.cpp"
+    "01_sync_primitives.cpp"
+    "02_task_graph.cpp"
 )
 
 find_package( Threads REQUIRED )
@@ -14,6 +16,19 @@ foreach( source IN LISTS sources )
 endforeach()
 
 if( BUILD_TESTING )
+    foreach( scenario semaphore signal readers contention )
+        add_test( NAME concurrent_sync_${scenario} COMMAND 01_sync_primitives ${scenario} )
+        set_tests_properties( concurrent_sync_${scenario} PROPERTIES
+            TIMEOUT 30 LABELS "concurrent;concurrent_extended" )
+    endforeach()
+    foreach( scheduler pool loose )
+        foreach( scenario chain diamond fanout )
+            add_test( NAME concurrent_graph_${scheduler}_${scenario}
+                COMMAND 02_task_graph ${scheduler} ${scenario} )
+            set_tests_properties( concurrent_graph_${scheduler}_${scenario} PROPERTIES
+                TIMEOUT 30 LABELS "concurrent;concurrent_extended" RUN_SERIAL TRUE )
+        endforeach()
+    endforeach()
     foreach( scenario threads pool ranges remainder nested )
         add_test( NAME concurrent_${scenario}
             COMMAND 00_threads_parallel_for ${scenario} )
