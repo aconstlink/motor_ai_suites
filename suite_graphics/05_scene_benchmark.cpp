@@ -263,7 +263,7 @@ namespace sample
             auto const trafo = stats( []( auto const & s ){ return s.trafo ; } ) ;
             auto const prep0 = stats( []( auto const & s ){ return s.prepare[0] ; } ) ;
             auto const prep1 = stats( []( auto const & s ){ return s.prepare[1] ; } ) ;
-            size_t const sets = _shader->borrow_varibale_sets().size() ;
+            size_t const sets = _shader->borrow_variable_sets().size() ;
             size_t const expected = _opts.path == "direct" ? _opts.objects :
                 _opts.objects * (1 + pass_count()) ;
             *_passed = sets == expected ;

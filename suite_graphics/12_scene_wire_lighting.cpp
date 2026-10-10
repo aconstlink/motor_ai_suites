@@ -494,7 +494,7 @@ namespace sample
         bool_t verify_frame( void_t ) noexcept
         {
             size_t active_sets = 0 ;
-            for( auto const & entry : _shader->borrow_varibale_sets() )
+            for( auto const & entry : _shader->borrow_variable_sets() )
                 if( entry.vs != nullptr ) ++active_sets ;
             if( active_sets != _objects.size()*(1+window_count()) ) return false ;
             for( auto const & o : _objects )
@@ -508,7 +508,7 @@ namespace sample
                 for( size_t w = 0 ; w < window_count() ; ++w )
                 {
                     if( o.subset[w] == size_t(-1) ) return false ;
-                    auto const borrowed = _shader->borrow_varibale_set(o.subset[w]) ;
+                    auto const borrowed = _shader->borrow_variable_set(o.subset[w]) ;
                     auto * set = borrowed.vs ;
                     if( set == nullptr ) return false ;
                     if( !matches(set,"u_world",actual) ||
