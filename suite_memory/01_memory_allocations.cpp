@@ -147,8 +147,7 @@ int main( int argc, char ** argv )
             return result ;
         }
         result = ok ? 0 : 1 ;
-        if( ok ) motor::log::global_t::status( "[memory allocations] PASS" ) ;
-        else motor::log::global_t::error( "[memory allocations] FAIL" ) ;
+        motor::log::global_t::test( "[memory allocations] " + mode, ok ) ;
     }
     motor::log::global_t::deinit() ;
     bool const clean = motor::memory::global_t::dump_to_std() == 0 ;

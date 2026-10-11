@@ -83,7 +83,7 @@ namespace sample
         void_t fail( motor::string_cref_t message ) noexcept
         {
             if( _quitting ) return ;
-            motor::log::global_t::error( "[RTT] " + message ) ;
+            motor::log::global_t::test( "[RTT] " + message, false ) ;
             _quitting = true ;
             close() ;
         }
@@ -553,8 +553,7 @@ namespace sample
             {
                 *_passed = !_options.dual || ( _opens == 2 && _closes == 1 ) ;
                 _quitting = true ;
-                motor::log::global_t::status( *_passed ?
-                    "[RTT] smoke passed; image correctness requires visual verification" : "[RTT] lifecycle counts failed" ) ;
+                motor::log::global_t::test( "[RTT] lifecycle smoke; image correctness requires visual verification", *_passed ) ;
                 close() ;
             }
         }

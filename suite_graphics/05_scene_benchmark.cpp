@@ -86,7 +86,7 @@ namespace sample
 
         void_t fail( char_cptr_t message ) noexcept
         {
-            motor::log::global_t::error( message ) ;
+            motor::log::global_t::test( message, false ) ;
             _closing = true ;
             close() ;
         }
@@ -273,7 +273,7 @@ namespace sample
                 _opts.objects * pass_count() * window_count(), sets,
                 frame.first, frame.second, sync.first, sync.second, trafo.first, trafo.second,
                 prep0.first, prep0.second, prep1.first, prep1.second, _opts.lighting.c_str() ) ;
-            if( !*_passed ) motor::log::global_t::error( "Unexpected variable-set count; benchmark invalid" ) ;
+            motor::log::global_t::test( "[benchmark] expected variable-set count", *_passed ) ;
             motor::log::global_t::status( "CPU callback/frame-cadence metrics only; no GPU timestamps or allocation counts. Draw count is expected, not GPU-verified." ) ;
         }
 

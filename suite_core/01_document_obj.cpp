@@ -216,14 +216,13 @@ namespace this_file
                 uvs += keyword == "vt" ; faces += keyword == "f" ;
                 for( size_t i = 0 ; i < count ; ++i ) by_line.add( line.get_token( i ) ) ;
             } ) ;
-            if( !( by_line == expected ) || !( traverse( doc ) == expected ) )
+            if( !motor::log::global_t::test( "for_each_line and for_each_token match the reference",
+                ( by_line == expected ) && ( traverse( doc ) == expected ) ) )
             {
-                motor::log::global_t::error( "Document token/line traversal differs from the whitespace reference" ) ;
                 return false ;
             }
             motor::log::global_t::status<256>( "Document: %zu lines, %zu tokens; OBJ records: v=%zu vt=%zu vn=%zu f=%zu",
                 lines, expected.tokens, positions, uvs, normals, faces ) ;
-            motor::log::global_t::status( "PASS: for_each_line and for_each_token match the reference" ) ;
         }
         if( verify_only ) return true ;
 
@@ -241,7 +240,7 @@ namespace this_file
                 else s = measure( [&] { return view_tokens( text, idx == 5 ) ; } ) ;
                 if( !( s.value == expected ) )
                 {
-                    motor::log::global_t::error<256>( "FAIL: token checksum mismatch: %s", names[idx] ) ;
+                    motor::log::global_t::test( motor::string_t("Token checksum match: ") + names[idx], false ) ;
                     return false ;
                 }
                 if( round != 0 ) results[idx][round - 1] = s ;
@@ -284,6 +283,7 @@ int main( int argc, char ** argv )
             }
         }
         ok = this_file::run( location, verify_only ) ;
+        motor::log::global_t::test( "[document OBJ] " + location, ok ) ;
     }
     motor::io::global_t::deinit() ;
     motor::concurrent::global_t::deinit() ;

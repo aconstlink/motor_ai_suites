@@ -93,8 +93,7 @@ int main( int argc, char ** argv )
         {
             bool const ok = this_file::run( scheduler == "pool", width ) ;
             result = ok ? 0 : 1 ;
-            if( ok ) motor::log::global_t::status<256>( "[graph] %s/%s: PASS", scheduler.c_str(), shape.c_str() ) ;
-            else motor::log::global_t::error<256>( "[graph] %s/%s: FAIL", scheduler.c_str(), shape.c_str() ) ;
+            motor::log::global_t::test( "[graph] " + scheduler + "/" + shape, ok ) ;
         }
         else motor::log::global_t::error( "Usage: 02_task_graph pool|loose chain|diamond|fanout" ) ;
     }

@@ -102,8 +102,8 @@ namespace this_file
                 actual.emplace_back( token.data(), token.size() ) ;
             } ) ;
             bool_t const matches = actual == expected ;
-            if( matches ) motor::log::global_t::status<256>( "PASS: %s / %s", name, implementation ) ;
-            else motor::log::global_t::error<256>( "FAIL: %s / %s: expected %zu tokens, got %zu",
+            motor::log::global_t::test( motor::string_t(name) + " / " + implementation, matches ) ;
+            if( !matches ) motor::log::global_t::error<256>( "%s / %s: expected %zu tokens, got %zu",
                 name, implementation, expected.size(), actual.size() ) ;
             ok = matches && ok ;
         } ;
@@ -215,7 +215,7 @@ namespace this_file
                 double const ms = std::chrono::duration<double, std::milli>( benchmark_clock_t::now() - begin ).count() ;
                 if( result.hash != expected.hash || result.count != expected.count )
                 {
-                    motor::log::global_t::error<256>( "Traversal token mismatch: %s", names[idx] ) ;
+                    motor::log::global_t::test( motor::string_t("Traversal token match: ") + names[idx], false ) ;
                     return false ;
                 }
                 if( round != 0 ) samples[idx][round - 1] = ms ;
@@ -261,7 +261,7 @@ namespace this_file
                 double const ms = std::chrono::duration<double, std::milli>( benchmark_clock_t::now() - begin ).count() ;
                 if( result.hash != expected.hash || result.count != expected.count )
                 {
-                    motor::log::global_t::error<256>( "Benchmark token mismatch: %s", names[idx] ) ;
+                    motor::log::global_t::test( motor::string_t("Benchmark token match: ") + names[idx], false ) ;
                     return false ;
                 }
                 if( round != 0 ) samples[idx][round - 1] = ms ;
@@ -301,7 +301,7 @@ namespace this_file
                 double const ms = std::chrono::duration<double, std::milli>( std::chrono::steady_clock::now() - begin ).count() ;
                 if( result != expected[idx] )
                 {
-                    motor::log::global_t::error( "Counting benchmark mismatch" ) ;
+                    motor::log::global_t::test( "Counting benchmark matches reference", false ) ;
                     return false ;
                 }
                 if( round != 0 ) samples[idx][round - 1] = ms ;
@@ -325,6 +325,7 @@ int main( int argc, char ** argv )
         else if( scenario == "--benchmark-traversal" ) ok = this_file::benchmark_traversal() ;
         else if( scenario == "--benchmark-counting" ) ok = this_file::benchmark_counting() ;
         else ok = this_file::correctness( scenario ) ;
+        motor::log::global_t::test( "[document] " + scenario, ok ) ;
     }
     motor::log::global_t::deinit() ;
     bool const clean = motor::memory::global_t::dump_to_std() == 0 ;

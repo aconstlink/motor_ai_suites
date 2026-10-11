@@ -177,7 +177,7 @@ namespace sample
 
         void_t fail( char_cptr_t message ) noexcept
         {
-            motor::log::global_t::error(message) ;
+            motor::log::global_t::test(message, false) ;
             _quitting = true ;
             close() ;
         }
@@ -783,8 +783,9 @@ namespace sample
             }
             for( size_t w = 0 ; w < window_count() ; ++w )
                 if( _windows[w].frames < 45 ) return ;
-            motor::log::global_t::status<256>("[scene wire] phase %zu passed: hierarchy, bridges, emission, camera subsets, HDR properties (%s)",
-                _phase,_post_enabled ? "post processing" : "direct") ;
+            motor::log::global_t::test("[scene wire] phase " + motor::to_string(_phase) +
+                ": hierarchy, bridges, emission, camera subsets, HDR properties (" +
+                (_post_enabled ? "post processing" : "direct") + ")", true) ;
             if( ++_phase == 6 )
             {
                 *_passed = true ;

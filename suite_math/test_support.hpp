@@ -4,6 +4,7 @@
 #include <motor/memory/global.h>
 #include <motor/std/string>
 #include <cmath>
+#include <cstdio>
 #include <limits>
 
 namespace math_test
@@ -21,7 +22,7 @@ namespace math_test
             ++checks ;
             if( ok ) return ;
             ++failures ;
-            motor::log::global_t::error<512>("FAIL: %s%s",section.c_str(),name) ;
+            motor::log::global_t::test( section + name, false ) ;
         }
 
         void_t near( double_t const actual, double_t const expected,
@@ -32,7 +33,10 @@ namespace math_test
             ++checks ;
             if( ok ) return ;
             ++failures ;
-            motor::log::global_t::error<512>("FAIL: %s%s: expected %.12g, got %.12g",section.c_str(),name,expected,actual) ;
+            char message[512] ;
+            std::snprintf( message, sizeof(message), "%s%s: expected %.12g, got %.12g",
+                section.c_str(), name, expected, actual ) ;
+            motor::log::global_t::test( message, false ) ;
         }
 
         template< size_t N, typename A, typename B >
@@ -63,8 +67,9 @@ namespace math_test
                 ctx.section.clear() ;
                 test.run(ctx) ;
                 ++executed ;
-                motor::log::global_t::status<256>("%s: %s (%zu checks, %zu failures)",
-                    before == ctx.failures ? "PASS" : "FAIL",test.name,ctx.checks-checks,ctx.failures-before) ;
+                motor::log::global_t::test( motor::string_t(test.name) + " (" +
+                    motor::to_string(ctx.checks-checks) + " checks, " +
+                    motor::to_string(ctx.failures-before) + " failures)", before == ctx.failures ) ;
             }
             if( executed == 0 )
             {

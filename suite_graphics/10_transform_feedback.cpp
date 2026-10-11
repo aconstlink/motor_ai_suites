@@ -536,7 +536,7 @@ namespace sample
             {
                 *_passed = true ;
                 _quitting = true ;
-                motor::log::global_t::status( "[transform feedback] smoke passed; GPU contents/count need visual verification" ) ;
+                motor::log::global_t::test( "[transform feedback] smoke; GPU contents/count need visual verification", *_passed ) ;
                 close() ;
                 return ;
             }
@@ -554,7 +554,7 @@ namespace sample
                 std::chrono::steady_clock::now() - _started > std::chrono::seconds( 120 ) )
             {
                 _quitting = true ;
-                motor::log::global_t::error( "[transform feedback] smoke timed out" ) ;
+                motor::log::global_t::test( "[transform feedback] smoke completed before timeout", false ) ;
                 close() ;
             }
         }

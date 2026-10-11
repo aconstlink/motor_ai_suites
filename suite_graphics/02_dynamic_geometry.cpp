@@ -296,7 +296,7 @@ namespace sample
         {
             if( _smoke && std::chrono::steady_clock::now() - _started > std::chrono::seconds( 30 ) )
             {
-                motor::log::global::error( "[dynamic] smoke timed out" );
+                motor::log::global_t::test( "[dynamic] smoke completed before timeout", false );
                 close();
             }
         }
@@ -318,8 +318,7 @@ namespace sample
             case 4: _want_square = false; break;
             case 5:
                 *_passed = _added == 2 && _removed == 2 && _square_link == invalid;
-                motor::log::global::status( *_passed ? "[dynamic] lifecycle smoke passed (visual check required)" :
-                    "[dynamic] lifecycle smoke failed" );
+                motor::log::global_t::test( "[dynamic] lifecycle smoke (visual check required)", *_passed );
                 close();
                 break;
             }

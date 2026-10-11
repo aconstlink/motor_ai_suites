@@ -2,6 +2,7 @@ set( sources
     "00_threads_parallel_for.cpp"
     "01_sync_primitives.cpp"
     "02_task_graph.cpp"
+    "03_task_storage.cpp"
 )
 
 find_package( Threads REQUIRED )
@@ -16,6 +17,11 @@ foreach( source IN LISTS sources )
 endforeach()
 
 if( BUILD_TESTING )
+    foreach( scenario schedule disconnect )
+        add_test( NAME concurrent_task_storage_${scenario} COMMAND 03_task_storage ${scenario} )
+        set_tests_properties( concurrent_task_storage_${scenario} PROPERTIES
+            TIMEOUT 30 LABELS "concurrent;concurrent_extended;task_storage" )
+    endforeach()
     foreach( scenario semaphore signal readers contention )
         add_test( NAME concurrent_sync_${scenario} COMMAND 01_sync_primitives ${scenario} )
         set_tests_properties( concurrent_sync_${scenario} PROPERTIES

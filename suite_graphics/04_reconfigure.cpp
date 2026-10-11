@@ -474,7 +474,7 @@ namespace sample
             else
             {
                 *_passed = true ; _quitting = true ;
-                motor::log::global_t::status( "[reconfigure] smoke completed; pixel verification is separate" ) ;
+                motor::log::global_t::test( "[reconfigure] smoke; pixel verification is separate", *_passed ) ;
                 close() ;
             }
         }
@@ -484,7 +484,7 @@ namespace sample
             if( _options.smoke && !_quitting &&
                 std::chrono::steady_clock::now() - _started > std::chrono::seconds( 60 ) )
             {
-                motor::log::global_t::error( "[reconfigure] smoke timeout" ) ;
+                motor::log::global_t::test( "[reconfigure] smoke completed before timeout", false ) ;
                 _quitting = true ; close() ;
             }
         }

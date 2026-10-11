@@ -164,15 +164,13 @@ static int run_tests( int argc, char ** argv )
                 size_t( 100 ), size_t( hardware ) * 128 } )
             {
                 bool const result = this_file::parallel( 13, count ) ;
-                if( result ) motor::log::global_t::status<128>( "range size %zu: PASS", count ) ;
-                else motor::log::global_t::error<128>( "range size %zu: FAIL", count ) ;
+                motor::log::global_t::test( "range size " + motor::to_string( count ), result ) ;
                 ok = result && ok ;
             }
         }
     }
 
-    if( ok ) motor::log::global_t::status<128>( "[concurrent] %s: PASS", mode.c_str() ) ;
-    else motor::log::global_t::error<128>( "[concurrent] %s: FAIL", mode.c_str() ) ;
+    motor::log::global_t::test( "[concurrent] " + mode, ok ) ;
     return ok ? 0 : 1 ;
 }
 

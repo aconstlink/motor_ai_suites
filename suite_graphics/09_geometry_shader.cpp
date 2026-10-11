@@ -373,7 +373,7 @@ namespace sample
             {
                 *_passed = true ;
                 _quitting = true ;
-                motor::log::global_t::status( "[geometry shader] smoke passed; pixels require visual verification" ) ;
+                motor::log::global_t::test( "[geometry shader] smoke; pixels require visual verification", *_passed ) ;
                 close() ;
                 return ;
             }
@@ -387,7 +387,7 @@ namespace sample
                 std::chrono::steady_clock::now() - _started > std::chrono::seconds( 60 ) )
             {
                 _quitting = true ;
-                motor::log::global_t::error( "[geometry shader] smoke timed out" ) ;
+                motor::log::global_t::test( "[geometry shader] smoke completed before timeout", false ) ;
                 close() ;
             }
         }

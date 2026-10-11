@@ -19,9 +19,7 @@ namespace this_file
 
     bool_t check( bool_t const value, char const * message )
     {
-        if( value ) motor::log::global_t::status<256>( "PASS: %s", message ) ;
-        else motor::log::global_t::error<256>( "FAIL: %s", message ) ;
-        return value ;
+        return motor::log::global_t::test( message, value ) ;
     }
 
     bool_t input_test( void_t )

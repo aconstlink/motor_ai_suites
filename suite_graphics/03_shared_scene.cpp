@@ -94,7 +94,7 @@ namespace sample
 
         void_t fail( char_cptr_t const message ) noexcept
         {
-            motor::log::global_t::error( message ) ;
+            motor::log::global_t::test( message, false ) ;
             _quitting = true ;
             close() ;
         }
@@ -391,7 +391,7 @@ namespace sample
             {
                 *_passed = true ;
                 _quitting = true ;
-                motor::log::global_t::status( "[shared scene] single-backend smoke completed; pixels require visual verification" ) ;
+                motor::log::global_t::test( "[shared scene] single-backend smoke; pixels require visual verification", *_passed ) ;
                 close() ;
                 return ;
             }
@@ -411,9 +411,7 @@ namespace sample
             {
                 *_passed = _opens == 2 && _closes == 2 && _ready_count == 2 ;
                 _quitting = true ;
-                motor::log::global_t::status( *_passed ?
-                    "[shared scene] lifecycle smoke completed; pixels require visual verification" :
-                    "[shared scene] lifecycle smoke failed" ) ;
+                motor::log::global_t::test( "[shared scene] lifecycle smoke; pixels require visual verification", *_passed ) ;
                 close() ;
             }
         }

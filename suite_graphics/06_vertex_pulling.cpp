@@ -295,7 +295,7 @@ namespace sample
             if( ++_frames < 3 ) return ;
             *_passed = true ;
             _quitting = true ;
-            motor::log::global_t::status( "[vertex pulling] smoke passed: shaders ready, draws and updates on every backend; pixels need visual verification" ) ;
+            motor::log::global_t::test( "[vertex pulling] shaders ready, draws and updates on every backend; pixels need visual verification", *_passed ) ;
             close() ;
         }
 
@@ -305,7 +305,7 @@ namespace sample
                 std::chrono::steady_clock::now() - _started > std::chrono::seconds( 30 ) )
             {
                 _quitting = true ;
-                motor::log::global_t::error( "[vertex pulling] smoke timed out" ) ;
+                motor::log::global_t::test( "[vertex pulling] smoke completed before timeout", false ) ;
                 close() ;
             }
         }

@@ -216,6 +216,7 @@ int main( int argc, char** argv )
         motor::shared( sample::triangle_app( dual, frames ) ) );
     auto const result = carrier->exec();
     motor::memory::release_ptr( carrier );
+    motor::log::global_t::test( "[triangle] application completed; pixels require visual verification", result == 0 );
     motor::concurrent::global::deinit();
     motor::log::global::deinit();
     motor::profiling::global::deinit();

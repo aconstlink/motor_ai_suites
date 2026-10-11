@@ -258,7 +258,7 @@ namespace sample
         {
             if( _smoke && std::chrono::steady_clock::now() - _started > std::chrono::seconds( 30 ) )
             {
-                motor::log::global::error( "[lifecycle] smoke test timed out" );
+                motor::log::global_t::test( "[lifecycle] smoke completed before timeout", false );
                 _quitting = true;
                 close();
             }
@@ -300,8 +300,7 @@ namespace sample
                 if( _secondary_window == invalid_window )
                 {
                     *_smoke_passed = _open_count == 2 && _close_count == 2 && _ready_count == 2;
-                    motor::log::global::status( *_smoke_passed ?
-                        "[lifecycle] smoke test passed" : "[lifecycle] smoke test failed" );
+                    motor::log::global_t::test( "[lifecycle] smoke test", *_smoke_passed );
                     _quitting = true;
                     close();
                 }

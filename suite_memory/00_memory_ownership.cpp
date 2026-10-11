@@ -94,8 +94,7 @@ int main( int argc, char ** argv )
             return result ;
         }
         result = ok ? 0 : 1 ;
-        if( ok ) motor::log::global_t::status<256>( "[memory ownership] %s: PASS", mode.c_str() ) ;
-        else motor::log::global_t::error<256>( "[memory ownership] %s: FAIL", mode.c_str() ) ;
+        motor::log::global_t::test( "[memory ownership] " + mode, ok ) ;
     }
     motor::log::global_t::deinit() ;
     bool const clean = motor::memory::global_t::dump_to_std() == 0 ;

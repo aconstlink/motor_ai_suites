@@ -501,12 +501,13 @@ namespace sample
             {
                 if( _windows[w].submissions != _windows[w].frames*_objects.size()*passes )
                 {
-                    motor::log::global_t::error("[lighting scene] invalid submission count") ;
+                    motor::log::global_t::test("[lighting scene] expected submission count", false) ;
                     _quitting = true ; close() ; return ;
                 }
             }
-            motor::log::global_t::status<256>( "[lighting scene] phase %zu passed: mode=%d mask=%zu, %zu draws/window/frame",
-                _phase, _frame_mode, _frame_mask, _objects.size()*passes ) ;
+            motor::log::global_t::test( "[lighting scene] phase " + motor::to_string(_phase) +
+                ": mode=" + motor::to_string(_frame_mode) + " mask=" + motor::to_string(_frame_mask) +
+                ", " + motor::to_string(_objects.size()*passes) + " draws/window/frame", true ) ;
             if( ++_phase == 10 )
             {
                 *_passed = true ; _quitting = true ; close() ; return ;
@@ -522,7 +523,7 @@ namespace sample
         {
             if( _opts.smoke && !_quitting && std::chrono::steady_clock::now()-_started > std::chrono::seconds(90) )
             {
-                motor::log::global_t::error("[lighting scene] smoke timeout") ;
+                motor::log::global_t::test("[lighting scene] smoke completed before timeout", false) ;
                 _quitting = true ; close() ;
             }
         }
