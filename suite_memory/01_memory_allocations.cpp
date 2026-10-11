@@ -15,6 +15,7 @@ namespace this_file
 
     bool_t raw( void_t )
     {
+        motor::log::global_t::status("------------------- raw ----------------------") ;
         auto const before = memory_t::get_sib() ;
         bool_t ok = true ;
         bool_t purposes_ok = true ;
@@ -48,6 +49,8 @@ namespace this_file
 
     bool_t typed_array( void_t )
     {
+        motor::log::global_t::status("------------------- typed_array ----------------------") ;
+
         auto * data = memory_t::alloc<element>( size_t(4), "typed array test" ) ;
         for( size_t i = 0; i < 4; ++i ) element::addresses[i] = data + i ;
         data = memory_t::dealloc( data, size_t(4) ) ;
@@ -66,6 +69,7 @@ namespace this_file
 
     bool_t containers( void_t )
     {
+        motor::log::global_t::status("------------------- malloc_copy ----------------------") ;
         auto const before = memory_t::get_sib() ;
         bool_t ok = true ;
         {
@@ -84,6 +88,8 @@ namespace this_file
 
     bool_t malloc_copy( void_t )
     {
+        motor::log::global_t::status("------------------- malloc_copy ----------------------") ;
+
         auto const before = memory_t::get_sib() ;
         bool_t ok = true ;
         {
@@ -102,6 +108,8 @@ namespace this_file
 
     bool_t malloc_move( bool_t const assignment )
     {
+        motor::log::global_t::status("------------------- malloc_move ----------------------") ;
+
         auto const before = memory_t::get_sib() ;
         bool_t ok = true ;
         {
@@ -129,25 +137,44 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
+    using namespace motor::core::types ;
     int result = 2 ;
     {
         motor::string_t const mode = argc == 2 ? argv[1] : "" ;
         motor::log::global_t::status<256>( "[memory allocations] %s", mode.c_str() ) ;
-        bool ok = false ;
-        if( mode == "raw" ) ok = this_file::raw() ;
-        else if( mode == "typed_array" ) ok = this_file::typed_array() ;
-        else if( mode == "containers" ) ok = this_file::containers() ;
-        else if( mode == "malloc_copy" ) ok = this_file::malloc_copy() ;
-        else if( mode == "malloc_move" ) ok = this_file::malloc_move( false ) ;
-        else if( mode == "malloc_assignment" ) ok = this_file::malloc_move( true ) ;
+        bool_t const all = mode == "--smoke" || mode == "all" ;
+        struct test_case
+        {
+            char_cptr_t name ;
+            bool_t (*run)( void_t ) ;
+        } ;
+        test_case const cases[] = {
+            { "raw", this_file::raw },
+            { "typed_array", this_file::typed_array },
+            { "containers", this_file::containers },
+            { "malloc_copy", this_file::malloc_copy },
+            { "malloc_move", []( void_t ) { return this_file::malloc_move( false ) ; } },
+            { "malloc_assignment", []( void_t ) { return this_file::malloc_move( true ) ; } }
+        } ;
+        bool_t ok = true ;
+        size_t executed = 0 ;
+        for( auto const & test : cases )
+        {
+            if( !all && mode != test.name ) continue ;
+            bool_t const passed = test.run() ;
+            motor::log::global_t::test( motor::string_t("[memory allocations] ") + test.name, passed ) ;
+            ok = passed && ok ;
+            ++executed ;
+        }
+        if( executed == 0 )
+        {
+            motor::log::global_t::error( "Usage: 01_memory_allocations --smoke|all|raw|typed_array|containers|malloc_copy|malloc_move|malloc_assignment" ) ;
+        }
         else
         {
-            motor::log::global_t::error( "Usage: 01_memory_allocations raw|typed_array|containers|malloc_copy|malloc_move|malloc_assignment" ) ;
-            motor::log::global_t::deinit() ;
-            return result ;
+            result = ok ? 0 : 1 ;
+            if( all ) motor::log::global_t::test( "[memory allocations] all scenarios", ok ) ;
         }
-        result = ok ? 0 : 1 ;
-        motor::log::global_t::test( "[memory allocations] " + mode, ok ) ;
     }
     motor::log::global_t::deinit() ;
     bool const clean = motor::memory::global_t::dump_to_std() == 0 ;

@@ -80,21 +80,41 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
+    using namespace motor::core::types ;
     int result = 2 ;
     {
         motor::string_t const mode = argc == 2 ? argv[1] : "" ;
-        bool ok = false ;
-        if( mode == "sharing" ) ok = this_file::sharing() ;
-        else if( mode == "guard" ) ok = this_file::guard() ;
-        else if( mode == "concurrent" ) ok = this_file::concurrent() ;
+        bool_t const all = mode == "--smoke" || mode == "all" ;
+        struct test_case
+        {
+            char_cptr_t name ;
+            bool_t (*run)( void_t ) ;
+        } ;
+        test_case const cases[] = {
+            { "sharing", this_file::sharing },
+            { "guard", this_file::guard },
+            { "concurrent", this_file::concurrent }
+        } ;
+        bool_t ok = true ;
+        size_t executed = 0 ;
+        for( auto const & test : cases )
+        {
+            if( !all && mode != test.name ) continue ;
+            this_file::tracked::destroyed.store( 0 ) ;
+            bool_t const passed = test.run() ;
+            motor::log::global_t::test( motor::string_t("[memory ownership] ") + test.name, passed ) ;
+            ok = passed && ok ;
+            ++executed ;
+        }
+        if( executed == 0 )
+        {
+            motor::log::global_t::error( "Usage: 00_memory_ownership --smoke|all|sharing|guard|concurrent" ) ;
+        }
         else
         {
-            motor::log::global_t::error( "Usage: 00_memory_ownership sharing|guard|concurrent" ) ;
-            motor::log::global_t::deinit() ;
-            return result ;
+            result = ok ? 0 : 1 ;
+            if( all ) motor::log::global_t::test( "[memory ownership] all scenarios", ok ) ;
         }
-        result = ok ? 0 : 1 ;
-        motor::log::global_t::test( "[memory ownership] " + mode, ok ) ;
     }
     motor::log::global_t::deinit() ;
     bool const clean = motor::memory::global_t::dump_to_std() == 0 ;

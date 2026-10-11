@@ -1,8 +1,12 @@
 # Memory Tests
 
 Console regression tests for Motor's memory APIs. No graphics context or assets
-are required. Every scenario runs in its own process and checks Motor's memory
-dump after releasing test objects and shutting down logging.
+are required. Individual scenarios run in separate processes. The `--smoke`
+option (alias `all`) runs all scenarios of an executable in one process, reports
+each result with `motor::log::global_t::test`, and continues after failed checks.
+Both modes check Motor's memory dump after releasing test objects and shutting
+down logging. Exit codes are 0 for success, 1 for failed checks or leaks, and 2
+for invalid arguments.
 
 ## Ownership
 
@@ -36,6 +40,18 @@ system allocations. They test correctness rather than allocator speed.
 cmake --build build --config Release --parallel 4 --target 00_memory_ownership 01_memory_allocations
 ctest --test-dir build -C Release -L memory --output-on-failure --no-tests=error
 ```
+
+Run all ownership or allocation checks directly:
+
+```sh
+build/bin/Release/00_memory_ownership --smoke
+build/bin/Release/01_memory_allocations --smoke
+```
+
+Use `ctest --test-dir build -C Release -L memory_smoke --output-on-failure`
+to run both aggregate tests. Each aggregate has one final memory dump; use the
+individual scenarios to isolate leaks. Smoke mode includes the known failing
+regressions below and does not hide them.
 
 For both new areas, use `-L "concurrent_extended|memory"`. The Windows and Linux
 CTest workflows build and run these tests in Debug and Release. Regression

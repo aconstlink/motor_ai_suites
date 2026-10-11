@@ -9,6 +9,10 @@ foreach( source 00_memory_ownership.cpp 01_memory_allocations.cpp )
 endforeach()
 
 if( BUILD_TESTING )
+    add_test( NAME memory_ownership_smoke COMMAND 00_memory_ownership --smoke )
+    add_test( NAME memory_allocations_smoke COMMAND 01_memory_allocations --smoke )
+    set_tests_properties( memory_ownership_smoke memory_allocations_smoke
+        PROPERTIES TIMEOUT 60 LABELS "memory;memory_smoke" )
     foreach( scenario sharing guard concurrent )
         add_test( NAME memory_ownership_${scenario} COMMAND 00_memory_ownership ${scenario} )
         set_tests_properties( memory_ownership_${scenario} PROPERTIES TIMEOUT 30 LABELS memory )
