@@ -3,6 +3,7 @@ set( sources
     "01_sync_primitives.cpp"
     "02_task_graph.cpp"
     "03_task_storage.cpp"
+    "04_datas_locking.cpp"
 )
 
 find_package( Threads REQUIRED )
@@ -17,6 +18,11 @@ foreach( source IN LISTS sources )
 endforeach()
 
 if( BUILD_TESTING )
+    foreach( scenario lifecycle recursive try_access independent contention wakeup )
+        add_test( NAME concurrent_datas_${scenario} COMMAND 04_datas_locking ${scenario} )
+        set_tests_properties( concurrent_datas_${scenario} PROPERTIES
+            TIMEOUT 30 LABELS "concurrent;concurrent_extended;datas" )
+    endforeach()
     foreach( scenario schedule disconnect )
         add_test( NAME concurrent_task_storage_${scenario} COMMAND 03_task_storage ${scenario} )
         set_tests_properties( concurrent_task_storage_${scenario} PROPERTIES

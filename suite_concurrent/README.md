@@ -50,6 +50,58 @@ not detect capacity retained and repeatedly increased during runtime.
 
 Run only these regressions with `ctest --test-dir build -C Release -L task_storage --output-on-failure --no-tests=error`.
 
+## Backend Data Locking (No Rendering)
+
+`04_datas_locking [--smoke|lifecycle|recursive|try_access|independent|contention|wakeup]`
+tests the actual `motor::platform::datas<T>` header with dummy data. It links only
+Concurrent, Memory and Log, with no window, graphics backend or GPU context.
+
+| Scenario | Checks |
+| --- | --- |
+| `lifecycle` | Creation, lookup, missing IDs, growth to 81 entries, stable payload addresses, invalidation, slot reuse and cleanup |
+| `recursive` | Nested blocking and try access to the same entry, preserving outer ownership after inner guards leave, acquisition by another thread afterwards |
+| `try_access` | Missing entry, rejection while another thread owns the entry, successful acquisition after release |
+| `independent` | Access to a second entry while the first entry remains locked |
+| `contention` | Six threads perform 12,000 accesses; callbacks must remain exclusive and preserve values |
+| `wakeup` | 32 rounds of four contenders, checking exclusion, wakeup and reacquisition |
+
+No argument runs all scenarios. CTest runs each scenario in its own process under
+the `datas` and `concurrent` labels, so existing console CI includes these tests.
+Each scenario has a 20-second watchdog; CTest additionally enforces 30 seconds.
+On a watchdog failure the process exits without normal cleanup, because joining
+deadlocked workers would hang. Normal exits require no live dummy objects and an
+empty Motor memory dump.
+
+The test harness uses standard-library synchronization. Contended dummy values
+are atomic, so broken mutual exclusion does not itself create payload data races.
+These tests cannot prove that the guard's internal metadata is race-free; a
+ThreadSanitizer run is useful in addition to repeated functional runs. Recursive
+access while a container writer is pending is not covered here.
+
+```sh
+cmake --build build --config Release --target 04_datas_locking --parallel 2
+ctest --test-dir build -C Release -L datas --output-on-failure --no-tests=error
+ctest --test-dir build -C Release -L datas --repeat until-fail:10 --output-on-failure
+```
+
+### Initial Datas Results (2026-10-12)
+
+With Motor `3d240b4`, Windows MSVC Debug and Release both passed five of the six
+scenarios. `contention` hit the 20-second watchdog in both configurations and in
+a second Release run. The five completed scenarios had empty memory dumps.
+Do not interpret the passing recursive test as proof of thread safety.
+
+Code inspection still shows owner fast paths in `guard_data::enter()` and
+`try_enter()`, plus the updates in `leave()`, accessing `tid`/`entries` outside
+`mtx`. These accesses race with other threads and the wait predicate can change
+without the condition-variable mutex. This is a concrete suspect for the stall;
+the timeout alone does not identify the exact interleaving.
+
+The test and Motor Memory/Log sources also compiled with GCC ThreadSanitizer in
+WSL. That executable could not run: the sanitizer aborted at startup with
+`FATAL: ThreadSanitizer: unexpected memory mapping`. No sanitizer diagnosis was
+obtained. The engine implementation was not changed as part of these tests.
+
 ## Running
 
 ```sh
