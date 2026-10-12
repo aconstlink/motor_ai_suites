@@ -26,6 +26,8 @@ foreach( source IN LISTS sources )
 endforeach()
 
 target_link_libraries( 05_scene_benchmark PRIVATE motor::scene motor::gfx )
+# Match physical render dimensions when comparing with DPI-aware frameworks.
+set_property( TARGET 05_scene_benchmark PROPERTY VS_DPI_AWARE "PerMonitor" )
 target_link_libraries( 03_shared_scene PRIVATE motor::gfx )
 target_link_libraries( 07_vertex_pulling_field PRIVATE motor::gfx )
 target_link_libraries( 08_render_to_texture PRIVATE motor::gfx )

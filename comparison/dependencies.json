@@ -1,0 +1,6 @@
+{
+  "raylib": { "url": "https://github.com/raysan5/raylib.git", "revision": "fdc8b37391b52fdc8cc62af37d02235c9ec59daa", "directory": "raylib", "submodules": false },
+  "bgfx": { "url": "https://github.com/bkaradzic/bgfx.cmake.git", "revision": "a046ef085427ff7dd5a499d7f48e06f5d1bb049d", "directory": "bgfx.cmake", "submodules": true },
+  "cinder": { "url": "https://github.com/cinder/Cinder.git", "revision": "f90f332d1a4d453282c76435f3401271f25922f9", "directory": "cinder", "submodules": false },
+  "ezengine": { "url": "https://github.com/ezEngine/ezEngine.git", "revision": "e70f5f4d327f6db0e42fe97224f08ed42ddf660e", "directory": "ezengine", "submodules": false }
+}

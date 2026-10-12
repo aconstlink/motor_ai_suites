@@ -42,6 +42,7 @@ namespace sample
         float _color[3] = { 0.9f, 0.4f, 0.15f };
         motor::graphics::data_variable<motor::math::vec4f_t>* _color_variable = nullptr;
         bool _smoke;
+        bool _gl_only;
         unsigned _step = 0;
         unsigned _step_frames = 0;
         unsigned _open_count = 0;
@@ -72,8 +73,8 @@ namespace sample
         }
 
     public:
-        window_lifecycle_app( bool smoke, bool* passed ) noexcept
-            : _smoke( smoke ), _smoke_passed( passed ) {}
+        window_lifecycle_app( bool smoke, bool gl_only, bool* passed ) noexcept
+            : _smoke( smoke ), _gl_only( gl_only ), _smoke_passed( passed ) {}
 
         void on_init() noexcept override
         {
@@ -171,7 +172,8 @@ namespace sample
             if( _want_secondary && _secondary_window == invalid_window && !_quitting )
             {
                 _secondary_window = open_window(
-                    secondary_backend, secondary_title, 740 );
+                    _gl_only ? motor::application::graphics_generation::gen4_gl4 : secondary_backend,
+                    _gl_only ? "motor | lifecycle | OpenGL 4 secondary" : secondary_title, 740 );
                 _secondary_ready = false;
                 ++_open_count;
                 motor::log::global::status( "[lifecycle] secondary window requested" );
@@ -245,7 +247,7 @@ namespace sample
             if( ImGui::Begin( "Window lifecycle", nullptr, ImGuiWindowFlags_NoSavedSettings ) )
             {
                 ImGui::BeginDisabled( _smoke || _closing_secondary );
-                ImGui::Checkbox( secondary_label, &_want_secondary );
+                ImGui::Checkbox( _gl_only ? "Second OpenGL 4 window" : secondary_label, &_want_secondary );
                 ImGui::ColorEdit3( "Color", _color );
                 ImGui::EndDisabled();
                 ImGui::Text( "Opened: %u   Closed: %u", _open_count, _close_count );
@@ -336,19 +338,21 @@ namespace sample
 int main( int argc, char** argv )
 {
     bool smoke = false;
+    bool gl_only = false;
     for( int i = 1; i < argc; ++i )
     {
         if( std::strcmp( argv[i], "--smoke" ) == 0 ) smoke = true;
+        else if( std::strcmp( argv[i], "--gl-only" ) == 0 ) gl_only = true;
         else
         {
-            motor::log::global_t::status( "Usage: 01_window_lifecycle [--smoke]" );
+            motor::log::global_t::status( "Usage: 01_window_lifecycle [--smoke] [--gl-only]" );
             motor::log::global_t::deinit();
             return std::strcmp( argv[i], "--help" ) == 0 ? 0 : 2;
         }
     }
     bool smoke_passed = false;
     motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
-        motor::shared( sample::window_lifecycle_app( smoke, &smoke_passed ) ) );
+        motor::shared( sample::window_lifecycle_app( smoke, gl_only, &smoke_passed ) ) );
     auto const result = carrier->exec();
     motor::memory::release_ptr( carrier );
     motor::concurrent::global::deinit();

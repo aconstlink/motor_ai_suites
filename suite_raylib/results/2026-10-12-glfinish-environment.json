@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-10-12T22:08:38.0152497+02:00",
+  "cpu": [
+    {
+      "Name": "Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz",
+      "NumberOfCores": 4,
+      "NumberOfLogicalProcessors": 8
+    }
+  ],
+  "gpu": [
+    {
+      "Name": "NVIDIA GeForce RTX 2060",
+      "DriverVersion": "32.0.15.9621"
+    }
+  ],
+  "os": {
+    "Caption": "Microsoft Windows 11 Pro",
+    "Version": "10.0.26100",
+    "BuildNumber": "26100"
+  },
+  "suites_commit": "d68f55c942191b2816a68e8b36d895d54e014c6f",
+  "motor_commit": "cc4c402daf10b05404c1e158f15beb2449447330",
+  "working_tree": [
+    " M BUILDING.md",
+    " M CMakeLists.txt",
+    " M README.md",
+    " m motor",
+    " M suite_graphics/01_window_lifecycle.cpp",
+    " M suite_graphics/CMakeLists.txt",
+    "?? comparison/",
+    "?? externals/",
+    "?? suite_raylib/"
+  ],
+  "motor_working_tree": [
+    " M platform/graphics/gl/gl4.cpp"
+  ],
+  "executables": [
+    {
+      "Algorithm": "SHA256",
+      "Hash": "17E801C5DFCAA28F49C60406FE2C3693F6AE2AE12B01300324CE916D218F98E4",
+      "Path": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\bin\\Release\\05_scene_benchmark.exe"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "8CB368B995522F1EBFFB17F388BD83E3E5EDDA3AE4C61DA41022F50C6A53EC6F",
+      "Path": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\bin\\Release\\00_raylib_benchmark.exe"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "17E801C5DFCAA28F49C60406FE2C3693F6AE2AE12B01300324CE916D218F98E4",
+      "Path": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\glfinish-ab\\finish-on-20261012-220339\\05_scene_benchmark.exe"
+    }
+  ],
+  "motor_platform_libraries": [
+    {
+      "Algorithm": "SHA256",
+      "Hash": "278C838AFCEA16100BB3536229F4FF0199C6A478B693BECA8E36CCB0C11293BC",
+      "Path": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\bin\\Release\\motor_platform.dll"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "29414912B18B86C17F994CD6CB89819C027D899A5DF6D3A6E2C043A00F0CD7D2",
+      "Path": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\glfinish-ab\\finish-on-20261012-220339\\motor_platform.dll"
+    }
+  ],
+  "gl4_sources": [
+    {
+      "Algorithm": "SHA256",
+      "Hash": "B5011FD8C677B357D9F670B4410B4654280CBD53BB038E280410D51BE860D5BE",
+      "Path": "E:\\repos_aconstlink\\motor_ai_suites\\motor\\platform\\graphics\\gl\\gl4.cpp"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "13688FB7897F5C82B92F7A7736EA3CA89DBC0FE429C045339886EFFE5945745F",
+      "Path": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\glfinish-ab\\finish-on-20261012-220339\\gl4-finish-on.cpp"
+    }
+  ],
+  "finish_on_directory": "E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/glfinish-ab/finish-on-20261012-220339",
+  "sources": [
+    {
+      "Algorithm": "SHA256",
+      "Hash": "D09E88C3A55FFFDFBBDA45374B1617FE740077D9A259F27DCA3CB550D26CEEF4",
+      "Path": "E:\\repos_aconstlink\\motor_ai_suites\\suite_graphics\\05_scene_benchmark.cpp"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "51CA0AB08CD5D04F91CE32037AE7DEF4BB336105CF25756B9CB1A05C6FA9134E",
+      "Path": "E:\\repos_aconstlink\\motor_ai_suites\\suite_raylib\\00_raylib_benchmark.cpp"
+    }
+  ],
+  "configuration": "Release",
+  "warmup": 180,
+  "frames": 600,
+  "repeats": 3,
+  "normalize_client_size": true,
+  "expected_client_width": 1280,
+  "expected_client_height": 720,
+  "objects": [
+    100,
+    1000,
+    5000
+  ],
+  "metric": "CPU frame-start interval; not GPU time or display FPS"
+}

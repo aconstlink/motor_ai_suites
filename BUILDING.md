@@ -1,5 +1,12 @@
 # Building the samples
 
+## Raylib benchmark
+
+`MOTOR_AI_BUILD_RAYLIB=ON` adds raylib under `externals/raylib` and the regular
+`00_raylib_benchmark` executable under `suites/suite_raylib`. Build and start it
+like a Motor sample, using the same solution and configuration. No nested builds
+or other comparison frameworks are included. See the [raylib guide](suite_raylib/README.md).
+
 ## Wire console tests
 
 Build targets `00_wire_slots` and `01_wire_bridges`, then run:
@@ -103,6 +110,7 @@ For a bounded automated lifecycle check:
 
 ```sh
 build/bin/Release/01_window_lifecycle.exe --smoke
+build/bin/Release/01_window_lifecycle.exe --smoke --gl-only
 
 # Linux, single-configuration build
 build/bin/01_window_lifecycle --smoke
@@ -111,8 +119,9 @@ build/bin/01_window_lifecycle --smoke
 This opens/closes the secondary window twice, changes colors between steps, checks that the
 shader becomes ready after both openings, and exits. It returns a nonzero
 code if the sequence fails, times out after 30 seconds, or leaves entries in
-Motor's memory manager. On Windows it requires OpenGL and D3D11 support;
-on Linux only OpenGL is used. It does not compare rendered pixels or certify
+Motor's memory manager. On Windows the default requires OpenGL and D3D11 support;
+`--gl-only` uses OpenGL for both windows, including the reopened secondary window.
+On Linux only OpenGL is used. It does not compare rendered pixels or certify
 that native graphics resources are leak-free.
 
 ## Dynamic geometry and variable sets
