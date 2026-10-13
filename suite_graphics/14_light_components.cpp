@@ -58,6 +58,8 @@ namespace sample
             size_t active = 0 ;
             bool_t point[light_count] = {} ;
             vec3_t light_value[light_count] ;
+            vec3_t light_color[light_count] ;
+            float_t light_intensity[light_count] = {} ;
             window_data( void_t ) noexcept = default ;
             window_data( window_data const & ) = delete ;
             window_data( window_data && rhs ) noexcept : id(rhs.id), camera(std::move(rhs.camera)),
@@ -67,7 +69,10 @@ namespace sample
                 // Only moved during app construction, before queued lambdas borrow this.
                 assert(id == window_id_t(-1)) ;
                 for( size_t i = 0 ; i < light_count ; ++i )
-                { point[i] = rhs.point[i] ; light_value[i] = rhs.light_value[i] ; }
+                {
+                    point[i] = rhs.point[i] ; light_value[i] = rhs.light_value[i] ;
+                    light_color[i] = rhs.light_color[i] ; light_intensity[i] = rhs.light_intensity[i] ;
+                }
             }
         } ;
 
@@ -163,20 +168,20 @@ namespace sample
                 }
                 else
                 {
-                    // The visitor currently forwards only direction/position/type.
-                    // Fixed white light and a six-unit falloff keep this test on that API.
+                    // Radius has no binding yet; both point lights use a six-unit falloff.
                     source += R"(
                         vec3_t u_direction : light_direction ; vec3_t u_position : light_position ;
                         vec3_t u_eye : camera_position ; bool_t is_point_light ;
+                        vec3_t u_light_color : light_color ; float_t u_light_intensity : light_intensity ;
                         void main()
                         {
-                            vec3_t l = -u_direction ; float_t energy = 0.32 ;
+                            vec3_t l = -u_direction ; float_t energy = u_light_intensity ;
                             if( is_point_light )
                             {
                                 l = u_position - in.world_pos ;
                                 float_t dist = length( l ) ;
                                 float_t falloff = max( 1.0 - dist / 6.0, 0.0 ) ;
-                                energy = 1.1 * falloff * falloff ;
+                                energy = energy * falloff * falloff ;
                             }
                             l = l / max( length( l ), 0.0001 ) ;
                             vec3_t n = normalize( in.world_nrm ) ;
@@ -185,7 +190,8 @@ namespace sample
                             float_t specular = 0.0 ;
                             if( diffuse > 0.0 )
                             { specular = pow( max( dot( n, normalize( l + v ) ), 0.0 ), 32.0 ) * 0.18 ; }
-                            out.color = vec4_t( (u_albedo * diffuse + as_vec3( specular )) * energy, 0.0 ) ;
+                            vec3_t lit = (u_albedo * diffuse + as_vec3( specular )) ' u_light_color ;
+                            out.color = vec4_t( lit * energy, 0.0 ) ;
                         }
                     )" ;
                 }
@@ -222,6 +228,9 @@ namespace sample
                     vars->data_variable<vec3_t>("u_position")->set(vec3_t(0)) ;
                     vars->data_variable<vec3_t>("u_eye")->set(vec3_t(0,4,10)) ;
                     vars->data_variable<bool_t>("is_point_light")->set(false) ;
+                    // Zero defaults expose a missing visitor update instead of hiding it.
+                    vars->data_variable<vec3_t>("u_light_color")->set(vec3_t(0)) ;
+                    vars->data_variable<float_t>("u_light_intensity")->set(0.0f) ;
                 }
                 size_t const id = _shaders[pass]->add_variable_set(motor::move(vars)) ;
                 auto comp = motor::shared(motor::scene::msl_component_t(motor::share(_shaders[pass]),id,0)) ;
@@ -239,14 +248,15 @@ namespace sample
             // Group + leaf placement, including two lights in one component.
             auto group = motor::shared(motor::scene::logic_group_t()) ;
             auto lc = motor::shared(motor::scene::light_component_t()) ;
-            auto sun = motor::shared(motor::gfx::directional_light_t(vec3_t(-.4f,-1,-.3f).normalized())) ;
+            auto sun = motor::shared(motor::gfx::directional_light_t(
+                .32f,vec4_t(1.0f,.92f,.8f,1),vec3_t(-.4f,-1,-.3f).normalized())) ;
             _sun = sun ; lc->add_light(motor::move(sun)) ;
-            auto first = motor::shared(motor::gfx::point_light_t(1,vec4_t(1),vec3_t(-3,2,0),6)) ;
+            auto first = motor::shared(motor::gfx::point_light_t(1.4f,vec4_t(1,.3f,.12f,1),vec3_t(-3,2,0),6)) ;
             _points[0] = first ; lc->add_light(motor::move(first)) ;
             group->add_component(motor::move(lc)) ;
             {
                 auto leaf = motor::shared(motor::scene::logic_leaf_t()) ;
-                auto second = motor::shared(motor::gfx::point_light_t(1,vec4_t(1),vec3_t(3,2,0),6)) ;
+                auto second = motor::shared(motor::gfx::point_light_t(1.8f,vec4_t(.18f,.5f,1,1),vec3_t(3,2,0),6)) ;
                 _points[1] = second ;
                 leaf->add_component(motor::shared(motor::scene::light_component_t(motor::move(second)))) ;
                 group->add_child(motor::move(leaf)) ;
@@ -294,7 +304,7 @@ namespace sample
             }
             make_lights() ;
             for( size_t i = 0 ; i < 2 ; ++i )
-                _markers[i] = add_object(_points[i]->get_position(),vec3_t(.18f),vec3_t(0),vec3_t(1),true) ;
+                _markers[i] = add_object(_points[i]->get_position(),vec3_t(.18f),vec3_t(0),_points[i]->color(),true) ;
             {
                 motor::graphics::render_state_sets_t s ;
                 s.depth_s.do_change = true ; s.depth_s.ss.do_activate = true ;
@@ -407,6 +417,8 @@ namespace sample
                 motor::scene::light_pass_render_visitor_t pass(1,rid,fe,&window.camera,light) ;
                 motor::scene::node_t::traverser(_root).apply(&pass) ;
                 window.point[active] = light->get_light_type() == motor::gfx::light_type::point ;
+                window.light_color[active] = light->color() ;
+                window.light_intensity[active] = light->intensity() ;
                 window.light_value[active] = window.point[active] ?
                     static_cast<motor::gfx::point_light_ptr_t>(light)->get_position() :
                     static_cast<motor::gfx::directional_light_ptr_t>(light)->get_direction() ;
@@ -438,9 +450,24 @@ namespace sample
                         auto * value = vars->find_data_variable<vec3_t>(window.point[l] ? "u_position" : "u_direction") ;
                         auto * world = vars->find_data_variable<mat4_t>("u_world") ;
                         auto * view = vars->find_data_variable<mat4_t>("u_view") ;
+                        auto * color = vars->find_data_variable<vec3_t>("u_light_color") ;
+                        auto * intensity = vars->find_data_variable<float_t>("u_light_intensity") ;
                         if( !point || !value || !world || !view || point->get() != window.point[l] ) return false ;
+                        if( !color || !intensity || !std::isfinite(intensity->get()) ||
+                            std::abs(intensity->get()-window.light_intensity[l]) > .0001f )
+                        {
+                            motor::log::global_t::test("[light components] light color/intensity binding",false) ;
+                            return false ;
+                        }
                         for( size_t k = 0 ; k < 3 ; ++k )
+                        {
                             if( !std::isfinite(value->get()[k]) || std::abs(value->get()[k]-window.light_value[l][k]) > .0001f ) return false ;
+                            if( !std::isfinite(color->get()[k]) || std::abs(color->get()[k]-window.light_color[l][k]) > .0001f )
+                            {
+                                motor::log::global_t::test("[light components] light color value",false) ;
+                                return false ;
+                            }
+                        }
                         for( size_t k = 0 ; k < 16 ; ++k )
                             if( std::abs(world->get()[k]-obj.trafo->get_computed().get_transformation()[k]) > .0001f ||
                                 std::abs(view->get()[k]-window.camera.get_view_matrix()[k]) > .0001f ) return false ;
@@ -458,7 +485,7 @@ namespace sample
             bool_t ok = verify() ;
             for( size_t w = 0 ; w < count() ; ++w ) ok &= _windows[w].active == expected[_phase] ;
             motor::log::global_t::test("[light components] phase "+motor::to_string(_phase)+
-                " collector / type / light values / transforms / distinct subsets",ok) ;
+                " collector / type / light values / color / intensity / transforms / distinct subsets",ok) ;
             if( !ok ) { fail("[light components] frame validation failed") ; return ; }
             if( ++_phase == 5 ) { *_passed = true ; _quitting = true ; close() ; return ; }
             for( size_t w = 0 ; w < count() ; ++w ) _windows[w].executed.store(0) ;

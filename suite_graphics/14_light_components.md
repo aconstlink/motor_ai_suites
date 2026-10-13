@@ -24,7 +24,9 @@ Graphics smoke runs require a working desktop and are not added to headless CTes
 - Six colored boxes and a floor use two MSL components: ambient/base and lighting.
 - A group owns one light component with a directional light and a point light.
 - A child leaf owns another component with a second point light.
-- Two small unlit white cubes mark point-light positions.
+- A soft warm directional light (intensity 0.32), an orange point light (1.4),
+  and a blue point light (1.8) provide distinct colors and strengths.
+- Two small unlit cubes in the corresponding light colors mark point positions.
 - Light components own the lights. The collector and application borrow them.
 
 Every graphics update clears and reuses the collector, traverses the scene, and
@@ -47,12 +49,14 @@ base/subset bridges. The application does not manually supply light uniforms.
 
 ## Current API Boundary
 
-The current visitor supplies `light_direction`, `light_position` and the named
-boolean `is_point_light`. It does not yet transfer `light::color()`,
-`light::intensity()` or `point_light::get_radius()` to shader variables.
-Consequently all test lights are white; the shader uses fixed strengths and a
-six-unit squared falloff for points. These constants are sample lighting, not a
-claim that the corresponding engine properties are implemented or tested.
+The visitor supplies `light_direction`, `light_position`, `light_color`,
+`light_intensity` and the named boolean `is_point_light`. The shader multiplies
+both diffuse and specular contributions by the light RGB color and intensity.
+Base sets initialize color and intensity to zero; the visitor must populate each
+render subset. No sample-local code writes the per-light uniforms.
+
+`point_light::get_radius()` is not yet forwarded. The shader still uses a fixed
+six-unit squared falloff for points.
 Point radius is initialized to six for consistency, but is not read by the shader.
 
 ## Smoke Coverage
@@ -63,6 +67,8 @@ lights in reverse order. Assertions inspect the actual component-created subsets
 
 - Expected active-light counts and collector contents, without accumulation.
 - Point/directional boolean and the corresponding position/direction values.
+- RGB color and intensity match each source light, including after subset reuse
+  and reversed light order; nonfinite values fail validation.
 - World and view matrices and unique subset IDs across lights/windows per object.
 - Recovery from zero lights and reuse of IDs by a different light type.
 
@@ -73,7 +79,7 @@ and visible attenuation still require visual verification.
 
 ## Verification (2026-10-13)
 
-Windows/MSVC Release, Motor `4e9c25c`:
+Windows/MSVC Release, Motor `1418eff`:
 
 | Run | Result |
 | --- | --- |

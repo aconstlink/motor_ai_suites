@@ -176,11 +176,14 @@ editable stage properties and a direct-rendering comparison switch.
 
 ### 14 Light Components
 
-Directional and moving point lights collected from scene components, then rendered
-with the engine light-pass visitor. Includes additive passes, per-light/view
-subsets, controls, and a smoke sequence that changes light types and order.
+Colored directional and moving point lights collected from scene components, then
+rendered with the engine light-pass visitor using each light's color and intensity.
+Includes additive passes, per-light/view subsets, controls, and a smoke sequence
+that changes light types and order.
 
 [Source](suite_graphics/14_light_components.cpp) | [Data flow and current limits](suite_graphics/14_light_components.md)
+
+![Directional and colored point lights](docs/screenshots/14_light_components.png)
 
 ## Console Tests
 
