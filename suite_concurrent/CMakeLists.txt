@@ -4,6 +4,7 @@ set( sources
     "02_task_graph.cpp"
     "03_task_storage.cpp"
     "04_datas_locking.cpp"
+    "05_datas_cost.cpp"
 )
 
 find_package( Threads REQUIRED )
@@ -18,6 +19,8 @@ foreach( source IN LISTS sources )
 endforeach()
 
 if( BUILD_TESTING )
+    add_test( NAME concurrent_datas_cost COMMAND 05_datas_cost --smoke )
+    set_tests_properties( concurrent_datas_cost PROPERTIES TIMEOUT 40 LABELS "concurrent;datas" RUN_SERIAL TRUE )
     foreach( scenario lifecycle recursive try_access independent contention wakeup )
         add_test( NAME concurrent_datas_${scenario} COMMAND 04_datas_locking ${scenario} )
         set_tests_properties( concurrent_datas_${scenario} PROPERTIES

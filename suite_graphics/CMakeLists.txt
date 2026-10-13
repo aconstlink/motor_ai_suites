@@ -12,6 +12,7 @@ set( sources
     "10_transform_feedback.cpp"
     "11_lighting_scene.cpp"
     "12_scene_wire_lighting.cpp"
+    "13_live_recompile.cpp"
 )
 
 foreach( source IN LISTS sources )
