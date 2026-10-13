@@ -1,4 +1,9 @@
-# Document tokenization
+# Core Tests
+
+- [Binding search: while vs. find_if](02_binding_search.md): isolated string lookup benchmark, without a graphics backend.
+- Document tokenization and OBJ measurements are documented below.
+
+## Document tokenization
 
 ## Sponza OBJ via Motor IO
 

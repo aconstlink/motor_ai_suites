@@ -1,0 +1,223 @@
+Actual MSVC Release object disassembly; complete function bytes verified in linked EXE.
+EXE SHA256: DA088841540F772027709AD511E7F2135EB5041FA184D85BEDE0DFE5916E339B
+
+Size: 48 bytes; verified at EXE file offset 0x1980
+??$find_if_search@_K@this_file@@YA_NAEBV?$vector@_KV?$allocator@_K@std@@@std@@AEB_KAEA_K@Z (bool __cdecl this_file::find_if_search<unsigned __int64>(class std::vector<unsigned __int64,class std::allocator<unsigned __int64> > const &,unsigned __int64 const &,unsigned __int64 &)):
+  0000000000000000: 4C 8B 11           mov         r10,qword ptr [rcx]
+  0000000000000003: 4C 8B 49 08        mov         r9,qword ptr [rcx+8]
+  0000000000000007: 49 8B C2           mov         rax,r10
+  000000000000000A: 4D 3B D1           cmp         r10,r9
+  000000000000000D: 74 11              je          0000000000000020
+  000000000000000F: 48 8B 0A           mov         rcx,qword ptr [rdx]
+  0000000000000012: 48 39 08           cmp         qword ptr [rax],rcx
+  0000000000000015: 74 0C              je          0000000000000023
+  0000000000000017: 48 83 C0 08        add         rax,8
+  000000000000001B: 49 3B C1           cmp         rax,r9
+  000000000000001E: 75 F2              jne         0000000000000012
+  0000000000000020: 32 C0              xor         al,al
+  0000000000000022: C3                 ret
+  0000000000000023: 49 2B C2           sub         rax,r10
+  0000000000000026: 48 C1 F8 03        sar         rax,3
+  000000000000002A: 49 89 00           mov         qword ptr [r8],rax
+  000000000000002D: B0 01              mov         al,1
+  000000000000002F: C3                 ret
+
+Size: 52 bytes; verified at EXE file offset 0x5140
+??$while_search@_K@this_file@@YA_NAEBV?$vector@_KV?$allocator@_K@std@@@std@@AEB_KAEA_K@Z (bool __cdecl this_file::while_search<unsigned __int64>(class std::vector<unsigned __int64,class std::allocator<unsigned __int64> > const &,unsigned __int64 const &,unsigned __int64 &)):
+  0000000000000000: 4C 8B 11           mov         r10,qword ptr [rcx]
+  0000000000000003: 48 C7 C0 FF FF FF  mov         rax,0FFFFFFFFFFFFFFFFh
+                    FF
+  000000000000000A: 4C 8B 49 08        mov         r9,qword ptr [rcx+8]
+  000000000000000E: 4D 2B CA           sub         r9,r10
+  0000000000000011: 49 C1 F9 03        sar         r9,3
+  0000000000000015: 48 FF C0           inc         rax
+  0000000000000018: 49 3B C1           cmp         rax,r9
+  000000000000001B: 73 0C              jae         0000000000000029
+  000000000000001D: 48 8B 0A           mov         rcx,qword ptr [rdx]
+  0000000000000020: 49 39 0C C2        cmp         qword ptr [r10+rax*8],rcx
+  0000000000000024: 75 EF              jne         0000000000000015
+  0000000000000026: 49 3B C1           cmp         rax,r9
+  0000000000000029: 75 03              jne         000000000000002E
+  000000000000002B: 32 C0              xor         al,al
+  000000000000002D: C3                 ret
+  000000000000002E: 49 89 00           mov         qword ptr [r8],rax
+  0000000000000031: B0 01              mov         al,1
+  0000000000000033: C3                 ret
+
+Size: 52 bytes; verified at EXE file offset 0x60E0
+?while_cached@this_file@@YA_NAEBV?$vector@_KV?$allocator@_K@std@@@std@@AEB_KAEA_K@Z (bool __cdecl this_file::while_cached(class std::vector<unsigned __int64,class std::allocator<unsigned __int64> > const &,unsigned __int64 const &,unsigned __int64 &)):
+  0000000000000000: 4C 8B 12           mov         r10,qword ptr [rdx]
+  0000000000000003: 48 C7 C0 FF FF FF  mov         rax,0FFFFFFFFFFFFFFFFh
+                    FF
+  000000000000000A: 48 8B 51 08        mov         rdx,qword ptr [rcx+8]
+  000000000000000E: 4C 8B 09           mov         r9,qword ptr [rcx]
+  0000000000000011: 49 2B D1           sub         rdx,r9
+  0000000000000014: 48 C1 FA 03        sar         rdx,3
+  0000000000000018: 48 FF C0           inc         rax
+  000000000000001B: 48 3B C2           cmp         rax,rdx
+  000000000000001E: 73 09              jae         0000000000000029
+  0000000000000020: 4D 39 14 C1        cmp         qword ptr [r9+rax*8],r10
+  0000000000000024: 75 F2              jne         0000000000000018
+  0000000000000026: 48 3B C2           cmp         rax,rdx
+  0000000000000029: 75 03              jne         000000000000002E
+  000000000000002B: 32 C0              xor         al,al
+  000000000000002D: C3                 ret
+  000000000000002E: 49 89 00           mov         qword ptr [r8],rax
+  0000000000000031: B0 01              mov         al,1
+  0000000000000033: C3                 ret
+
+Size: 67 bytes; verified at EXE file offset 0x5C80
+?pointer_search@this_file@@YA_NAEBV?$vector@_KV?$allocator@_K@std@@@std@@AEB_KAEA_K@Z (bool __cdecl this_file::pointer_search(class std::vector<unsigned __int64,class std::allocator<unsigned __int64> > const &,unsigned __int64 const &,unsigned __int64 &)):
+  0000000000000000: 48 8B 41 08        mov         rax,qword ptr [rcx+8]
+  0000000000000004: 4C 8B 09           mov         r9,qword ptr [rcx]
+  0000000000000007: 4C 3B C8           cmp         r9,rax
+  000000000000000A: 74 22              je          000000000000002E
+  000000000000000C: 48 8B 12           mov         rdx,qword ptr [rdx]
+  000000000000000F: 49 2B C1           sub         rax,r9
+  0000000000000012: 48 83 E0 F8        and         rax,0FFFFFFFFFFFFFFF8h
+  0000000000000016: 4A 8D 0C 08        lea         rcx,[rax+r9]
+  000000000000001A: 49 8B C1           mov         rax,r9
+  000000000000001D: 74 12              je          0000000000000031
+  000000000000001F: 90                 nop
+  0000000000000020: 48 39 10           cmp         qword ptr [rax],rdx
+  0000000000000023: 74 0C              je          0000000000000031
+  0000000000000025: 48 83 C0 08        add         rax,8
+  0000000000000029: 48 3B C1           cmp         rax,rcx
+  000000000000002C: 75 F2              jne         0000000000000020
+  000000000000002E: 32 C0              xor         al,al
+  0000000000000030: C3                 ret
+  0000000000000031: 48 3B C1           cmp         rax,rcx
+  0000000000000034: 74 F8              je          000000000000002E
+  0000000000000036: 49 2B C1           sub         rax,r9
+  0000000000000039: 48 C1 F8 03        sar         rax,3
+  000000000000003D: 49 89 00           mov         qword ptr [r8],rax
+  0000000000000040: B0 01              mov         al,1
+  0000000000000042: C3                 ret
+
+Size: 94 bytes; verified at EXE file offset 0x45E0
+??$unrolled_search@$01@this_file@@YA_NAEBV?$vector@_KV?$allocator@_K@std@@@std@@AEB_KAEA_K@Z (bool __cdecl this_file::unrolled_search<2>(class std::vector<unsigned __int64,class std::allocator<unsigned __int64> > const &,unsigned __int64 const &,unsigned __int64 &)):
+  0000000000000000: 4C 8B 0A           mov         r9,qword ptr [rdx]
+  0000000000000003: 33 C0              xor         eax,eax
+  0000000000000005: 48 8B 11           mov         rdx,qword ptr [rcx]
+  0000000000000008: 4C 8B 51 08        mov         r10,qword ptr [rcx+8]
+  000000000000000C: 4C 2B D2           sub         r10,rdx
+  000000000000000F: 49 C1 FA 03        sar         r10,3
+  0000000000000013: 49 83 FA 02        cmp         r10,2
+  0000000000000017: 72 24              jb          000000000000003D
+  0000000000000019: 0F 1F 80 00 00 00  nop         dword ptr [rax+0000000000000000h]
+                    00
+  0000000000000020: 4C 39 0C C2        cmp         qword ptr [rdx+rax*8],r9
+  0000000000000024: 74 32              je          0000000000000058
+  0000000000000026: 4C 39 4C C2 08     cmp         qword ptr [rdx+rax*8+8],r9
+  000000000000002B: 74 28              je          0000000000000055
+  000000000000002D: 48 83 C0 02        add         rax,2
+  0000000000000031: 49 8B CA           mov         rcx,r10
+  0000000000000034: 48 2B C8           sub         rcx,rax
+  0000000000000037: 48 83 F9 02        cmp         rcx,2
+  000000000000003B: 73 E3              jae         0000000000000020
+  000000000000003D: 49 3B C2           cmp         rax,r10
+  0000000000000040: 73 0E              jae         0000000000000050
+  0000000000000042: 4C 39 0C C2        cmp         qword ptr [rdx+rax*8],r9
+  0000000000000046: 74 10              je          0000000000000058
+  0000000000000048: 48 FF C0           inc         rax
+  000000000000004B: 49 3B C2           cmp         rax,r10
+  000000000000004E: 72 F2              jb          0000000000000042
+  0000000000000050: 75 06              jne         0000000000000058
+  0000000000000052: 32 C0              xor         al,al
+  0000000000000054: C3                 ret
+  0000000000000055: 48 FF C0           inc         rax
+  0000000000000058: 49 89 00           mov         qword ptr [r8],rax
+  000000000000005B: B0 01              mov         al,1
+  000000000000005D: C3                 ret
+
+Size: 118 bytes; verified at EXE file offset 0x4640
+??$unrolled_search@$02@this_file@@YA_NAEBV?$vector@_KV?$allocator@_K@std@@@std@@AEB_KAEA_K@Z (bool __cdecl this_file::unrolled_search<3>(class std::vector<unsigned __int64,class std::allocator<unsigned __int64> > const &,unsigned __int64 const &,unsigned __int64 &)):
+  0000000000000000: 4C 8B 0A           mov         r9,qword ptr [rdx]
+  0000000000000003: 33 C0              xor         eax,eax
+  0000000000000005: 48 8B 11           mov         rdx,qword ptr [rcx]
+  0000000000000008: 4C 8B 51 08        mov         r10,qword ptr [rcx+8]
+  000000000000000C: 4C 2B D2           sub         r10,rdx
+  000000000000000F: 49 C1 FA 03        sar         r10,3
+  0000000000000013: 49 83 FA 03        cmp         r10,3
+  0000000000000017: 72 2B              jb          0000000000000044
+  0000000000000019: 0F 1F 80 00 00 00  nop         dword ptr [rax+0000000000000000h]
+                    00
+  0000000000000020: 4C 39 0C C2        cmp         qword ptr [rdx+rax*8],r9
+  0000000000000024: 74 41              je          0000000000000067
+  0000000000000026: 4C 39 4C C2 08     cmp         qword ptr [rdx+rax*8+8],r9
+  000000000000002B: 74 40              je          000000000000006D
+  000000000000002D: 4C 39 4C C2 10     cmp         qword ptr [rdx+rax*8+10h],r9
+  0000000000000032: 74 2F              je          0000000000000063
+  0000000000000034: 48 83 C0 03        add         rax,3
+  0000000000000038: 49 8B CA           mov         rcx,r10
+  000000000000003B: 48 2B C8           sub         rcx,rax
+  000000000000003E: 48 83 F9 03        cmp         rcx,3
+  0000000000000042: 73 DC              jae         0000000000000020
+  0000000000000044: 49 3B C2           cmp         rax,r10
+  0000000000000047: 73 15              jae         000000000000005E
+  0000000000000049: 0F 1F 80 00 00 00  nop         dword ptr [rax+0000000000000000h]
+                    00
+  0000000000000050: 4C 39 0C C2        cmp         qword ptr [rdx+rax*8],r9
+  0000000000000054: 74 11              je          0000000000000067
+  0000000000000056: 48 FF C0           inc         rax
+  0000000000000059: 49 3B C2           cmp         rax,r10
+  000000000000005C: 72 F2              jb          0000000000000050
+  000000000000005E: 75 07              jne         0000000000000067
+  0000000000000060: 32 C0              xor         al,al
+  0000000000000062: C3                 ret
+  0000000000000063: 48 83 C0 02        add         rax,2
+  0000000000000067: 49 89 00           mov         qword ptr [r8],rax
+  000000000000006A: B0 01              mov         al,1
+  000000000000006C: C3                 ret
+  000000000000006D: 48 FF C0           inc         rax
+  0000000000000070: 49 89 00           mov         qword ptr [r8],rax
+  0000000000000073: B0 01              mov         al,1
+  0000000000000075: C3                 ret
+
+Size: 128 bytes; verified at EXE file offset 0x46C0
+??$unrolled_search@$03@this_file@@YA_NAEBV?$vector@_KV?$allocator@_K@std@@@std@@AEB_KAEA_K@Z (bool __cdecl this_file::unrolled_search<4>(class std::vector<unsigned __int64,class std::allocator<unsigned __int64> > const &,unsigned __int64 const &,unsigned __int64 &)):
+  0000000000000000: 4C 8B 0A           mov         r9,qword ptr [rdx]
+  0000000000000003: 33 C0              xor         eax,eax
+  0000000000000005: 48 8B 11           mov         rdx,qword ptr [rcx]
+  0000000000000008: 4C 8B 51 08        mov         r10,qword ptr [rcx+8]
+  000000000000000C: 4C 2B D2           sub         r10,rdx
+  000000000000000F: 49 C1 FA 03        sar         r10,3
+  0000000000000013: 49 83 FA 04        cmp         r10,4
+  0000000000000017: 72 32              jb          000000000000004B
+  0000000000000019: 0F 1F 80 00 00 00  nop         dword ptr [rax+0000000000000000h]
+                    00
+  0000000000000020: 4C 39 0C C2        cmp         qword ptr [rdx+rax*8],r9
+  0000000000000024: 74 41              je          0000000000000067
+  0000000000000026: 4C 39 4C C2 08     cmp         qword ptr [rdx+rax*8+8],r9
+  000000000000002B: 74 4A              je          0000000000000077
+  000000000000002D: 4C 39 4C C2 10     cmp         qword ptr [rdx+rax*8+10h],r9
+  0000000000000032: 74 39              je          000000000000006D
+  0000000000000034: 4C 39 4C C2 18     cmp         qword ptr [rdx+rax*8+18h],r9
+  0000000000000039: 74 28              je          0000000000000063
+  000000000000003B: 48 83 C0 04        add         rax,4
+  000000000000003F: 49 8B CA           mov         rcx,r10
+  0000000000000042: 48 2B C8           sub         rcx,rax
+  0000000000000045: 48 83 F9 04        cmp         rcx,4
+  0000000000000049: 73 D5              jae         0000000000000020
+  000000000000004B: 49 3B C2           cmp         rax,r10
+  000000000000004E: 73 0E              jae         000000000000005E
+  0000000000000050: 4C 39 0C C2        cmp         qword ptr [rdx+rax*8],r9
+  0000000000000054: 74 11              je          0000000000000067
+  0000000000000056: 48 FF C0           inc         rax
+  0000000000000059: 49 3B C2           cmp         rax,r10
+  000000000000005C: 72 F2              jb          0000000000000050
+  000000000000005E: 75 07              jne         0000000000000067
+  0000000000000060: 32 C0              xor         al,al
+  0000000000000062: C3                 ret
+  0000000000000063: 48 83 C0 03        add         rax,3
+  0000000000000067: 49 89 00           mov         qword ptr [r8],rax
+  000000000000006A: B0 01              mov         al,1
+  000000000000006C: C3                 ret
+  000000000000006D: 48 83 C0 02        add         rax,2
+  0000000000000071: 49 89 00           mov         qword ptr [r8],rax
+  0000000000000074: B0 01              mov         al,1
+  0000000000000076: C3                 ret
+  0000000000000077: 48 FF C0           inc         rax
+  000000000000007A: 49 89 00           mov         qword ptr [r8],rax
+  000000000000007D: B0 01              mov         al,1
+  000000000000007F: C3                 ret

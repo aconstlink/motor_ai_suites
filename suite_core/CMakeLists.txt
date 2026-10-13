@@ -11,6 +11,17 @@ if( BUILD_TESTING )
     endforeach()
 endif()
 
+set( source "02_binding_search.cpp" )
+motor_vs_src_dir( "${source}" )
+add_executable( 02_binding_search "${source}" )
+target_link_libraries( 02_binding_search PRIVATE motor::log )
+set_target_properties( 02_binding_search PROPERTIES FOLDER "suites/suite_core" )
+
+if( BUILD_TESTING )
+    add_test( NAME core_binding_search COMMAND 02_binding_search --verify-only )
+    set_tests_properties( core_binding_search PROPERTIES TIMEOUT 30 LABELS "core" )
+endif()
+
 set( source "01_document_obj.cpp" )
 motor_vs_src_dir( "${source}" )
 add_executable( 01_document_obj "${source}" )
