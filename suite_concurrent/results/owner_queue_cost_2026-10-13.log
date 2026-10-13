@@ -1,0 +1,46 @@
+[1;37;40m[s][1;37;40mLogger online
+[1;37;40m[s][1;37;40m[online] : motor log
+[1;37;40m[s][1;37;40m[owner] shared_datas observed=500208445 pop_calls=0 queue_high_water=0
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch1 observed=167166000 pop_calls=1002 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch32 observed=491310300 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch1 observed=165170000 pop_calls=1006 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch32 observed=488602138 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch1 observed=167667500 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch32 observed=491310300 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch1 observed=27527040 pop_calls=1745 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch32 observed=469405855 pop_calls=1001 queue_high_water=78
+[1;37;40m[s][1;37;40m[owner] shared_datas observed=500456556 pop_calls=0 queue_high_water=0
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch32 observed=491310300 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch1 observed=165170000 pop_calls=1006 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch32 observed=484727544 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] shared_datas observed=499955056 pop_calls=0 queue_high_water=0
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch1 observed=167667500 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=1000 shared_datas median_ms=56.134600 min_ms=54.496300 max_ms=63.258600 ns/op=218.422568
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=1000 queue_datas_batch1 median_ms=64.125000 min_ms=63.662500 max_ms=65.626000 ns/op=249.513619
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=1000 queue_datas_batch32 median_ms=59.002100 min_ms=58.905900 max_ms=61.089200 ns/op=229.580156
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=1000 queue_owned_batch1 median_ms=0.716500 min_ms=0.626000 max_ms=2.349500 ns/op=2.787938
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=1000 queue_owned_batch32 median_ms=0.596200 min_ms=0.561800 max_ms=0.622700 ns/op=2.319844
+[1;37;40m[s][1;37;40m[owner] shared_datas observed=122775881397 pop_calls=0 queue_high_water=0
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch1 observed=167166000 pop_calls=16002 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch32 observed=85287364000 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch1 observed=165170000 pop_calls=16006 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch32 observed=72962466661 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch1 observed=167166000 pop_calls=16002 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch32 observed=85415388000 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch1 observed=167667500 pop_calls=16001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch32 observed=81019811112 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] shared_datas observed=123327341055 pop_calls=0 queue_high_water=0
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch32 observed=85287364000 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch1 observed=165170000 pop_calls=16006 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] queue_owned_batch32 observed=71494767667 pop_calls=1001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] shared_datas observed=123527541434 pop_calls=0 queue_high_water=0
+[1;37;40m[s][1;37;40m[owner] queue_datas_batch1 observed=167667500 pop_calls=16001 queue_high_water=256
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=16000 shared_datas median_ms=70.060000 min_ms=63.907600 max_ms=78.290500 ns/op=257.573529
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=16000 queue_datas_batch1 median_ms=86.488300 min_ms=70.861000 max_ms=106.157800 ns/op=317.971691
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=16000 queue_datas_batch32 median_ms=72.388600 min_ms=71.647600 max_ms=81.958700 ns/op=266.134559
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=16000 queue_owned_batch1 median_ms=2.286200 min_ms=1.674100 max_ms=2.648600 ns/op=8.405147
+[1;37;40m[s][1;37;40m[owner] reads=256000 updates=16000 queue_owned_batch32 median_ms=1.303400 min_ms=1.285000 max_ms=1.307300 ns/op=4.791912
+[1;37;40m[s][1;32;40m[OK][1;37;40m [owner] every update applied, final per-entry counts and sequence sums
+***************************************************
+[manager::dump_to_std] : Dump to std [0] sib
+* Memory manager has no entries.

@@ -5,6 +5,8 @@ set( sources
     "03_task_storage.cpp"
     "04_datas_locking.cpp"
     "05_datas_cost.cpp"
+    "06_variable_set_cost.cpp"
+    "07_owner_queue_cost.cpp"
 )
 
 find_package( Threads REQUIRED )
@@ -18,7 +20,13 @@ foreach( source IN LISTS sources )
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_concurrent" )
 endforeach()
 
+target_link_libraries( 06_variable_set_cost PRIVATE motor::graphics )
+
 if( BUILD_TESTING )
+    add_test( NAME concurrent_variable_set_cost COMMAND 06_variable_set_cost --smoke )
+    add_test( NAME concurrent_owner_queue_cost COMMAND 07_owner_queue_cost --smoke )
+    set_tests_properties( concurrent_variable_set_cost concurrent_owner_queue_cost PROPERTIES
+        TIMEOUT 75 LABELS "concurrent;cost" RUN_SERIAL TRUE )
     add_test( NAME concurrent_datas_cost COMMAND 05_datas_cost --smoke )
     set_tests_properties( concurrent_datas_cost PROPERTIES TIMEOUT 40 LABELS "concurrent;datas" RUN_SERIAL TRUE )
     foreach( scenario lifecycle recursive try_access independent contention wakeup )

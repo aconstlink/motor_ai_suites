@@ -20,6 +20,7 @@ processing. Each application is a separate CMake target.
 ## Start Here
 
 - [Live Recompile and Lock Costs](docs/RECOMPILE_AND_LOCKS.md): shader-layout changes during rendering and isolated `datas` measurements.
+- [Variable Sets and Owner Queues](docs/VARIABLE_SET_AND_QUEUE_COSTS.md): name lookup versus cached pointers, and shared access versus message handoff.
 - [Build and run](BUILDING.md): setup, basic applications, Wire and concurrency tests.
 - [Scene Graph + Wire Lighting](suite_graphics/12_scene_wire_lighting.md): the combined integration sample.
 - [Lighting Gallery](suite_graphics/11_lighting_scene.md): the corresponding low-level rendering sample.
