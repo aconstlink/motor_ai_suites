@@ -4,6 +4,7 @@
 #include <motor/std/string>
 #include <motor/std/vector>
 #include <motor/platform/graphics/datas.hpp>
+#include "support/measured_datas.hpp"
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -14,7 +15,7 @@
 namespace this_file
 {
     using namespace motor::core::types ;
-    namespace diag = motor::platform::diagnostic ;
+    namespace diag = motor::tests::diagnostic ;
     using clock = std::chrono::steady_clock ;
 
     class watchdog
@@ -85,7 +86,9 @@ namespace this_file
     template< bool Measure >
     bool_t run( size_t const rounds, int_t const scenario, diag::mode const mode, char_cptr_t label )
     {
-        motor::platform::datas<payload, Measure> data ;
+        using data_t = std::conditional_t<Measure, motor::tests::datas<payload, true>,
+            motor::platform::datas<payload>> ;
+        data_t data ;
         size_t const ids[] = { create( data, "render" ), create( data, "support" ) } ;
         // Warm the same access path, outside the measured interval.
         for( size_t i = 0 ; i < 500 ; ++i ) data.access( ids[0], []( payload & p ) { p.value = 0 ; } ) ;
@@ -144,7 +147,7 @@ namespace this_file
 
     bool_t failed_try( void_t )
     {
-        motor::platform::datas<payload, true> data ;
+        motor::tests::datas<payload, true> data ;
         auto const id = create( data, "held" ) ;
         diag::counters measured ;
         bool_t ok = true ;
@@ -181,12 +184,12 @@ int main( int argc, char ** argv )
     bool_t ok = true ;
     {
         this_file::watchdog timeout ;
-        namespace diag = motor::platform::diagnostic ;
+        namespace diag = motor::tests::diagnostic ;
         char_cptr_t const names[] = { "serial", "recursive", "independent entries", "same entry", "container growth" } ;
         for( int_t s = 0 ; s < 5 ; ++s )
         {
             motor::log::global_t::status( motor::string_t( "[datas-cost] scenario: " ) + names[s] ) ;
-            ok = this_file::run<false>( rounds, s, diag::mode::off, "compiled out" ) && ok ;
+            ok = this_file::run<false>( rounds, s, diag::mode::off, "original engine datas" ) && ok ;
             ok = this_file::run<true>( rounds, s, diag::mode::off, "recording off" ) && ok ;
             ok = this_file::run<true>( rounds, s, diag::mode::counters, "counters only" ) && ok ;
             ok = this_file::run<true>( rounds, s, diag::mode::timings, "timed" ) && ok ;

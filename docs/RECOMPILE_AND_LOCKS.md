@@ -81,19 +81,27 @@ Workloads:
 - One worker accesses an existing entry while the other creates 64 entries.
 - A held entry receives 100 unsuccessful `try_access` attempts from another thread.
 
-Every timed workload has three controls: instrumentation compiled out, recording
+Every timed workload has three controls: original engine `datas`, recording
 disabled, and counters only. Logging, initialization and warmup are outside the
 measured interval. Thread joining is included in wall time; this matters especially
 for the short smoke runs. Repeat benchmark runs before drawing conclusions.
 
 ### Instrumentation
 
-Existing `datas<T>` users retain the default `Measure = false`. Only the test
-opts in through `datas<payload, true>`. The engine change adds diagnostics around
-the existing operations; the lock algorithms and acquisition order are unchanged.
-Normal backends do not record timestamps or counters.
+The engine's `datas<T>` is restored to its version before the diagnostic changes
+in commit `59fe05f`. No diagnostics header, template parameter or build entry
+remains in Motor. The uninstrumented baseline uses this actual engine template.
 
-`motor::platform::diagnostic::local` is thread-local. Each worker copies its own
+Only the test uses a separate copy,
+[`support/measured_datas.hpp`](../suite_concurrent/support/measured_datas.hpp),
+with counters in
+[`support/datas_diagnostics.hpp`](../suite_concurrent/support/datas_diagnostics.hpp).
+These live in `motor::tests`, not the engine's platform namespace. Instrumentation
+surrounds the original lock operations without changing their acquisition order.
+This is a snapshot: future engine changes must be reviewed against the test copy
+before interpreting new measurements.
+
+`motor::tests::diagnostic::local` is thread-local. Each worker copies its own
 counters after its workload, and the test aggregates after joining. No shared
 counter mutex is introduced. Recording can be off, counters only, or timings.
 
@@ -110,8 +118,8 @@ threads, not frame latency. Lock release, name lookup, allocation and callable
 wrapping are not separately instrumented; they still contribute to wall time.
 Clock calls themselves perturb this small workload, hence the controls.
 
-This is a CPU microbenchmark using Motor's actual `datas` template and dummy
-payloads, not GPU profiling and not a measurement of real shader-compilation
+This is a CPU microbenchmark comparing Motor's actual `datas` template with a
+test-only instrumented copy and dummy payloads, not GPU profiling or real shader-compilation
 contention. In particular, it cannot attribute the Motor/raylib frame-time gap to
 locks. The structural-writer workload only models concurrent container access.
 
@@ -136,3 +144,12 @@ The CPU run demonstrated measurable instrumentation overhead; it was not an
 isolated repeated performance study and overlapped a build. Its wall times are
 not a baseline for renderer optimization. Linux and visual/pixel correctness were
 not verified in this run.
+
+### Test-only Instrumentation Follow-up
+
+After restoring the original engine files and moving diagnostics into the suite,
+the Release targets `04_datas_locking`, `05_datas_cost` and `07_owner_queue_cost`
+rebuilt successfully. All eight selected CTests (`concurrent_datas_*` plus
+`concurrent_owner_queue_cost`) passed. The full `05_datas_cost --benchmark` also
+passed with an empty Motor memory dump. Graphics tests were not rerun for this
+restoration.

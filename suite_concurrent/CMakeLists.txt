@@ -21,6 +21,9 @@ foreach( source IN LISTS sources )
 endforeach()
 
 target_link_libraries( 06_variable_set_cost PRIVATE motor::graphics )
+target_sources( 05_datas_cost PRIVATE
+    "support/measured_datas.hpp"
+    "support/datas_diagnostics.hpp" )
 
 if( BUILD_TESTING )
     add_test( NAME concurrent_variable_set_cost COMMAND 06_variable_set_cost --smoke )
