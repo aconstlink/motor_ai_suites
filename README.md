@@ -174,6 +174,14 @@ editable stage properties and a direct-rendering comparison switch.
 
 ![Scene graph and Wire lighting gallery](docs/screenshots/12_scene_wire_lighting.png)
 
+### 14 Light Components
+
+Directional and moving point lights collected from scene components, then rendered
+with the engine light-pass visitor. Includes additive passes, per-light/view
+subsets, controls, and a smoke sequence that changes light types and order.
+
+[Source](suite_graphics/14_light_components.cpp) | [Data flow and current limits](suite_graphics/14_light_components.md)
+
 ## Console Tests
 
 These applications do not render a scene. Their output consists of checks,

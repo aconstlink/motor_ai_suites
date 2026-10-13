@@ -13,6 +13,7 @@ set( sources
     "11_lighting_scene.cpp"
     "12_scene_wire_lighting.cpp"
     "13_live_recompile.cpp"
+    "14_light_components.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -36,3 +37,4 @@ target_link_libraries( 09_geometry_shader PRIVATE motor::gfx )
 target_link_libraries( 10_transform_feedback PRIVATE motor::gfx )
 target_link_libraries( 11_lighting_scene PRIVATE motor::gfx motor::geometry )
 target_link_libraries( 12_scene_wire_lighting PRIVATE motor::scene motor::gfx motor::geometry motor::wire )
+target_link_libraries( 14_light_components PRIVATE motor::scene motor::gfx )
