@@ -19,6 +19,7 @@ processing. Each application is a separate CMake target.
 
 ## Start Here
 
+- [Village 1800](suite_graphics/15_village.md): procedural houses and dragon, scene graph, collected lights, Wire, GPU particles and HDR postprocessing.
 - [Render Access and Runtime Compilation](docs/RENDER_ACCESS_AND_COMPILE_COSTS.md): measured OID/status/variable lookup costs and Motor/raylib shader compilation during rendering.
 - [Live Recompile and Lock Costs](docs/RECOMPILE_AND_LOCKS.md): shader-layout changes during rendering and isolated `datas` measurements.
 - [Variable Sets and Owner Queues](docs/VARIABLE_SET_AND_QUEUE_COSTS.md): name lookup versus cached pointers, and shared access versus message handoff.
@@ -185,6 +186,27 @@ that changes light types and order.
 [Source](suite_graphics/14_light_components.cpp) | [Data flow and current limits](suite_graphics/14_light_components.md)
 
 ![Directional and colored point lights](docs/screenshots/14_light_components.png)
+
+### 15 Village 1800
+
+Four procedural half-timber houses around a cobbled square, with individual roof
+tiles, a well, cart, barrels and vegetation. The default scene contains 323,145
+triangles and 8,192 particle seeds. Smoke, sparks and drifting motes are generated
+through transform feedback / stream output and rendered as soft billboards.
+Includes HDR, bloom, FXAA, camera controls, density presets and optional dual
+OpenGL/D3D11 windows. A procedural dragon circles the village with shader-animated
+wings and tail, plus optional fire breath. The UI reports per-window draw counts.
+Village and dragon use the scene graph and render visitor. Two directional
+lights and one point light are collected from light components; Wire connects
+their values to the shared shader. No external assets are required.
+Eleven material types are rendered in 41 scene batches with individual surface
+parameters. Houses include tiled dormers, detailed windows on every facade,
+flower boxes, entrance canopies, iron fittings, lanterns and hanging signs.
+Rounded roof tiles, ridge caps, detailed window/door trim and refined well/cart
+geometry add further detail. Directional moonlight casts PCF-filtered shadows
+through Motor's camera, depth framebuffer, MSL bindings and scene visitors.
+
+[Source](suite_graphics/15_village.cpp) | [Run guide and limitations](suite_graphics/15_village.md)
 
 ## Console Tests
 
