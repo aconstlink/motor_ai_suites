@@ -3,6 +3,9 @@
 This is a scaling benchmark, not a pass/fail performance threshold. It uses the
 Motor revision pinned by this repository. No engine changes are required.
 
+Latest measurements: [GL4/D3D11 datas locks on/off, 2026-10-15](../docs/DATAS_LOCK_COMPARISON.md),
+including functional coverage and historical framework references.
+
 ## Run
 
 Build `05_scene_benchmark` in Release. From `build/bin/Release`:

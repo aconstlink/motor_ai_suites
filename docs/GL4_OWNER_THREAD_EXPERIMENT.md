@@ -1,5 +1,9 @@
 # GL4 Owner-Thread Lock Experiment
 
+Historical experiment. See the [2026-10-15 GL4/D3D11 comparison](DATAS_LOCK_COMPARISON.md)
+for the newer `unlocking-datas` revision, both backends and repeated measurements.
+The findings below refer to the older revision and experiment only.
+
 ## Scope
 
 Local experiment in the Motor submodule of `motor_ai_suites`, based on Motor

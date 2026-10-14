@@ -19,6 +19,7 @@ processing. Each application is a separate CMake target.
 
 ## Start Here
 
+- [Datas Lock Comparison](docs/DATAS_LOCK_COMPARISON.md): updated GL4/D3D11 timings, lock on/off tests and historical framework references (2026-10-15).
 - [Village 1800](suite_graphics/15_village.md): procedural houses and dragon, scene graph, collected lights, Wire, GPU particles and HDR postprocessing.
 - [Render Access and Runtime Compilation](docs/RENDER_ACCESS_AND_COMPILE_COSTS.md): measured OID/status/variable lookup costs and Motor/raylib shader compilation during rendering.
 - [Live Recompile and Lock Costs](docs/RECOMPILE_AND_LOCKS.md): shader-layout changes during rendering and isolated `datas` measurements.
