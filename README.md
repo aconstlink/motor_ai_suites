@@ -209,6 +209,8 @@ through Motor's camera, depth framebuffer, MSL bindings and scene visitors.
 
 [Source](suite_graphics/15_village.cpp) | [Run guide and limitations](suite_graphics/15_village.md)
 
+![Village 1800](docs/screenshots/15_village.png)
+
 ## Console Tests
 
 These applications do not render a scene. Their output consists of checks,
