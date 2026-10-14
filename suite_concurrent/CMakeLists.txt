@@ -7,6 +7,7 @@ set( sources
     "05_datas_cost.cpp"
     "06_variable_set_cost.cpp"
     "07_owner_queue_cost.cpp"
+    "08_render_access_cost.cpp"
 )
 
 find_package( Threads REQUIRED )
@@ -21,11 +22,14 @@ foreach( source IN LISTS sources )
 endforeach()
 
 target_link_libraries( 06_variable_set_cost PRIVATE motor::graphics )
+target_link_libraries( 08_render_access_cost PRIVATE motor::graphics )
 target_sources( 05_datas_cost PRIVATE
     "support/measured_datas.hpp"
     "support/datas_diagnostics.hpp" )
 
 if( BUILD_TESTING )
+    add_test( NAME concurrent_render_access_cost COMMAND 08_render_access_cost --smoke )
+    set_tests_properties( concurrent_render_access_cost PROPERTIES TIMEOUT 75 LABELS "concurrent;cost" RUN_SERIAL TRUE )
     add_test( NAME concurrent_variable_set_cost COMMAND 06_variable_set_cost --smoke )
     add_test( NAME concurrent_owner_queue_cost COMMAND 07_owner_queue_cost --smoke )
     set_tests_properties( concurrent_variable_set_cost concurrent_owner_queue_cost PROPERTIES

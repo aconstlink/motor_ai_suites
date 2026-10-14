@@ -19,6 +19,7 @@ processing. Each application is a separate CMake target.
 
 ## Start Here
 
+- [Render Access and Runtime Compilation](docs/RENDER_ACCESS_AND_COMPILE_COSTS.md): measured OID/status/variable lookup costs and Motor/raylib shader compilation during rendering.
 - [Live Recompile and Lock Costs](docs/RECOMPILE_AND_LOCKS.md): shader-layout changes during rendering and isolated `datas` measurements.
 - [Variable Sets and Owner Queues](docs/VARIABLE_SET_AND_QUEUE_COSTS.md): name lookup versus cached pointers, and shared access versus message handoff.
 - [Build and run](BUILDING.md): setup, basic applications, Wire and concurrency tests.

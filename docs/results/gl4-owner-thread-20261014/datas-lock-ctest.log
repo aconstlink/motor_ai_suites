@@ -1,0 +1,24 @@
+Test project E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026
+    Start 3: concurrent_datas_cost
+1/7 Test #3: concurrent_datas_cost ............   Passed    0.07 sec
+    Start 4: concurrent_datas_lifecycle
+2/7 Test #4: concurrent_datas_lifecycle .......   Passed    0.04 sec
+    Start 5: concurrent_datas_recursive
+3/7 Test #5: concurrent_datas_recursive .......   Passed    0.01 sec
+    Start 6: concurrent_datas_try_access
+4/7 Test #6: concurrent_datas_try_access ......   Passed    0.02 sec
+    Start 7: concurrent_datas_independent
+5/7 Test #7: concurrent_datas_independent .....   Passed    0.01 sec
+    Start 8: concurrent_datas_contention
+6/7 Test #8: concurrent_datas_contention ......   Passed    0.02 sec
+    Start 9: concurrent_datas_wakeup
+7/7 Test #9: concurrent_datas_wakeup ..........   Passed    0.50 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Label Time Summary:
+concurrent             =   0.68 sec*proc (7 tests)
+concurrent_extended    =   0.61 sec*proc (6 tests)
+datas                  =   0.68 sec*proc (7 tests)
+
+Total Test time (real) =   0.81 sec

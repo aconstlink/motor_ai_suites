@@ -1,0 +1,14 @@
+[1;37;40m[s][1;37;40mLogger online
+[1;37;40m[s][1;37;40m[online] : motor log
+[1;37;40m[s][1;37;40m[compile-cost] raylib seed=2026102402 operations=128 worker
+[1;37;40m[s][1;37;40m[compile-cost] raylib revision=1 compile_ms=143.936400 ready_ms=144.634800 frames_before_delivery=137
+[1;37;40m[s][1;37;40m[compile-cost] raylib revision=2 compile_ms=71.109900 ready_ms=72.222000 frames_before_delivery=52
+[1;37;40m[s][1;37;40m[compile-cost] raylib revision=3 compile_ms=74.718000 ready_ms=75.389500 frames_before_delivery=56
+[1;37;40m[s][1;37;40m[compile-cost] raylib revision=4 compile_ms=79.104700 ready_ms=79.791800 frames_before_delivery=68
+[1;37;40m[s][1;37;40m[compile-cost] raylib revision=5 compile_ms=94.209900 ready_ms=95.260800 frames_before_delivery=67
+[1;37;40m[s][1;37;40m[compile-cost] raylib revision=6 compile_ms=89.825400 ready_ms=90.947500 frames_before_delivery=81
+[1;37;40m[s][1;37;40m[compile-cost] raylib-worker idle-frame samples=420 mean_ms=0.427380 p50_ms=0.388200 p95_ms=0.643300 p99_ms=0.782100 max_ms=1.455900 over16=0 over33=0
+[1;37;40m[s][1;37;40m[compile-cost] raylib-worker compile-frame samples=467 mean_ms=1.198989 p50_ms=0.530200 p95_ms=0.868900 p99_ms=37.537800 max_ms=57.571200 over16=7 over33=6
+[1;37;40m[s][1;37;40m[compile-cost] raylib-worker request-to-ready samples=6 mean_ms=93.041067 p50_ms=79.791800 p95_ms=95.260800 p99_ms=95.260800 max_ms=144.634800 over16=6 over33=6
+[1;37;40m[s][1;37;40m[compile-cost] raylib-worker progress_frames=461
+[1;37;40m[s][1;32;40m[OK][1;37;40m [compile-cost] all programs delivered and used

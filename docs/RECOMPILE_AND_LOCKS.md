@@ -1,7 +1,15 @@
 # Live Recompile and Lock Costs
 
+The [render-access and runtime compilation comparison](RENDER_ACCESS_AND_COMPILE_COSTS.md)
+adds actual OID/status/variable lookup measurements and compares Motor GL4's
+support thread with synchronous raylib and a test-supplied raylib compiler worker.
+
 Two focused tests for the existing renderer. Neither introduces frame snapshots,
 changes lock ownership, nor removes synchronization.
+
+The later [GL4 owner-thread lock experiment](GL4_OWNER_THREAD_EXPERIMENT.md)
+compares the new messaging backend with and without `datas` locks. Its engine
+changes are local and experimental, not a replacement for the tests below.
 
 ## Build
 
@@ -20,10 +28,19 @@ generator they are normally in `build/bin`.
 13_live_recompile --smoke --gl-only
 13_live_recompile --smoke --d3d-only
 13_live_recompile --smoke --dual
+13_live_recompile --smoke --gl-only --valid-only
+13_live_recompile --gl-only --close-on-submit
 ```
 
 Without `--smoke`, use the A, B + tint and Invalid buttons. The default is one
 OpenGL window. D3D11 and mixed-backend dual mode require Windows.
+
+`--valid-only` starts with A and replaces the invalid revision with A. It isolates
+successful layout recompilation when the error-handling path itself is broken;
+it does not replace the original negative test. `--close-on-submit` closes the
+application after submitting the first tested shader configuration. Compilation
+may already have finished by shutdown, so this is not a deterministic test of
+compiler overlap. A crash, timeout, or non-empty Motor memory dump still fails.
 
 - Twelve quads share one MSL object and geometry, with separate variable sets.
 - A uses `u_color`. B adds `u_tint`, changing the shader's active uniform layout.

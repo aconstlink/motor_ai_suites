@@ -13,6 +13,9 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include "../comparison/compile_cost.hpp"
+#include <charconv>
+#include <cstring>
 
 namespace sample
 {
@@ -21,7 +24,13 @@ namespace sample
     using state = motor::graphics::object_state ;
     using result = motor::graphics::result ;
     using clock = std::chrono::steady_clock ;
-    struct options { bool_t dual = false, d3d = false, smoke = false ; } ;
+    struct options
+    {
+        bool_t dual = false, d3d = false, smoke = false ;
+        bool_t valid_only = false, close_on_submit = false ;
+        bool_t benchmark = false ;
+        uint32_t seed = 1 ;
+    } ;
 
     motor::string_t source( motor::string_in_t name, int_t const variant )
     {
@@ -79,6 +88,19 @@ namespace sample
         int_t _variant = 2, _requested = -1 ;
         bool_t _quitting = false, _failed = false ;
         clock::time_point _started, _changed ;
+        clock::time_point _previous_frame, _compile_start ;
+        compile_cost::measurements _measurements ;
+        bool_t _compile_active = false, _active_this_frame = false ;
+        size_t _idle_frames = 0, _bench_round = 0, _heartbeat_start = 0 ;
+
+        motor::string_t current_source( void_t ) const
+        {
+            if( !_options.benchmark || _revision == 1 ) return source( "live_shader", _variant ) ;
+            return "config live_shader { vertex_shader { in vec3_t pos : position ; out vec4_t pos : position ; "
+                "vec4_t u_offset ; void main() { out.pos = vec4_t( in.pos, 1.0 ) + u_offset ; } } "
+                "pixel_shader { out vec4_t color : color ; vec4_t u_color ; void main() { " +
+                compile_cost::body( _options.seed, _revision - 1, true ) + " } } }" ;
+        }
 
         size_t count( void_t ) const noexcept { return _options.dual ? 2 : 1 ; }
         window_data * find( window_id_t const id ) noexcept
@@ -99,10 +121,15 @@ namespace sample
         }
 
     public:
-        recompile_app( options const opts, bool_t * passed ) noexcept : _options( opts ), _passed( passed ) {}
+        recompile_app( options const opts, bool_t * passed ) noexcept : _options( opts ), _passed( passed )
+        {
+            if( opts.valid_only || opts.close_on_submit || opts.benchmark ) _variant = 0 ;
+        }
 
         void_t on_init( void_t ) noexcept override
         {
+            if( _options.benchmark ) motor::log::global_t::status( "[compile-cost] motor seed=" +
+                motor::to_string( _options.seed ) + " operations=" + motor::to_string( compile_cost::operations ) ) ;
             _started = _changed = clock::now() ;
             {
                 auto vb = motor::graphics::vertex_buffer_t()
@@ -123,7 +150,7 @@ namespace sample
             }
             {
                 _shader = motor::shared( motor::graphics::msl_object_t( "live_shader" ) ) ;
-                _shader->add( motor::graphics::msl_api_type::msl_4_0, source( "live_shader", _variant ) ) ;
+                _shader->add( motor::graphics::msl_api_type::msl_4_0, current_source() ) ;
                 _geometry_id = _shader->link_geometry( "live_quad" ) ;
                 for( size_t i = 0 ; i < 12 ; ++i )
                 {
@@ -165,10 +192,10 @@ namespace sample
                 info.x = int_t( 40 + i * 660 ) ; info.y = 80 ; info.w = 640 ; info.h = 640 ;
                 info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 : motor::application::graphics_generation::gen4_gl4 ;
                 w.id = create_window( info ) ;
-                send_window_message( w.id, []( auto & window )
+                send_window_message( w.id, [vsync = !_options.benchmark]( auto & window )
                 {
                     window.send_message( motor::application::show_message( { true } ) ) ;
-                    window.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                    window.send_message( motor::application::vsync_message_t( { vsync } ) ) ;
                 } ) ;
             }
         }
@@ -186,7 +213,7 @@ namespace sample
             }
             if( _requested < 0 || !settled() ) return ;
             _variant = _requested ; _requested = -1 ; ++_revision ; _changed = clock::now() ;
-            _shader->clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, source( "live_shader", _variant ) ) ;
+            _shader->clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, current_source() ) ;
             for( size_t i = 0 ; i < count() ; ++i )
             {
                 _windows[i].draws = 0 ; _windows[i].executed.store( 0 ) ; _windows[i].pending_frames = 0 ;
@@ -215,6 +242,11 @@ namespace sample
             w->started = true ;
             if( w->submitted != _revision )
             {
+                if( _options.benchmark && _revision > 1 )
+                {
+                    _compile_start = clock::now() ; _compile_active = true ; _active_this_frame = true ;
+                    _heartbeat_start = w->heartbeat.load() ;
+                }
                 if( !fe->configure<motor::graphics::msl_object_t>( _shader ) ) { fail( "configure rejected" ) ; return ; }
                 w->submitted = _revision ;
             }
@@ -225,6 +257,13 @@ namespace sample
             else if( w->completed != _revision )
             {
                 bool_t const valid = status.first == state::ready && status.second == result::ok ;
+                if( _options.benchmark )
+                {
+                    auto * listener = _shader->borrow_compilation_listener() ;
+                    motor::graphics::shader_bindings_t bindings ;
+                    if( !listener->has_changed() || !listener->reset_and_successful( bindings ) )
+                    { fail( "benchmark revision did not report successful compilation" ) ; return ; }
+                }
                 bool_t const rejected = status.first == state::raw && status.second == result::failed ;
                 // A fresh invalid shader must fail. After success, object intentionally
                 // preserves ready/ok for the last valid resource, not the last command.
@@ -243,6 +282,16 @@ namespace sample
                     { fail( "unexpected compilation result" ) ; return ; }
                 }
                 w->completed = _revision ;
+                if( _options.benchmark && _compile_active )
+                {
+                    auto const latency = compile_cost::ms( _compile_start, clock::now() ) ;
+                    _measurements.latency.emplace_back( latency ) ;
+                    auto const progress = w->heartbeat.load() - _heartbeat_start ;
+                    _measurements.progress_frames += progress ;
+                    motor::log::global_t::status( "[compile-cost] motor revision=" + motor::to_string( _revision - 1 ) +
+                        " ready_ms=" + motor::to_string( latency ) + " command_progress=" + motor::to_string( progress ) ) ;
+                    _compile_active = false ; _active_this_frame = true ; _idle_frames = 0 ;
+                }
                 motor::log::global_t::status( "  pending frames=" + motor::to_string( w->pending_frames ) ) ;
             }
             fe->push( &_state ) ;
@@ -250,11 +299,19 @@ namespace sample
             detail.geo = _background_geo ; detail.varset = _background_vars ;
             fe->render( _background, detail ) ;
             fe->fence( [w]( void_t ) { w->heartbeat.fetch_add( 1 ) ; } ) ;
-            if( !pending && _variant != 2 )
+            if( !pending && _variant != 2 && (!_options.benchmark || w->draws == 0) )
             {
                 detail.geo = _geometry_id ;
-                for( size_t i = 12 ; i-- > 0 ; ) { detail.varset = _sets[i] ; fe->render( _shader, detail ) ; }
+                // Benchmark keeps twelve cheap quads visible during compilation.
+                // The compiled program is exercised once after delivery.
+                for( size_t i = _options.benchmark ? 1 : 12 ; i-- > 0 ; ) { detail.varset = _sets[i] ; fe->render( _shader, detail ) ; }
                 ++w->draws ;
+            }
+            if( _options.benchmark )
+            {
+                // Fixed cheap draw workload, independent of the compiled program.
+                detail.geo = _background_geo ; detail.varset = _background_vars ;
+                for( size_t i = 0 ; i < 12 ; ++i ) fe->render( _background, detail ) ;
             }
             if( !pending ) fe->fence( [w]( void_t ) { w->executed.fetch_add( 1 ) ; } ) ;
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
@@ -262,9 +319,48 @@ namespace sample
 
         void_t on_frame_done( void_t ) noexcept override
         {
+            if( _options.benchmark && !_quitting )
+            {
+                auto const now = clock::now() ;
+                if( _windows[0].started && _previous_frame != clock::time_point{} )
+                {
+                    auto & samples = _compile_active || _active_this_frame ? _measurements.active : _measurements.idle ;
+                    if( _compile_active || _active_this_frame || _idle_frames >= 30 )
+                        samples.emplace_back( compile_cost::ms( _previous_frame, now ) ) ;
+                }
+                _previous_frame = now ; _active_this_frame = false ;
+                if( !settled() ) return ;
+                if( ++_idle_frames < compile_cost::idle_frames ) return ;
+                if( _bench_round < compile_cost::rounds )
+                { ++_bench_round ; _requested = 0 ; _idle_frames = 0 ; }
+                else
+                {
+                    _measurements.report( _windows[0].label ) ;
+                    *_passed = !_failed && _measurements.latency.size() == compile_cost::rounds ;
+                    motor::log::global_t::test( "[compile-cost] all revisions delivered and drawn", *_passed ) ;
+                    _quitting = true ; close() ;
+                }
+                return ;
+            }
+            if( _options.close_on_submit && !_quitting )
+            {
+                bool_t submitted = true ;
+                for( size_t i = 0 ; i < count() ; ++i ) submitted &= _windows[i].submitted == _revision ;
+                if( submitted )
+                {
+                    // This tests teardown after enqueue, not guaranteed compiler overlap.
+                    motor::log::global_t::test( "[live-recompile] closing after configure submission", true ) ;
+                    *_passed = !_failed ; _quitting = true ; close() ;
+                }
+                return ;
+            }
             if( !_options.smoke || _quitting || !settled() ) return ;
             int_t const sequence[] = { 0, 1, 0, 1, 2, 0, 1, 0 } ;
-            if( _step < sizeof( sequence ) / sizeof( sequence[0] ) ) _requested = sequence[_step++] ;
+            if( _step < sizeof( sequence ) / sizeof( sequence[0] ) )
+            {
+                _requested = sequence[_step++] ;
+                if( _options.valid_only && _requested == 2 ) _requested = 0 ;
+            }
             else
             {
                 bool_t recovered = true ;
@@ -272,7 +368,9 @@ namespace sample
                 motor::log::global_t::test( "[live-recompile] final valid revision rendered after recovery", recovered ) ;
                 bool_t const ok = !_failed && recovered ;
                 *_passed = ok ;
-                motor::log::global_t::test( "[live-recompile] A/B layouts, failure and recovery; pixels require visual verification", ok ) ;
+                motor::log::global_t::test( _options.valid_only ?
+                    "[live-recompile] valid A/B layouts; pixels require visual verification" :
+                    "[live-recompile] A/B layouts, failure and recovery; pixels require visual verification", ok ) ;
                 _quitting = true ; close() ;
             }
         }
@@ -282,7 +380,7 @@ namespace sample
         }
         bool_t on_tool( window_id_t const id, motor::application::app::tool_data_ref_t ) noexcept override
         {
-            if( id != _windows[0].id || _quitting ) return false ;
+            if( id != _windows[0].id || _quitting || _options.benchmark ) return false ;
             if( ImGui::Begin( "Live shader", nullptr, ImGuiWindowFlags_AlwaysAutoResize ) )
             {
                 ImGui::Text( "Revision %llu / variant %d", static_cast<unsigned long long>( _revision ), _variant ) ;
@@ -320,15 +418,25 @@ int main( int argc, char ** argv )
     {
         motor::string_t const arg( argv[i] ) ;
         if( arg == "--smoke" ) opts.smoke = true ;
+        else if( arg == "--benchmark" ) { opts.benchmark = true ; opts.smoke = true ; }
+        else if( arg == "--seed" && i + 1 < argc )
+        {
+            auto const text = argv[++i] ; auto const end = text + std::strlen( text ) ;
+            auto const parsed = std::from_chars( text, end, opts.seed ) ;
+            if( parsed.ec != std::errc{} || parsed.ptr != end ) return 2 ;
+        }
+        else if( arg == "--valid-only" ) opts.valid_only = true ;
+        else if( arg == "--close-on-submit" ) { opts.close_on_submit = true ; opts.smoke = true ; }
         else if( arg == "--dual" ) { opts.dual = true ; opts.d3d = false ; }
         else if( arg == "--gl-only" ) { opts.dual = false ; opts.d3d = false ; }
         else if( arg == "--d3d-only" ) { opts.dual = false ; opts.d3d = true ; }
         else
         {
-            motor::log::global_t::status( "Usage: 13_live_recompile [--smoke] [--gl-only|--d3d-only|--dual]" ) ;
+            motor::log::global_t::status( "Usage: 13_live_recompile [--smoke] [--valid-only] [--close-on-submit] [--benchmark --seed N] [--gl-only|--d3d-only|--dual]" ) ;
             motor::log::global_t::deinit() ; return arg == "--help" ? 0 : 2 ;
         }
     }
+    if( opts.benchmark && (opts.dual || opts.close_on_submit) ) return 2 ;
 #ifndef _WIN32
     if( opts.dual || opts.d3d ) return 2 ;
 #endif

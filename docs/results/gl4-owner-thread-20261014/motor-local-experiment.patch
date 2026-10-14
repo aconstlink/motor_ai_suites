@@ -1,0 +1,277 @@
+diff --git a/platform/graphics/datas.hpp b/platform/graphics/datas.hpp
+index cbd4ec4..6537357 100644
+--- a/platform/graphics/datas.hpp
++++ b/platform/graphics/datas.hpp
+@@ -7,16 +7,18 @@
+ #include <motor/concurrent/mrsw.hpp>
+ 
+ #include <atomic>
++#include <type_traits>
+ 
+ namespace motor
+ {
+ namespace platform
+ {
+ //*******************************************************************************************
+-template < typename T >
++template < typename T, bool Locking = true >
+ struct datas
+ {
+-    motor_this_typedefs( datas< T > );
++    using self_type = datas< T, Locking >;
++    motor_this_typedefs( self_type );
+ 
+   private:
+ 
+@@ -46,6 +48,7 @@ struct datas
+ 
+         bool_t try_enter( void_t ) noexcept
+         {
++            if constexpr( !Locking ) return true;
+             std::unique_lock< std::mutex > lk( mtx );
+             if( tid == std::this_thread::get_id() && ++entries > 0 ) return true;
+             
+@@ -58,6 +61,7 @@ struct datas
+ 
+         void_t enter( void_t ) noexcept
+         {
++            if constexpr( !Locking ) return;
+             std::unique_lock< std::mutex > lk( mtx );
+             if( tid == std::this_thread::get_id() && ++entries > 0 ) return;
+ 
+@@ -69,6 +73,7 @@ struct datas
+ 
+         bool_t leave( void ) noexcept
+         {
++            if constexpr( !Locking ) return true;
+             std::unique_lock< std::mutex > lk( mtx );
+             if( tid == std::this_thread::get_id() && --entries == 0 )
+             {
+@@ -163,7 +168,21 @@ struct datas
+ 
+     using items_t = motor::vector< wrapper >;
+ 
+-    mutable motor::concurrent::mrsw_t mtx;
++    // Local experiment: only render-thread-owned GL4 containers opt out.
++    struct no_lock
++    {
++        struct scope
++        {
++            explicit scope( no_lock & ) noexcept {}
++        };
++        using reader_lock_t = scope;
++        using writer_lock_t = scope;
++    };
++    using mutex_t = std::conditional_t< Locking, motor::concurrent::mrsw_t, no_lock >;
++    using reader_lock_t = typename mutex_t::reader_lock_t;
++    using writer_lock_t = typename mutex_t::writer_lock_t;
++
++    mutable mutex_t mtx;
+     items_t items;
+ 
+   public:
+@@ -191,21 +210,21 @@ struct datas
+     {
+         // #1 quick check if id is still valid
+         {
+-            motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++            reader_lock_t lk( mtx );
+             oid = this_t::check_oid( oid, items );
+         }
+ 
+         // #2 if new or invalid, create new oid
+         if( oid == size_t( -1 ) )
+         {
+-            motor::concurrent::mrsw_t::writer_lock_t lk( mtx );
++            writer_lock_t lk( mtx );
+             oid = this_t::determine_oid( oid, name, items );
+         }
+ 
+         // #3 oid is safe, can access now.
+         if( oid != size_t( -1 ) )
+         {
+-            motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++            reader_lock_t lk( mtx );
+ 
+             this_t::busy_guard busy_wait( items[ oid ].gd );
+             return funk( oid, items[ oid ].name, *items[ oid ].data );
+@@ -247,7 +266,7 @@ struct datas
+         if( oid == size_t( -1 ) ) return std::make_pair( false, false );
+ 
+         {
+-            motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++            reader_lock_t lk( mtx );
+ 
+             if( this_t::check_oid( oid, items ) == size_t( -1 ) )
+                 return std::make_pair( false, false );
+@@ -282,7 +301,7 @@ struct datas
+     {
+         if( oid == size_t( -1 ) ) return std::make_pair( false, R() );
+ 
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+ 
+         if( this_t::check_oid( oid, items ) == size_t( -1 ) ) return std::make_pair( false, R() );
+ 
+@@ -305,7 +324,7 @@ struct datas
+         if( oid == size_t( -1 ) ) return false;
+ 
+         {
+-            motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++            reader_lock_t lk( mtx );
+ 
+             if( this_t::check_oid( oid, items ) == size_t( -1 ) ) return false;
+ 
+@@ -318,7 +337,7 @@ struct datas
+     bool_t access_by_name(
+         motor::string_in_t name, std::function< void_t( size_t const, T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+ 
+         auto i = size_t( -1 );
+         while( ++i < items.size() && items[ i ].name != name );
+@@ -339,7 +358,7 @@ struct datas
+     {
+         if( oid == size_t( -1 ) ) return std::make_pair( false, R() );
+ 
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+ 
+         if( this_t::check_oid( oid, items ) == size_t( -1 ) ) return std::make_pair( false, R() );
+ 
+@@ -414,7 +433,7 @@ struct datas
+     {
+         if( name.empty() ) return size_t( -1 );
+ 
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+ 
+         size_t i = size_t( -1 );
+         while( ++i < items.size() && items[ i ].name != name );
+@@ -423,7 +442,7 @@ struct datas
+ 
+     void_t for_each( std::function< void_t( T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         for( auto & i : items )
+         {
+             if( !i.valid ) continue;
+@@ -435,7 +454,7 @@ struct datas
+ 
+     void_t for_each( std::function< void_t( size_t const, T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         for( size_t i = 0; i < items.size(); ++i )
+         {
+             if( !items[ i ].valid ) continue;
+@@ -447,7 +466,7 @@ struct datas
+ 
+     void_t for_each( std::function< void_t( motor::string_in_t, T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         for( auto & i : items )
+         {
+             if( !i.valid ) continue;
+@@ -462,7 +481,7 @@ struct datas
+     // this function return true if the loop broke
+     bool_t for_each_with_break( std::function< bool_t( T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         for( auto & i : items )
+         {
+             if( !i.valid ) continue;
+@@ -474,7 +493,7 @@ struct datas
+ 
+     bool_t for_each_with_break( std::function< bool_t( motor::string_in_t, T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         for( auto & i : items )
+         {
+             if( !i.valid ) continue;
+@@ -486,7 +505,7 @@ struct datas
+ 
+     bool_t for_each_with_break( std::function< bool_t( size_t const id, T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         for( size_t i = 0; i < items.size(); ++i )
+         {
+             if( !items[ i ].valid ) continue;
+@@ -499,7 +518,7 @@ struct datas
+     bool_t for_each_with_break(
+         std::function< bool_t( size_t const id, motor::string_in_t, T & ) > funk ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         for( size_t i = 0; i < items.size(); ++i )
+         {
+             if( !items[ i ].valid ) continue;
+@@ -535,7 +554,7 @@ struct datas
+     // invalidate a particular item
+     bool_t invalidate( size_t const oid ) noexcept
+     {
+-        motor::concurrent::mrsw_t::reader_lock_t lk( mtx );
++        reader_lock_t lk( mtx );
+         if( oid >= items.size() ) return false;
+         items[ oid ].data->invalidate( items[ oid ].name );
+         items[ oid ].valid = false;
+@@ -544,4 +563,4 @@ struct datas
+     }
+ };
+ } // namespace platform
+-} // namespace motor
+\ No newline at end of file
++} // namespace motor
+diff --git a/platform/graphics/gl4/gl4.cpp b/platform/graphics/gl4/gl4.cpp
+index 48b249b..41ff5fd 100644
+--- a/platform/graphics/gl4/gl4.cpp
++++ b/platform/graphics/gl4/gl4.cpp
+@@ -44,33 +44,33 @@ struct gl4_backend::pimpl
+ {
+     motor_this_typedefs( pimpl );
+ 
+-    using feedbacks_t = motor::platform::datas< pimpl_data::feedback_data_t >;
++    using feedbacks_t = motor::platform::datas< pimpl_data::feedback_data_t, false >;
+     feedbacks_t _feedbacks;
+ 
+-    using geo_datas_t = motor::platform::datas< pimpl_data::geo_data_t >;
++    using geo_datas_t = motor::platform::datas< pimpl_data::geo_data_t, false >;
+     geo_datas_t _geometries;
+ 
+-    using shader_datas_t = motor::platform::datas< pimpl_data::shader_data_t >;
++    using shader_datas_t = motor::platform::datas< pimpl_data::shader_data_t, false >;
+     shader_datas_t _shaders;
+ 
+-    using states_t = motor::platform::datas< pimpl_data::state_data >;
++    using states_t = motor::platform::datas< pimpl_data::state_data, false >;
+     states_t _states;
+ 
+     motor::stack< motor::graphics::render_state_sets_t, 10 > _state_stack;
+ 
+-    using render_datas_t = motor::platform::datas< pimpl_data::render_data >;
++    using render_datas_t = motor::platform::datas< pimpl_data::render_data, false >;
+     render_datas_t _renders;
+ 
+-    using image_datas_t = motor::platform::datas< pimpl_data::image_data_t >;
++    using image_datas_t = motor::platform::datas< pimpl_data::image_data_t, false >;
+     image_datas_t _images;
+ 
+-    using arrays_t = motor::platform::datas< pimpl_data::array_data_t >;
++    using arrays_t = motor::platform::datas< pimpl_data::array_data_t, false >;
+     arrays_t _arrays;
+ 
+-    using framebuffer_datas_t = motor::platform::datas< pimpl_data::framebuffer_data_t >;
++    using framebuffer_datas_t = motor::platform::datas< pimpl_data::framebuffer_data_t, false >;
+     framebuffer_datas_t _framebuffers;
+ 
+-    using msls_t = motor::platform::datas< pimpl_data::msl_data_t >;
++    using msls_t = motor::platform::datas< pimpl_data::msl_data_t, false >;
+     msls_t _msls;
+ 
+     GLsizei vp_width = 0;
