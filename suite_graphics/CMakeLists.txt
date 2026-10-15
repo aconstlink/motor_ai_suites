@@ -15,6 +15,7 @@ set( sources
     "13_live_recompile.cpp"
     "14_light_components.cpp"
     "15_village.cpp"
+    "16_async_assets.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -42,3 +43,6 @@ target_link_libraries( 14_light_components PRIVATE motor::scene motor::gfx )
 
 target_link_libraries( 15_village PRIVATE motor::scene motor::gfx motor::wire )
 target_sources( 15_village PRIVATE village/geometry.hpp village/dragon.hpp village/shaders.hpp )
+
+target_link_libraries( 16_async_assets PRIVATE motor::format motor::io motor::scene motor::gfx motor::wire )
+target_compile_definitions( 16_async_assets PRIVATE MOTOR_ASYNC_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/assets/async_loading" )

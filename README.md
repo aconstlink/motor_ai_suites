@@ -19,6 +19,7 @@ processing. Each application is a separate CMake target.
 
 ## Start Here
 
+- [Async Asset Loading](suite_graphics/16_async_assets.md): stream Sponza, then Suzanne into the running scene through Motor's database and glTF importer.
 - [Native Rendering References](suite_reference/README.md): optional bgfx, Cinder and direct OpenGL cube benchmarks beside raylib, with normal Visual Studio targets.
 - [Datas Lock Comparison](docs/DATAS_LOCK_COMPARISON.md): updated GL4/D3D11 timings, lock on/off tests and historical framework references (2026-10-15).
 - [Village 1800](suite_graphics/15_village.md): procedural houses and dragon, scene graph, collected lights, Wire, GPU particles and HDR postprocessing.
@@ -211,6 +212,15 @@ through Motor's camera, depth framebuffer, MSL bindings and scene visitors.
 [Source](suite_graphics/15_village.cpp) | [Run guide and limitations](suite_graphics/15_village.md)
 
 ![Village 1800](docs/screenshots/15_village.png)
+
+### 16 Async Asset Loading
+
+Load Sponza asynchronously, then insert Suzanne while Sponza continues rendering.
+Uses Motor's IO database, module registry, scene graph and runtime shader
+configuration. A texture-free normal-color shader makes the imported geometry
+readable without lights. Includes camera controls and a pending-import shutdown test.
+
+[Source](suite_graphics/16_async_assets.cpp) | [Guide and import limitations](suite_graphics/16_async_assets.md) | [Model credits](suite_graphics/assets/async_loading/ATTRIBUTION.md)
 
 ## Console Tests
 
