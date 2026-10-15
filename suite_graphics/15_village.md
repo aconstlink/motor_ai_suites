@@ -28,7 +28,8 @@ the default. `--particles` accepts 256 through 65536 seeds; the default is 8192.
 `--still` freezes simulation time initially. D3D11 and `--dual` require Windows.
 
 The ImGui panel controls camera yaw, distance and height, orbit, pause, particles,
-dragon visibility, fire breath, moon shadows/bias, postprocessing and emission. Geometry density and seed count are startup options
+dragon visibility, fire breath, moon orbit/yaw/elevation/speed, moon shadows/bias,
+postprocessing and emission. Geometry density and seed count are startup options
 so camera movement does not trigger mesh construction or buffer reallocation.
 Closing either window closes the application.
 
@@ -118,6 +119,17 @@ The existing directional key light is now the moon. Shadow rendering uses only
 Motor objects and APIs: `generic_camera`, a depth-only `framebuffer_object`
 (2048 x 2048, `depth32`), `state_object`, `msl_object`, MSL components and visitors.
 There are no raw OpenGL/D3D calls or additional rendering libraries in the sample.
+
+The moon orbits independently of the viewing camera, initially at 3 degrees per
+second. `Moon yaw` sets its azimuth; `Moon elevation` sets its angle above the
+horizon (10 to 80 degrees). `Moon speed` accepts -15 to +15 degrees per second,
+including reverse motion. Disabling `Moon orbit` holds the current direction;
+reenabling it continues there without a jump. `Pause` and `--still` also stop
+automatic moon motion. Manual angle changes remain available while paused.
+The shared `on_graphics` update sets the directional light and aims the Motor
+shadow camera from that same direction before collecting lights and rendering
+either window. The shadow map is redrawn from the updated camera each frame.
+This animates the light, not a visible moon mesh or a day/night cycle.
 
 Before color rendering, `render_visitor(1, view_id, frontend, moon_camera)` draws
 the village and visible dragon into the depth map. `single_shadow_data` carries
@@ -222,6 +234,10 @@ lights, the expected number of variable sets, distinct view-subset IDs and their
 world/view/projection, camera, clock, material, light-energy and fire parameters.
 It also checks shadow-pass subsets, the light matrices on visible leaves, shadow
 settings and matching animation clocks between color and depth. It
+also checks directional-light values in every color subset, orbit motion,
+holding the shadow camera while orbit is disabled, and manual yaw/elevation
+changes followed by resumed motion. With `--still`, it checks frozen automatic
+motion while still exercising the manual angle changes. It
 checks submission counters including the
 final 97 draws per window, then closes normally. It has a 75-second
 application timeout. Exit status is nonzero for a failed smoke or a nonempty
@@ -238,6 +254,17 @@ Local verification on 2026-10-14 (MSVC Release, NVIDIA RTX 2060):
 | GL4, low, 256 seeds | 160 frames, scene/material/Wire/shadow subset and toggle/draw checks, exit 0, empty dump |
 | GL4 + D3D11, high, 8192 seeds | 160 frames per window, scene/material/Wire/shadow subset and toggle/draw checks, exit 0, empty dump |
 | D3D11, ultra, 65536 seeds | 160 frames, scene/material/Wire/shadow subset and toggle/draw checks, exit 0, empty dump |
+
+Moon-orbit verification on 2026-10-15 (MSVC Release):
+
+- `--dual --smoke`: high detail, 8192 seeds, 160 frames per backend; orbit,
+  stop/resume, manual angles and light/shadow subset checks passed.
+- `--dual --smoke --still --detail low --particles 256`: frozen automatic
+  motion and manual angle changes passed on both backends.
+- Both runs exited with code 0 and empty Motor memory dumps. The targeted build
+  produced no compiler warnings. The existing GL4 unused-normal and shutdown
+  `wglMakeCurrent(00)` messages remain. These are data/submission checks, not
+  a visual comparison of moving shadows.
 
 The targeted shadow build reported no compiler warnings. These runs use Motor's
 original locking implementation, without the earlier local `datas` experiment.

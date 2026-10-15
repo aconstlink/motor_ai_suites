@@ -1,0 +1,30 @@
+add_library( motor_reference_workload INTERFACE )
+target_include_directories( motor_reference_workload INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}" )
+target_link_libraries( motor_reference_workload INTERFACE motor::math motor::log )
+option( MOTOR_AI_REFERENCE_GRAPHICS_TESTS "Register window smoke tests for the optional references" OFF )
+
+function( motor_reference_target target suite )
+    target_link_libraries( ${target} PRIVATE motor_reference_workload )
+    set_target_properties( ${target} PROPERTIES FOLDER "suites/${suite}"
+        VS_DPI_AWARE "PerMonitor"
+        VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${target}>"
+        VS_DEBUGGER_COMMAND_ARGUMENTS "--objects 1000 --warmup 120 --frames 300" )
+    if( BUILD_TESTING )
+        add_test( NAME ${target}_help COMMAND ${target} --help )
+        add_test( NAME ${target}_invalid COMMAND ${target} --objects 0 )
+        set_tests_properties( ${target}_invalid PROPERTIES WILL_FAIL TRUE )
+        set_tests_properties( ${target}_help ${target}_invalid PROPERTIES LABELS "reference;cpu" TIMEOUT 15 )
+        if( MOTOR_AI_REFERENCE_GRAPHICS_TESTS )
+            add_test( NAME ${target}_smoke COMMAND ${target} --objects 100 --warmup 2 --frames 10 )
+            set_tests_properties( ${target}_smoke PROPERTIES LABELS "reference;graphics" TIMEOUT 60 RUN_SERIAL TRUE )
+        endif()
+    endif()
+endfunction()
+
+if( BUILD_TESTING )
+    add_executable( 00_reference_workload_test "00_reference_workload_test.cpp" )
+    target_link_libraries( 00_reference_workload_test PRIVATE motor_reference_workload )
+    set_target_properties( 00_reference_workload_test PROPERTIES FOLDER "suites/suite_reference" )
+    add_test( NAME reference_workload COMMAND 00_reference_workload_test )
+    set_tests_properties( reference_workload PROPERTIES LABELS "reference;cpu" TIMEOUT 15 )
+endif()

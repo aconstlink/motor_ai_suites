@@ -130,6 +130,9 @@ namespace village
         bool_t _frame_fire = true ;
         bool_t _shadows = true, _frame_shadows = true ;
         float_t _shadow_bias = 0.00035f ;
+        float_t _moon_yaw = 0, _moon_elevation = 45, _moon_speed = 3 ;
+        bool_t _moon_orbit = true ;
+        motor::math::mat4f_t _smoke_moon_view = motor::math::mat4f_t::make_identity() ;
         bool_t _frame_post = true, _frame_particles = true, _quitting = false ;
         std::chrono::steady_clock::time_point _started ;
 
@@ -240,14 +243,26 @@ namespace village
             // Motor uses one GL-style projection for both APIs. Keep the whole scene in
             // positive clip Z as well, so D3D's near clipping does not remove casters.
             _moon_camera.make_orthographic(64,64,0.1f,160.0f) ;
+            auto const direction = _directional[0]->get_direction() ;
+            _moon_yaw = std::atan2(-direction.x(),-direction.z())*180.0f/pi ;
+            _moon_elevation = std::asin(-direction.y())*180.0f/pi ;
+        }
+
+        void_t update_moon( void_t ) noexcept
+        {
+            float_t const yaw = _moon_yaw*pi/180.0f, elevation = _moon_elevation*pi/180.0f ;
+            vec3 const to_moon(std::sin(yaw)*std::cos(elevation),std::sin(elevation),
+                std::cos(yaw)*std::cos(elevation)) ;
+            _directional[0]->set_direction(to_moon*-1.0f) ;
             vec3 const center(0,4,0) ;
-            _moon_camera.look_at(center-_directional[0]->get_direction()*120.0f,vec3(0,1,0),center) ;
+            _moon_camera.look_at(center+to_moon*120.0f,vec3(0,1,0),center) ;
             _moon_shadow.proj = _moon_camera.get_proj_matrix() ;
             _moon_shadow.view = _moon_camera.get_view_matrix() ;
         }
 
         void_t update_scene( void_t ) noexcept
         {
+            update_moon() ;
             _light_collector.clear_lights() ; _collected_lights = 0 ;
             motor::scene::node_t::traverser(_root).apply(&_light_collector) ;
             _light_collector.for_each_light([&]( size_t const, motor::scene::light_component_mtr_t comp )
@@ -336,6 +351,8 @@ namespace village
                         !matches(shadow_vars,"u_clock",(object.model == 7 ? _controls->dragon_clock : _controls->clock)->get_value()) ) return false ;
                     for( size_t l = 0 ; l < 3 ; ++l )
                         if( !matches(vars,("u_energy_"+motor::to_string(l)).c_str(),_controls->energy[l]->get_value()) ) return false ;
+                    for( size_t l = 0 ; l < 2 ; ++l )
+                        if( !matches(vars,("u_direction_"+motor::to_string(l)).c_str(),_directional[l]->get_direction()) ) return false ;
                 }
             }
             return true ;
@@ -555,6 +572,7 @@ namespace village
             }
             update_variables() ;
             update_scene() ;
+            _smoke_moon_view = _moon_shadow.view ;
             motor::log::global_t::status("[village] "+motor::to_string(_vertices)+" vertices, "+motor::to_string(_triangles)+
                 " triangles, "+motor::to_string(_village_draws)+" village + "+motor::to_string(_dragon_draws)+
                 " dragon material batches, "+motor::to_string(_opts.particles)+" GPU particle seeds") ;
@@ -567,7 +585,16 @@ namespace village
         void_t on_graphics( motor::application::app::graphics_data_in_t data ) noexcept override
         {
             if( _quitting ) return ;
-            if( !_paused ) _time += data.sec_dt ;
+            if( !_paused )
+            {
+                _time += data.sec_dt ;
+                if( _moon_orbit )
+                {
+                    _moon_yaw = std::fmod(_moon_yaw+_moon_speed*data.sec_dt,360.0f) ;
+                    if( _moon_yaw > 180.0f ) _moon_yaw -= 360.0f ;
+                    if( _moon_yaw < -180.0f ) _moon_yaw += 360.0f ;
+                }
+            }
             update_variables() ;
             update_scene() ;
             // These properties are populated by the stages' compilation listeners, not init().
@@ -719,6 +746,11 @@ namespace village
                 ImGui::SliderFloat("Height",&_height,5,35) ; ImGui::Checkbox("Orbit",&_orbit) ;
                 ImGui::Checkbox("Pause",&_paused) ; ImGui::Checkbox("Particles",&_particles_enabled) ;
                 ImGui::Checkbox("Dragon",&_dragon_enabled) ; ImGui::Checkbox("Fire breath",&_breath) ;
+                ImGui::Separator() ;
+                ImGui::SliderFloat("Moon yaw",&_moon_yaw,-180,180,"%.1f deg") ;
+                ImGui::SliderFloat("Moon elevation",&_moon_elevation,10,80,"%.1f deg") ;
+                ImGui::SliderFloat("Moon speed",&_moon_speed,-15,15,"%.1f deg/s") ;
+                ImGui::Checkbox("Moon orbit",&_moon_orbit) ;
                 ImGui::Checkbox("Moon shadows",&_shadows) ; ImGui::SliderFloat("Shadow bias",&_shadow_bias,0.0f,0.002f,"%.5f") ;
                 ImGui::Checkbox("HDR / bloom / FXAA",&_post_enabled) ; ImGui::SliderFloat("Emission",&_emission,0,3) ;
             }
@@ -731,8 +763,22 @@ namespace village
             for( size_t w = 0 ; w < window_count() ; ++w )
                 if( _windows[w].frames < (_smoke_phase+1)*40 ) return ;
             if( !verify_scene() ) { fail("[village] scene transforms, camera subsets, collector and wire bridges") ; return ; }
-            if( _smoke_phase == 0 ) { _breath = false ; _shadows = false ; ++_smoke_phase ; return ; }
-            if( _smoke_phase == 1 ) { _dragon_enabled = false ; _shadows = true ; ++_smoke_phase ; return ; }
+            bool_t moon_moved = false ;
+            for( size_t i = 0 ; i < 16 ; ++i )
+                moon_moved |= std::abs(_moon_shadow.view[i]-_smoke_moon_view[i]) > 0.0001f ;
+            bool_t const expect_motion = _smoke_phase == 2 || (!_opts.still && _smoke_phase != 1) ;
+            if( moon_moved != expect_motion ) { fail("[village] moon orbit and frozen shadow camera") ; return ; }
+            _smoke_moon_view = _moon_shadow.view ;
+            if( _smoke_phase == 0 )
+            {
+                _breath = false ; _shadows = false ; _moon_orbit = false ; ++_smoke_phase ; return ;
+            }
+            if( _smoke_phase == 1 )
+            {
+                _dragon_enabled = false ; _shadows = true ;
+                _moon_yaw += 90.0f ; _moon_elevation = 25.0f ; _moon_orbit = true ;
+                ++_smoke_phase ; return ;
+            }
             if( _smoke_phase == 2 ) { _dragon_enabled = true ; _breath = true ; ++_smoke_phase ; return ; }
             for( size_t w = 0 ; w < window_count() ; ++w )
             {
@@ -746,6 +792,7 @@ namespace village
             }
             motor::log::global_t::test("[village] scene hierarchy, material parameters, 3 collected lights, wire bridges and per-view subsets",true) ;
             motor::log::global_t::test("[village] 160 HDR + transform-feedback frames, moon shadow matrices and shadow/dragon/fire toggles on every backend",true) ;
+            motor::log::global_t::test("[village] moon orbit, stop/resume, manual angles and matching light/shadow subsets",true) ;
             *_passed = true ; _quitting = true ; close() ;
         }
 

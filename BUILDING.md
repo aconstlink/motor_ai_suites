@@ -5,7 +5,8 @@
 `MOTOR_AI_BUILD_RAYLIB=ON` adds raylib under `externals/raylib` and the regular
 `00_raylib_benchmark` executable under `suites/suite_raylib`. Build and start it
 like a Motor sample, using the same solution and configuration. No nested builds
-or other comparison frameworks are included. See the [raylib guide](suite_raylib/README.md).
+are used. Other frameworks have their own opt-in flags; see the
+[raylib guide](suite_raylib/README.md) and [reference guide](suite_reference/README.md).
 
 ## Wire console tests
 
@@ -145,3 +146,10 @@ window ends the application.
 Known failure on the pinned engine: after removing the square, change its
 color and add it again. Both backends still display the old color. See
 `ENGINE_NOTES.md`; the sample deliberately retains this regression case.
+
+## Optional native rendering references
+
+The [reference guide](suite_reference/README.md) describes individually optional
+bgfx, Cinder and direct OpenGL benchmarks, including their dependency downloads,
+Visual Studio targets and smoke tests. These are normal targets in this build,
+not the removed nested comparison builds. All three options default to OFF.
