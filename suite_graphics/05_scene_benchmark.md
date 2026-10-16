@@ -1,7 +1,7 @@
 # Scene and light-pass benchmark
 
 This is a scaling benchmark, not a pass/fail performance threshold. It uses the
-Motor revision pinned by this repository. No engine changes are required.
+motor revision pinned by this repository. No engine changes are required.
 
 Latest measurements: [GL4/D3D11 datas locks on/off, 2026-10-15](../docs/DATAS_LOCK_COMPARISON.md),
 including functional coverage and historical framework references.
@@ -24,7 +24,7 @@ No ImGui overlay is drawn. VSync is requested off, but a driver/compositor can
 still limit presentation. Keep other workloads closed and do not minimize windows.
 The window title identifies the backend, render path, lighting mode, object count
 and light count, for example
-`Motor benchmark | D3D11 | scene | singlepass | 5000 objects | 2 lights`.
+`motor benchmark | D3D11 | scene | singlepass | 5000 objects | 2 lights`.
 It is set once at window creation, without per-frame title updates.
 
 For the full Windows matrix (fresh process per case):
@@ -48,8 +48,8 @@ accepted on non-Windows systems; the matrix runner itself is Windows PowerShell.
 
 The same executable also supports `--path direct --lights 0`. This path creates
 no scene nodes, components, visitors or wire bridges. It retains the same cube,
-unlit MSL shader, grid, camera, animation, render state and window lifecycle.
-Each object owns one variable set through the shared MSL object. Borrowed world
+unlit msl shader, grid, camera, animation, render state and window lifecycle.
+Each object owns one variable set through the shared msl object. Borrowed world
 variable pointers are cached and updated in `on_graphics`; `on_render` simply
 records one draw per object. Camera and color values remain constant.
 
@@ -70,10 +70,10 @@ not rewritten in direct mode. Differences can therefore affect backend work too.
 
 ### Scene path
 
-- 100 / 1000 / 5000 scene leaves, each with a transform and MSL-set component.
-- One shared cube (24 vertices, 36 indices) and one shared MSL object per process.
+- 100 / 1000 / 5000 scene leaves, each with a transform and msl-set component.
+- One shared cube (24 vertices, 36 indices) and one shared msl object per process.
 - One base variable set per object; one derived render-data set per object/pass.
-- Unlit baseline or 1 / 2 / 4 / 8 directional-light traversals using Motor visitors.
+- Unlit baseline or 1 / 2 / 4 / 8 directional-light traversals using motor visitors.
 - Per-object colors are copied through the existing bridges. Deterministic rotation
   updates all transforms with a fixed angular step, independently of frame rate.
 - Fixed orthographic camera, 1280x720 framebuffer. Cubes shrink with object count
@@ -91,7 +91,7 @@ lights in one pixel shader and submits one draw per object/window. The default
 
 The single-pass shader uses ordinary named `vec3_t light_dir_0`, `light_dir_1`
 and optionally `light_dir_2` variables with explicitly unrolled diffuse terms.
-No MSL arrays, defines, shader-language changes or backend changes are required.
+No msl arrays, defines, shader-language changes or backend changes are required.
 Directions are initialized in each base variable set and reach the one derived
 render-data set through the existing scene bridges. A regular render visitor
 handles the single traversal; the multipass reference uses the light visitor.
@@ -144,7 +144,7 @@ Do not interpret the approximately 16 ms interval alone as proof of a VSync cap.
 
 All 16 measured runs and two additional dual-backend smoke cases (100 objects,
 2/3 lights, 5 warmup/10 samples) completed successfully with the expected set
-counts and empty Motor memory dumps. Both generated shader variants compiled
+counts and empty motor memory dumps. Both generated shader variants compiled
 on GL4 and D3D11. The invalid direct/singlepass combination was rejected. The
 known WGL shutdown diagnostic remains. Pixel equivalence has not been visually
 or through readback verified; successful command flow is not proof of matching
@@ -176,7 +176,7 @@ Logs/CSVs are under `build/benchmark-results`:
   produce a valid row merely by running the warmup loop.
 
 The test does not measure GPU timestamps, allocation event counts, VRAM or peak
-RAM. Motor's memory dump checks tracked allocations after shutdown only; it is
+RAM. motor's memory dump checks tracked allocations after shutdown only; it is
 not a measurement of runtime allocation churn. No changes to the engine's
 profiling/memory observer are made. A successful run does not prove pixel
 correctness; visually verify at least one small scene on each backend.
@@ -186,7 +186,7 @@ real graphics session and results depend on hardware, driver and window system.
 
 ## Initial verification (2026-10-05)
 
-Windows Release, Motor `cbed5cc`, i7-6700 (4 cores / 8 threads), RTX 2060,
+Windows Release, motor `cbed5cc`, i7-6700 (4 cores / 8 threads), RTX 2060,
 driver 32.0.15.9621. Other desktop applications were open; these are exploratory
 local measurements, not isolated or repeated performance claims.
 
@@ -213,7 +213,7 @@ The frame/preparation gap needs profiling of backend execution, synchronization
 and presentation; these timers cannot identify its cause or measure GPU cost.
 The full default matrix has not been completed.
 
-All completed verification runs reported an empty Motor memory-manager dump.
+All completed verification runs reported an empty motor memory-manager dump.
 GL shutdown still logs the known `wglMakeCurrent(00)` warning; no engine fixes
 were made as part of this benchmark.
 

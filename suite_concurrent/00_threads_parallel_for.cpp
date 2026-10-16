@@ -142,7 +142,7 @@ static int run_tests( int argc, char ** argv )
     auto const hardware = motor::concurrent::thread_t::hardware_concurrency() ;
     if( hardware == 0 )
     {
-        motor::log::global_t::error( "Motor currently requires hardware_concurrency() > 0." ) ;
+        motor::log::global_t::error( "motor currently requires hardware_concurrency() > 0." ) ;
         return 1 ;
     }
     motor::log::global_t::status<256>( "[concurrent] %s, hardware threads: %u", mode.c_str(), hardware ) ;

@@ -26,7 +26,7 @@ foreach ($model in @('Sponza','Suzanne')) {
     }
     $materialIndex = 0
     foreach ($material in $data.materials) {
-        # Motor currently requires material names; glTF itself makes them optional.
+        # motor currently requires material names; glTF itself makes them optional.
         if ([string]::IsNullOrEmpty($material.name)) {
             $material | Add-Member -Force NoteProperty name "material_$materialIndex"
         }
@@ -38,7 +38,7 @@ foreach ($model in @('Sponza','Suzanne')) {
             $material.pbrMetallicRoughness.PSObject.Properties.Remove($key)
         }
     }
-    $data.asset | Add-Member -Force NoteProperty copyright "Model authors and notices: see UPSTREAM_README.md; source: KhronosGroup/glTF-Sample-Models/2.0/$model. Textures omitted for the Motor async-loading sample."
+    $data.asset | Add-Member -Force NoteProperty copyright "Model authors and notices: see UPSTREAM_README.md; source: KhronosGroup/glTF-Sample-Models/2.0/$model. Textures omitted for the motor async-loading sample."
     [IO.File]::WriteAllText((Join-Path $target "$model.gltf"), ($data | ConvertTo-Json -Depth 100), [Text.UTF8Encoding]::new($false))
     Copy-Item -LiteralPath (Join-Path $original "glTF/$model.bin") -Destination $target
     Copy-Item -LiteralPath (Join-Path $original 'README.md') -Destination (Join-Path $target 'UPSTREAM_README.md')

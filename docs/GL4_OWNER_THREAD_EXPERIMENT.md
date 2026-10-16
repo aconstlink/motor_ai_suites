@@ -6,7 +6,7 @@ The findings below refer to the older revision and experiment only.
 
 ## Scope
 
-Local experiment in the Motor submodule of `motor_ai_suites`, based on Motor
+Local experiment in the motor submodule of `motor_ai_suites`, based on motor
 `0933369`. The committed source was fetched from the local `motor_suites/motor`
 checkout without modifying that checkout. The experiment is not committed and
 is not intended as an engine change to adopt unchanged.
@@ -23,7 +23,7 @@ queue locks, graphics variable-set locks, memory-manager locks, and all other
 synchronization are unchanged. No compile-status or shutdown bug was fixed to
 make the tests pass.
 
-The active GL4 worker now performs MSL parsing, dependency resolution, GLSL
+The active GL4 worker now performs msl parsing, dependency resolution, GLSL
 generation, compilation, linking, and reflection, and returns the result through
 the queue. The backend containers are updated by the result consumer in
 `end_frame()`. This makes a GL4-only lock experiment possible. It is not proof
@@ -113,7 +113,7 @@ minimum and maximum process median, not individual-frame extremes.
 | Scene, 1,000 objects, two lights | 19.085 (12.632-20.537) | 11.514 (9.013-16.215) |
 | Direct, 5,000 objects | 20.626 (19.143-21.280) | 23.294 (16.492-27.353) |
 
-All 30 benchmark processes exited successfully with empty Motor memory dumps.
+All 30 benchmark processes exited successfully with empty motor memory dumps.
 The aggregate medians favor the unlocked build in the 1,000-object workloads,
 but they are not a stable speedup estimate. In particular, paired comparisons
 change direction:
@@ -134,7 +134,7 @@ the remaining costs. No engine-wide lock removal is justified by these runs.
 
 Recorded runs and the exact local engine diff are in
 [`results/gl4-owner-thread-20261014`](results/gl4-owner-thread-20261014/).
-The patch applies to Motor `0933369`; it changes only `datas.hpp` and the nine
+The patch applies to motor `0933369`; it changes only `datas.hpp` and the nine
 GL4 container aliases. It intentionally leaves D3D11 locked.
 
 Platform DLL SHA-256:

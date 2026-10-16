@@ -120,11 +120,11 @@ foreach ($repeat in 1..$Repeats) {
                 $log = Get-Content -LiteralPath $out -Raw
                 if ($case.name.StartsWith('motor-gl')) {
                     $matches = [regex]::Matches($log, '(?m)(?<![A-Z_])BENCH,([^\r\n]+)')
-                    if ($matches.Count -ne 1) { throw "Expected one Motor result: $name" }
+                    if ($matches.Count -ne 1) { throw "Expected one motor result: $name" }
                     $v = $matches[0].Groups[1].Value.Split(',')
                     if ($v.Count -ne 17 -or $v[0] -ne 'gl' -or [int]$v[1] -ne $count -or
                         [int]$v[2] -ne 0 -or [int]$v[3] -ne $Frames -or [int]$v[4] -ne $count -or
-                        [int]$v[5] -ne $count) { throw "Unexpected Motor workload: $name" }
+                        [int]$v[5] -ne $count) { throw "Unexpected motor workload: $name" }
                     $frame = Number $v[6]; $p95 = Number $v[7]
                     $update = Number $v[10]; $submit = Number $v[12]
                 } else {

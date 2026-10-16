@@ -18,7 +18,7 @@ namespace this_file
     using datas_t = motor::platform::datas<payload> ;
 
     // A deliberately ordinary, bounded mutex/CV queue. This is a comparison
-    // model, not a lock-free queue or a replacement for Motor's command system.
+    // model, not a lock-free queue or a replacement for motor's command system.
     class queue
     {
         std::mutex _mutex ;

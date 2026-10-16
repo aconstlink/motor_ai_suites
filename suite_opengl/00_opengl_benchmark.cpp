@@ -6,7 +6,7 @@ namespace this_file
 {
     using namespace motor::core::types ;
 
-    // Resolve only the entry points this reference needs. No Motor graphics backend.
+    // Resolve only the entry points this reference needs. No motor graphics backend.
     struct gl_api
     {
 #define GL_ENTRY(type, name) type name = reinterpret_cast<type>(glfwGetProcAddress("gl" #name))

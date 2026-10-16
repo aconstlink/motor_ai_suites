@@ -1,9 +1,9 @@
 # Native rendering references
 
 Three optional references beside [raylib](../suite_raylib/README.md). Each is a
-normal executable in the Motor AI Suites solution, with a directly linked external
+normal executable in the motor AI Suites solution, with a directly linked external
 library where applicable. No child CMake/MSBuild invocations, launcher copies or
-automatic full benchmark runs. Motor's source and pinned submodule are unchanged.
+automatic full benchmark runs. motor's source and pinned submodule are unchanged.
 
 | Option (default OFF) | Target | Rendering |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ and keeps per-run logs, executable hashes and CSV records under the build tree.
 
 ## What is compared
 
-The common helper uses Motor math, containers and logging, **not** Motor's
+The common helper uses motor math, containers and logging, **not** motor's
 application, renderer, Scene Graph or Wire. Transforms follow the native raylib
 reference: fixed-step Y rotation, X rotation 0.3, the same grid/scale/colors and
 orthographic camera at (0,0,30), width 24, height 13.5, near/far 1/100.
@@ -120,9 +120,9 @@ is a small reference path for this workload, not a lower bound for every rendere
 Cinder presents after `draw()`, bgfx hands off via `frame()`, direct GL swaps inside
 the measured submission phase. Phase times are therefore not interchangeable.
 
-For Motor use `05_scene_benchmark --backend gl --path direct --lights 0` with the
+For motor use `05_scene_benchmark --backend gl --path direct --lights 0` with the
 same counts. For raylib prefer `--matrices separate`. Raylib uses 16-bit indices
-and its own mesh/matrix submission machinery. Motor's window client size needs
+and its own mesh/matrix submission machinery. motor's window client size needs
 checking (its requested size can include borders); the existing raylib comparison
 runner performs that adjustment. The new references reject mismatched framebuffer
 sizes. Do not combine their new numbers with the [historical table](../comparison/RESULTS.md).

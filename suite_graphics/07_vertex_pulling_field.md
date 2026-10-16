@@ -2,7 +2,7 @@
 
 `07_vertex_pulling_field` renders a wave field of rounded cubes using two array buffers:
 one stores the shared cube's positions/normals, the other stores each object's
-position, scale and color. MSL derives object and mesh indices from `vertex_id`.
+position, scale and color. msl derives object and mesh indices from `vertex_id`.
 The shader animates height and rotation and applies simple directional lighting.
 Each face is subdivided before its vertices are projected onto a rounded box.
 The additional triangles therefore describe curved edges and corners, not just
@@ -68,17 +68,17 @@ Timeout is 120 seconds. It does not automatically compare pixels or time GPU wor
 Release verification on 2026-10-06:
 
 - Dual-backend smoke: side 48/subdivisions 8, side 96/subdivisions 8 without
-  VSync, and side 48/subdivisions 16 passed, exit 0 and empty Motor memory dumps.
+  VSync, and side 48/subdivisions 16 passed, exit 0 and empty motor memory dumps.
 - Zero subdivisions and side 96/subdivisions 16 were rejected; the latter
   exceeds the buffer memory budget.
 - A paused side 8/subdivisions 16 scene displayed rounded cubes under GL4 and
-  D3D11. Closing it returned exit 0 with an empty Motor memory dump. This is a
+  D3D11. Closing it returned exit 0 with an empty motor memory dump. This is a
   manual mesh check, not a pixel-equivalence regression test.
 
 The final panel-only adjustment encountered unrelated concurrent D3D11 backend
 edits: accesses to the removed `cbuffer::var_set_idx` blocked a full dependency
 rebuild. Those engine edits were left untouched; the sample can be rebuilt
-against the previously successful Motor libraries using MSBuild's
+against the previously successful motor libraries using MSBuild's
 `/p:BuildProjectReferences=false`. The runs above validate those earlier binaries,
 not the unfinished backend edits.
 

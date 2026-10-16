@@ -5,7 +5,7 @@
 
 ## Document tokenization
 
-## Sponza OBJ via Motor IO
+## Sponza OBJ via motor IO
 
 `01_document_obj` loads `suite_core/working/sponza.obj` through
 `motor::io::database_t(path_t(DATAPATH), "./working", "data")`, followed by
@@ -21,7 +21,7 @@ cmake --build build --config Release --target 01_document_obj
 ctest --test-dir build -C Release -R '^core_document_obj$' --output-on-failure
 ```
 
-Locations are relative to the database's working directory and use Motor's
+Locations are relative to the database's working directory and use motor's
 location syntax. CTest registers the correctness-only test when sponza.obj
 exists at CMake configure time; no benchmark timing threshold is imposed.
 
@@ -43,7 +43,7 @@ are reported, but this is not a complete OBJ importer benchmark.
 
 Lines reaching 4096 bytes are rejected before constructing document to avoid
 its current fixed scratch-buffer limit. No allocation-count or peak-memory
-measurement is claimed. The final Motor dump does not track std allocations.
+measurement is claimed. The final motor dump does not track std allocations.
 
 Local Windows/MSVC Release result (24,424,786 bytes, 2,187,283 tokens):
 
@@ -56,7 +56,7 @@ Local Windows/MSVC Release result (24,424,786 bytes, 2,187,283 tokens):
 
 Database init: 4.206 ms; load/wait/copy: 52.107 ms. Document reports 569,548
 lines, 145,185 vertex records, 87,715 UV records, 72,781 normal records and
-262,267 face records. All comparisons passed with an empty Motor memory dump.
+262,267 face records. All comparisons passed with an empty motor memory dump.
 These numbers describe this one local run, not portable speed guarantees.
 
 ## Counting and reservation comparison
@@ -83,11 +83,11 @@ Do not subtract standalone medians from total medians to derive exact phase cost
 No document-without-reserve variant was implemented, so these measurements do not
 quantify how much document itself gains from reserve. Results are workload-specific.
 
-`00_document` compares Motor's document constructor/token iterator with standard
+`00_document` compares motor's document constructor/token iterator with standard
 string/substr, stringstream extraction, and a string_view baseline. The standard
 implementations retain all tokens before traversal, as document does. Each copies
 the source; string_view tokens reference that private copy. Standard types in the
-baselines are intentional. Application data and logging use Motor.
+baselines are intentional. Application data and logging use motor.
 
 CTest checks exact token contents and ordering, including LF, CRLF, whitespace,
 blank lines and an indented final line without a newline. These are whitespace
@@ -111,7 +111,7 @@ Every digest and token count is checked. There is no CI speed threshold.
 This is not equal functionality: document also stores line/indent metadata and
 normalizes text; the baselines only tokenize. Allocators differ as well. Results
 describe this workload, not general superiority. Release builds are important.
-No allocation count or peak-memory comparison is claimed; Motor's final leak
+No allocation count or peak-memory comparison is claimed; motor's final leak
 check cannot account for standard-library allocations.
 
 The separate `--benchmark-traversal` mode builds all representations beforehand
@@ -142,7 +142,7 @@ Windows/MSVC Release, 646058 bytes, 49152 tokens, median of nine runs:
 
 These are one local measurement, not portable performance guarantees.
 
-Two correctness tests currently fail in the unchanged Motor dependency:
+Two correctness tests currently fail in the unchanged motor dependency:
 `final_line` produces four rather than three tokens; `whitespace` produces one
 rather than zero. Both expose an extra empty token. Basic cases and blank lines
 pass. These failures intentionally remain visible in CTest/CI, not marked as

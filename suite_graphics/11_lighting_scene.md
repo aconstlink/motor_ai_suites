@@ -26,7 +26,7 @@ default to GL4 and reject `--d3d-only`. Closing either window closes the sample.
 
 ## Scene and controls
 
-- Cube geometry comes from Motor's cube/tri-mesh/flatten path. A second mesh
+- Cube geometry comes from motor's cube/tri-mesh/flatten path. A second mesh
   subdivides each cube triangle into 144 triangles and projects vertices onto
   a sphere; the triangle cube generator currently does not apply `tess`.
 - An analytic torus has 48 major and 20 minor segments with smooth normals.
@@ -39,7 +39,7 @@ default to GL4 and reject `--d3d-only`. Closing either window closes the sample.
   Diffuse plus Blinn-Phong highlights show hard and smooth surface responses.
 - Controls select single/multipass lighting, intensity per light, ambient,
   specular strength, camera orbit and pause. Animation rotates selected objects
-  and changes the key direction. Motor cameras handle perspective and resize.
+  and changes the key direction. motor cameras handle perspective and resize.
 
 The four unique meshes contain 3900 triangles in total; mesh reuse means this
 is not the scene's per-frame triangle submission count. No instancing is used.
@@ -47,7 +47,7 @@ is not the scene's per-frame triangle submission count. No instancing is used.
 ## Lighting paths
 
 Single pass uses three explicitly named direction/color uniform pairs and
-unrolled lighting expressions, without uniform arrays or MSL extensions. Disabled
+unrolled lighting expressions, without uniform arrays or msl extensions. Disabled
 lights have zero intensity, but the shader still contains all three evaluations.
 Each of the 12 objects is drawn once, with ambient included once.
 
@@ -67,17 +67,17 @@ a final production-lighting reference or a GPU performance benchmark.
 
 ## Resource lifetime
 
-Three shared MSL objects (ambient, one light, three lights) each link all four
-geometries. Configure geometry before MSL. Each object/window has five stable
+Three shared msl objects (ambient, one light, three lights) each link all four
+geometries. Configure geometry before msl. Each object/window has five stable
 variable sets: ambient, combined, and one per individual light. Cached variables
-are borrowed from those sets, which are owned by the MSL objects. All values and
+are borrowed from those sets, which are owned by the msl objects. All values and
 the active mode are prepared in `on_graphics`, never rewritten between async
 draws in `on_render`. The sample updates both active and inactive paths for easy
 interactive switching; do not use its CPU cost as an optimized lighting baseline.
 
-`on_last_frame` releases MSL before geometry/state resources. `on_render` is not
+`on_last_frame` releases msl before geometry/state resources. `on_render` is not
 called for that window's final frame.
-`on_shutdown` clears borrowed bindings before releasing the owning MSL references.
+`on_shutdown` clears borrowed bindings before releasing the owning msl references.
 Render states are explicitly applied each frame. After the additive state is
 popped there are no further scene draws, avoiding reliance on the previously
 observed D3D11 nested depth-state restoration issue for scene rendering.
@@ -89,7 +89,7 @@ lights, then repeats all lights with a different camera angle and stronger
 specular response. Each of ten phases requires at least 45 frames per backend
 and checks the exact number of submitted scene draws. It has a 90-second timeout.
 Controls are disabled during smoke. VSync is requested on; no timing claims are
-made from this test. Shader readiness and empty Motor memory dumps are separate
+made from this test. Shader readiness and empty motor memory dumps are separate
 from pixel correctness; matching images need visual inspection or readback.
 
 The first Release build against the current engine source was blocked by ongoing
@@ -103,7 +103,7 @@ The manual inspection process was stopped; automated verification is recorded
 separately below.
 
 On 2026-10-07 the final 3900-triangle-mesh version passed all ten phases in dual
-GL4/D3D11 mode and in D3D11-only mode, both with exit 0 and empty Motor memory
+GL4/D3D11 mode and in D3D11-only mode, both with exit 0 and empty motor memory
 dumps. All three shader configurations compiled on both backends. Logs are
 `build/bin/Release/lighting-scene-dual-smoke.log` and
 `build/bin/Release/lighting-scene-d3d-smoke.log`. GL4 warns about unused normals

@@ -6,7 +6,7 @@ The following tests add synchronization and dependency-graph coverage without gr
 
 Result lines use `motor::log::global_t::test`: green `[OK]` at status level or red
 `[FAIL]` at error level in the console, plain text in other loggers. This requires
-a Motor revision containing that API. Exit codes and memory checks remain the
+a motor revision containing that API. Exit codes and memory checks remain the
 authority for CTest; colors are only presentation.
 
 ## Synchronization
@@ -70,7 +70,7 @@ the `datas` and `concurrent` labels, so existing console CI includes these tests
 Each scenario has a 20-second watchdog; CTest additionally enforces 30 seconds.
 On a watchdog failure the process exits without normal cleanup, because joining
 deadlocked workers would hang. Normal exits require no live dummy objects and an
-empty Motor memory dump.
+empty motor memory dump.
 
 The test harness uses standard-library synchronization. Contended dummy values
 are atomic, so broken mutual exclusion does not itself create payload data races.
@@ -86,7 +86,7 @@ ctest --test-dir build -C Release -L datas --repeat until-fail:10 --output-on-fa
 
 ### Initial Datas Results (2026-10-12)
 
-With Motor `3d240b4`, Windows MSVC Debug and Release both passed five of the six
+With motor `3d240b4`, Windows MSVC Debug and Release both passed five of the six
 scenarios. `contention` hit the 20-second watchdog in both configurations and in
 a second Release run. The five completed scenarios had empty memory dumps.
 Do not interpret the passing recursive test as proof of thread safety.
@@ -97,7 +97,7 @@ Code inspection still shows owner fast paths in `guard_data::enter()` and
 without the condition-variable mutex. This is a concrete suspect for the stall;
 the timeout alone does not identify the exact interleaving.
 
-The test and Motor Memory/Log sources also compiled with GCC ThreadSanitizer in
+The test and motor Memory/Log sources also compiled with GCC ThreadSanitizer in
 WSL. That executable could not run: the sanitizer aborted at startup with
 `FATAL: ThreadSanitizer: unexpected memory mapping`. No sanitizer diagnosis was
 obtained. The engine implementation was not changed as part of these tests.
@@ -110,13 +110,13 @@ ctest --test-dir build -C Release -L concurrent_extended --output-on-failure --n
 ```
 
 Use `-L concurrent` to include the existing parallel-for tests. Each scenario runs
-in a separate process. Successful completion also requires an empty Motor memory
+in a separate process. Successful completion also requires an empty motor memory
 dump after cleanup. Repeated runs increase coverage but do not prove freedom from
 all data races or scheduling bugs.
 
 ## Initial Results
 
-Against Motor `8201afae`, all ten new scenarios pass in the final Windows
+Against motor `8201afae`, all ten new scenarios pass in the final Windows
 Debug/Release and Linux Debug (WSL) runs. Each scenario also passed five consecutive
 Windows Release runs.
 

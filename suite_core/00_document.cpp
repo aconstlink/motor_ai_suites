@@ -40,7 +40,7 @@ namespace this_file
         } ) ;
     }
 
-    // Standard-library baselines intentionally use std::string, not Motor's wrapper.
+    // Standard-library baselines intentionally use std::string, not motor's wrapper.
     template< typename F >
     void_t string_tokens( motor::string_in_t text, F && consume, bool_t const preallocate = false )
     {

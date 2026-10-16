@@ -1,10 +1,10 @@
 # Memory Tests
 
-Console regression tests for Motor's memory APIs. No graphics context or assets
+Console regression tests for motor's memory APIs. No graphics context or assets
 are required. Individual scenarios run in separate processes. The `--smoke`
 option (alias `all`) runs all scenarios of an executable in one process, reports
 each result with `motor::log::global_t::test`, and continues after failed checks.
-Both modes check Motor's memory dump after releasing test objects and shutting
+Both modes check motor's memory dump after releasing test objects and shutting
 down logging. Exit codes are 0 for success, 1 for failed checks or leaks, and 2
 for invalid arguments.
 
@@ -26,12 +26,12 @@ for invalid arguments.
 | --- | --- |
 | `raw` | Several allocation sizes, purpose metadata, byte contents and exact tracked-byte accounting |
 | `typed_array` | Each element in an allocated array is destroyed exactly once |
-| `containers` | Motor vector/string allocations, independent copies, moves and complete cleanup |
+| `containers` | motor vector/string allocations, independent copies, moves and complete cleanup |
 | `malloc_copy` | Typed copy contents, element count and allocation size without multiplying `sizeof(T)` twice |
 | `malloc_move` | Move construction and explicit pointer extraction without double release |
 | `malloc_assignment` | Move assignment into a nonempty guard releases its previous allocation |
 
-Allocation counts here refer to Motor's tracked bytes, not process RSS or total
+Allocation counts here refer to motor's tracked bytes, not process RSS or total
 system allocations. They test correctness rather than allocator speed.
 
 ## Running
@@ -59,7 +59,7 @@ failures intentionally remain failures; they are not marked `WILL_FAIL`.
 
 ## Initial Findings
 
-Tested against Motor `8201afae` on Windows (MSVC, Debug and Release) and Linux
+Tested against motor `8201afae` on Windows (MSVC, Debug and Release) and Linux
 (GCC, Debug, WSL). Five of the nine memory scenarios pass. Four expose existing
 engine issues; the tests do not modify the engine:
 
@@ -71,4 +71,4 @@ engine issues; the tests do not modify the engine:
 | `malloc_assignment` | The destination's previous allocation is lost; the memory dump reports seven leaked bytes | [malloc_guard.hpp](../motor/memory/malloc_guard.hpp) |
 
 Consequently, the expanded CTest workflows will report failures until these
-regressions are fixed in the Motor version used by the suite.
+regressions are fixed in the motor version used by the suite.

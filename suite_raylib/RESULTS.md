@@ -1,8 +1,8 @@
-# Motor / native raylib comparison: 2026-10-12
+# motor / native raylib comparison: 2026-10-12
 
 This is a direct, unlit draw-call workload comparison, not a general engine rating.
-Motor's Scene Graph, Wire connections, lights, shadows and postprocessing are not
-part of this measurement. No Motor engine source was changed for this original
+motor's Scene Graph, Wire connections, lights, shadows and postprocessing are not
+part of this measurement. No motor engine source was changed for this original
 series. The later [glFinish A/B experiment](GLFINISH.md) measures the engine change
 separately; do not merge its runs with the baseline below.
 
@@ -10,12 +10,12 @@ separately; do not merge its runs with the baseline below.
 
 - Intel Core i7-6700 (4 cores / 8 threads), NVIDIA GeForce RTX 2060.
 - Windows 11 Pro 26100, driver 32.0.15.9621, Visual Studio 2026, x64 Release.
-- Motor `cc4c402daf10b05404c1e158f15beb2449447330`;
+- motor `cc4c402daf10b05404c1e158f15beb2449447330`;
   suites base `d68f55c942191b2816a68e8b36d895d54e014c6f` plus the native raylib test.
 - Raylib source archive pinned to `fdc8b37391b52fdc8cc62af37d02235c9ec59daa`.
 - One window, verified 1280x720 client area and 144 DPI in every run.
 - Matching cube grid, colors, orthographic camera, scale and fixed-step animation.
-  Both applications use Motor's transform math. Shared mesh: 24 vertices,
+  Both applications use motor's transform math. Shared mesh: 24 vertices,
   36 indices per cube, one indexed draw per object; no instancing.
 - Depth test/write enabled, LEQUAL; no blending or backface culling.
   VSync and application frame limiting requested off. No MSAA requested.
@@ -24,16 +24,16 @@ separately; do not merge its runs with the baseline below.
 - No concurrent build. Normal desktop/browser applications remained active.
   Background CPU activity was observed: this is not an isolated idle-machine baseline.
 
-The initial checks exposed two confounders: Motor and raylib interpreted decorated
-window dimensions differently, and Motor was DPI-unaware while raylib was DPI-aware.
+The initial checks exposed two confounders: motor and raylib interpreted decorated
+window dimensions differently, and motor was DPI-unaware while raylib was DPI-aware.
 Both Visual Studio benchmark targets now use a PerMonitor manifest. The runner
 normalizes client dimensions at startup and verifies size and matching DPI.
 Earlier interrupted diagnostic series are **not** included below.
 
-**Synchronization follow-up:** Motor's measured GL4 path calls `glFinish()` on
+**Synchronization follow-up:** motor's measured GL4 path calls `glFinish()` on
 every frame; the Windows/GLFW raylib path does not. The results below include that
 policy difference. They must not be presented as equal GPU-completion policies or
-as the performance Motor would achieve without the forced wait. See the follow-up
+as the performance motor would achieve without the forced wait. See the follow-up
 section below and the separate [finish-on/off measurements](GLFINISH.md).
 
 ## Results
@@ -42,55 +42,55 @@ section below and the separate [finish-on/off measurements](GLFINISH.md).
 median of three run medians, not a pooled frame median or a GPU timestamp.
 It is not measured display FPS or presentation latency.
 
-| Objects / draws per frame | Motor GL4, three matrices | Raylib, three matrices | Raylib, combined MVP |
+| Objects / draws per frame | motor GL4, three matrices | Raylib, three matrices | Raylib, combined MVP |
 |---|---:|---:|---:|
 | 100 | 2.174 | 0.713 | 0.806 |
 | 1,000 | 10.315 | 3.942 | 4.150 |
 | 5,000 | 46.840 | 22.599 | 20.586 |
 
-Against the closer three-matrix raylib variant, Motor's interval is approximately
-**3.05x / 2.62x / 2.07x** at these object counts. All three Motor run medians were
+Against the closer three-matrix raylib variant, motor's interval is approximately
+**3.05x / 2.62x / 2.07x** at these object counts. All three motor run medians were
 higher than all three raylib run medians at the corresponding count, in both variants.
 
 There is meaningful run-to-run variation:
 
 | Variant | 100: min-max run median | 1,000: min-max run median | 5,000: min-max run median |
 |---|---:|---:|---:|
-| Motor GL4 | 2.002-2.590 | 10.162-10.317 | 45.153-59.711 |
+| motor GL4 | 2.002-2.590 | 10.162-10.317 | 45.153-59.711 |
 | Raylib, three matrices | 0.704-0.734 | 3.889-5.814 | 21.049-22.603 |
 | Raylib, combined MVP | 0.737-0.857 | 3.958-4.372 | 19.359-31.455 |
 
-The three-matrix raylib path remains faster than Motor here. Thus the original
+The three-matrix raylib path remains faster than motor here. Thus the original
 MVP-versus-three-matrices difference does not explain the overall gap. The raylib
 variants' ranges overlap; this run does not isolate a reliable cost for the extra
 matrix uniforms. Repeat under quieter conditions before making small-effect claims.
 
 ## Diagnostic timings
 
-Motor's measured transform/update medians were **0.019 / 0.209 / 1.122 ms** for
+motor's measured transform/update medians were **0.019 / 0.209 / 1.122 ms** for
 100 / 1,000 / 5,000 objects. Its frontend command-recording medians were
 **0.012 / 0.076 / 0.494 ms**. The transform evaluation alone therefore does not
 account for the whole frame interval.
 
-Do not compare Motor's command-recording time directly with raylib's submission
+Do not compare motor's command-recording time directly with raylib's submission
 column: raylib includes graphics API execution and EndDrawing/presentation there;
-Motor performs backend work on another thread. Nor should medians be subtracted
+motor performs backend work on another thread. Nor should medians be subtracted
 to claim an exact backend time. GPU timestamps and backend phase instrumentation
 are still missing.
 
 ## Remaining implementation differences
 
-- Motor uses its GL4 backend; raylib is built for OpenGL 3.3.
-- Motor keeps a variable set per object, cached variable pointers and frontend
+- motor uses its GL4 backend; raylib is built for OpenGL 3.3.
+- motor keeps a variable set per object, cached variable pointers and frontend
   commands. Raylib calls SetShaderValue and DrawMesh directly for each object.
 - The closer raylib mode uses matModel, matView and matProjection with the same
   shader multiplication order. DrawMesh still performs its internal matrix work,
   even when its combined MVP uniform is unused.
-- Motor's cube uses interleaved position/normal data and 32-bit indices. Raylib's
+- motor's cube uses interleaved position/normal data and 32-bit indices. Raylib's
   generated cube uses separate attribute buffers, unused UV data and 16-bit indices.
   This is equal visible work and topology counts, not byte-identical GPU resources.
-- Motor starts its normal application services and render thread; the raylib test
-  uses Motor math/containers/logging but not those application services.
+- motor starts its normal application services and render thread; the raylib test
+  uses motor math/containers/logging but not those application services.
 
 The increasing absolute gap with object count warrants profiling per-draw work,
 not a conclusion that the Scene Graph or lighting architecture is slow. Useful
@@ -120,7 +120,7 @@ See [Khronos synchronization](https://wikis.khronos.org/opengl/Synchronization).
 In the pinned raylib source, the Windows/GLFW `SwapScreenBuffer` uses
 `glfwSwapBuffers` without an explicit per-frame `glFinish`. Driver/presentation
 backpressure can still block it. A finish call in raylib's DRM implementation is
-not part of this Windows benchmark. Motor's ES3 backend has the same flush/finish
+not part of this Windows benchmark. motor's ES3 backend has the same flush/finish
 pair, but was not benchmarked here.
 
 The subsequent [controlled A/B experiment](GLFINISH.md) retains `glFlush` and
@@ -150,8 +150,8 @@ coverage and remaining validation limits are recorded in the [A/B report](GLFINI
 ## Validation and reproduction
 
 - 27/27 measured runs exited with code 0 and all 600 samples.
-- All nine Motor runs reported the expected variable-set count and an empty memory dump.
-- The known `wglMakeCurrent(00)` shutdown diagnostic appeared in all nine Motor runs,
+- All nine motor runs reported the expected variable-set count and an empty memory dump.
+- The known `wglMakeCurrent(00)` shutdown diagnostic appeared in all nine motor runs,
   after reporting timings. No crash or benchmark timeout occurred.
 - Both raylib shader variants passed graphical runs; their separately captured
   first-frame 1280x720 images matched exactly. Captures were not part of timed runs.

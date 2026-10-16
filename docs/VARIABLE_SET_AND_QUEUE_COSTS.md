@@ -25,13 +25,13 @@ individual contended operation. A separate 60-second watchdog catches hangs.
 ## Variable-set Access
 
 [06_variable_set_cost.cpp](../suite_concurrent/06_variable_set_cost.cpp) uses real
-Motor variable sets with 8 or 64 `vec4f` variables and initialized values.
+motor variable sets with 8 or 64 `vec4f` variables and initialized values.
 
 It compares:
 
 - Typed name lookup followed by reading the returned variable.
 - Reading a previously cached variable pointer.
-- The cached-pointer path inside a separate Motor `mrsw` reader lock, as a
+- The cached-pointer path inside a separate motor `mrsw` reader lock, as a
   primitive-cost control. This is not instrumentation of the set's private lock.
 
 Each case runs with one reader, two readers sharing the same immutable set, and
@@ -99,7 +99,7 @@ reconfigure and shutdown. Variable-value snapshots are a separate problem.
 
 Local Windows/MSVC Release run, 2026-10-13, Intel Core i7-6700 @ 3.40 GHz.
 Values below are medians of three trials, in milliseconds, not frame times.
-Both CTest smoke cases and both benchmark executables passed, with empty Motor
+Both CTest smoke cases and both benchmark executables passed, with empty motor
 memory dumps. No Linux run or backend changes were made for these experiments.
 Raw logs include min/max and queue occupancy:
 [variable sets](../suite_concurrent/results/variable_set_cost_2026-10-13.log),

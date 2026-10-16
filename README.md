@@ -6,33 +6,34 @@
 [![CTest Linux](https://github.com/aconstlink/motor_ai_suites/actions/workflows/ctest-linux.yml/badge.svg?branch=main)](https://github.com/aconstlink/motor_ai_suites/actions/workflows/ctest-linux.yml)
 
 Applications, integration tests and benchmarks built with
-[Motor](https://github.com/aconstlink/motor), my C++ engine/framework.
+[motor](https://github.com/aconstlink/motor), my C++ engine/framework.
 
 The samples in this repository are developed with OpenAI's coding assistant and
-reviewed and tested together with me. Motor itself is my independently developed
+reviewed and tested together with me. motor itself is my independently developed
 engine. The goal is to exercise its public APIs, find bugs and bottlenecks, and
 explore how the different systems work together in real applications.
 
-Motor is included as a Git submodule. The samples cover graphics, multiple
+motor is included as a Git submodule. The samples cover graphics, multiple
 windows and backends, scene graphs, Wire connections, concurrency and document
 processing. Each application is a separate CMake target.
 
 ## Start Here
 
-- [Async Asset Loading](suite_graphics/16_async_assets.md): stream Sponza, then Suzanne into the running scene through Motor's database and glTF importer.
+- [Logger Regression Tests](suite_log/README.md): bounded storage, ring order, range copies, concurrent writers and logger routing.
+- [Async Asset Loading](suite_graphics/16_async_assets.md): stream Sponza, then Suzanne into the running scene through motor's database and glTF importer.
 - [Native Rendering References](suite_reference/README.md): optional bgfx, Cinder and direct OpenGL cube benchmarks beside raylib, with normal Visual Studio targets.
 - [Datas Lock Comparison](docs/DATAS_LOCK_COMPARISON.md): updated GL4/D3D11 timings, lock on/off tests and historical framework references (2026-10-15).
 - [Village 1800](suite_graphics/15_village.md): procedural houses and dragon, scene graph, collected lights, Wire, GPU particles and HDR postprocessing.
-- [Render Access and Runtime Compilation](docs/RENDER_ACCESS_AND_COMPILE_COSTS.md): measured OID/status/variable lookup costs and Motor/raylib shader compilation during rendering.
+- [Render Access and Runtime Compilation](docs/RENDER_ACCESS_AND_COMPILE_COSTS.md): measured OID/status/variable lookup costs and motor/raylib shader compilation during rendering.
 - [Live Recompile and Lock Costs](docs/RECOMPILE_AND_LOCKS.md): shader-layout changes during rendering and isolated `datas` measurements.
 - [Variable Sets and Owner Queues](docs/VARIABLE_SET_AND_QUEUE_COSTS.md): name lookup versus cached pointers, and shared access versus message handoff.
 - [Build and run](BUILDING.md): setup, basic applications, Wire and concurrency tests.
 - [Scene Graph + Wire Lighting](suite_graphics/12_scene_wire_lighting.md): the combined integration sample.
 - [Lighting Gallery](suite_graphics/11_lighting_scene.md): the corresponding low-level rendering sample.
 - [Scene Benchmark](suite_graphics/05_scene_benchmark.md): workloads, measurements and their limitations.
-- [Archived Engine Comparisons](comparison/README.md): measured results, methodology and a profiling checklist for Motor. No external engine build integration.
+- [Archived Engine Comparisons](comparison/README.md): measured results, methodology and a profiling checklist for motor. No external engine build integration.
 - [Raylib Benchmark](suite_raylib/README.md): one optional native sample target with raylib as a directly linked external (`MOTOR_AI_BUILD_RAYLIB`).
-- [Document Tokenization](suite_core/README.md): core tests, Motor IO and tokenizer comparisons.
+- [Document Tokenization](suite_core/README.md): core tests, motor IO and tokenizer comparisons.
 - [Math Tests](suite_math/README.md): vectors, matrices, transformations, utilities and quaternions.
 - [Integration Notes](ENGINE_NOTES.md): historical findings and observations, with dates and tested revisions.
 
@@ -60,7 +61,7 @@ options of each application. D3D11 requires Windows.
 
 ### 00 Triangle
 
-A minimal geometry and MSL shader example. The optional second window renders
+A minimal geometry and msl shader example. The optional second window renders
 the same graphics objects through a different backend.
 
 [Source](suite_graphics/00_triangle.cpp) | [Run guide](BUILDING.md#initial-setup)
@@ -172,7 +173,7 @@ colored directional lights. Compare single-pass and additive multipass lighting.
 The gallery built around scene nodes, components and visitors. Wire slots drive
 transforms, material and light values; a parent group moves the exhibits, and
 two camera views use separate render-data subsets in the same graph.
-Motor's gfx post-processing pipeline adds Bloom, tone mapping and FXAA, with
+motor's gfx post-processing pipeline adds Bloom, tone mapping and FXAA, with
 editable stage properties and a direct-rendering comparison switch.
 
 [Source](suite_graphics/12_scene_wire_lighting.cpp) | [Graph, data flow and verification](suite_graphics/12_scene_wire_lighting.md)
@@ -207,7 +208,7 @@ parameters. Houses include tiled dormers, detailed windows on every facade,
 flower boxes, entrance canopies, iron fittings, lanterns and hanging signs.
 Rounded roof tiles, ridge caps, detailed window/door trim and refined well/cart
 geometry add further detail. Directional moonlight casts PCF-filtered shadows
-through Motor's camera, depth framebuffer, MSL bindings and scene visitors.
+through motor's camera, depth framebuffer, msl bindings and scene visitors.
 
 [Source](suite_graphics/15_village.cpp) | [Run guide and limitations](suite_graphics/15_village.md)
 
@@ -216,7 +217,7 @@ through Motor's camera, depth framebuffer, MSL bindings and scene visitors.
 ### 16 Async Asset Loading
 
 Load Sponza asynchronously, then insert Suzanne while Sponza continues rendering.
-Uses Motor's IO database, module registry, scene graph and runtime shader
+Uses motor's IO database, module registry, scene graph and runtime shader
 configuration. A texture-free normal-color shader makes the imported geometry
 readable without lights. Includes camera controls and a pending-import shutdown test.
 
@@ -229,7 +230,7 @@ diagnostics and, where applicable, benchmark measurements.
 
 | Area | Application | Purpose | Documentation |
 | --- | --- | --- | --- |
-| Concurrency | [00_threads_parallel_for](suite_concurrent/00_threads_parallel_for.cpp) | Native threads, Motor's pool, ranges and nested parallel work | [Concurrent tests](BUILDING.md#concurrent-console-tests) |
+| Concurrency | [00_threads_parallel_for](suite_concurrent/00_threads_parallel_for.cpp) | Native threads, motor's pool, ranges and nested parallel work | [Concurrent tests](BUILDING.md#concurrent-console-tests) |
 | Concurrency | [01_sync_primitives](suite_concurrent/01_sync_primitives.cpp) | Semaphore, signals, shared readers and writer exclusion | [Synchronization tests](suite_concurrent/README.md) |
 | Concurrency | [02_task_graph](suite_concurrent/02_task_graph.cpp) | Chain, diamond and fan-out graphs with both schedulers | [Task-graph tests](suite_concurrent/README.md) |
 | Memory | [00_memory_ownership](suite_memory/00_memory_ownership.cpp) | Share, borrow, move, release guards and concurrent reference counting | [Memory tests](suite_memory/README.md) |
@@ -237,7 +238,7 @@ diagnostics and, where applicable, benchmark measurements.
 | Wire | [00_wire_slots](suite_wire/00_wire_slots.cpp) | Fan-out, exchange, type checks and connection lifetime | [Wire tests](BUILDING.md#wire-console-tests) |
 | Wire | [01_wire_bridges](suite_wire/01_wire_bridges.cpp) | Input/output bridges, rebinding and variable-set replacement | [Wire tests](BUILDING.md#wire-console-tests) |
 | Core | [00_document](suite_core/00_document.cpp) | Token correctness and comparison with standard-library approaches | [Document tests](suite_core/README.md) |
-| Core / IO | [01_document_obj](suite_core/01_document_obj.cpp) | Load OBJ text through Motor's database and compare tokenization | [OBJ benchmark](suite_core/README.md#sponza-obj-via-motor-io) |
+| Core / IO | [01_document_obj](suite_core/01_document_obj.cpp) | Load OBJ text through motor's database and compare tokenization | [OBJ benchmark](suite_core/README.md#sponza-obj-via-motor-io) |
 | Math | [00_vector](suite_math/00_vector.cpp) | Arithmetic, normalization and cross products | [Math tests](suite_math/README.md) |
 | Math | [01_matrix](suite_math/01_matrix.cpp) | Products, transpose, homogeneous coordinates and 2D rotation | [Math tests](suite_math/README.md) |
 | Math | [02_transformation](suite_math/02_transformation.cpp) | TRS, hierarchy, cameras and projection | [Math tests](suite_math/README.md) |
@@ -270,7 +271,7 @@ CMake configuration time.
 Graphics smoke tests require a suitable interactive desktop and graphics driver.
 Their linked documents explain the checked conditions and known limitations.
 A successful smoke run is not automatically a correct-image test; memory dumps
-cover Motor-tracked allocations, not every possible GPU allocation.
+cover motor-tracked allocations, not every possible GPU allocation.
 
 Older observations and timings document particular engine revisions and machines.
 They should not be read as current failures or universal performance guarantees.

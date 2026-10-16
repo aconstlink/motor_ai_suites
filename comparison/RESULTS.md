@@ -2,7 +2,7 @@
 
 These are historical adapter measurements, not general engine ratings. The adapter
 code and external-framework build integration have been removed; the results and
-analysis are retained as a reference for profiling Motor.
+analysis are retained as a reference for profiling motor.
 See [methodology and implementation differences](README.md#what-the-numbers-mean).
 
 ## Setup
@@ -11,11 +11,11 @@ See [methodology and implementation differences](README.md#what-the-numbers-mean
 - NVIDIA driver 596.21 (Windows driver 32.0.15.9621).
 - Windows, Visual Studio 2026 / MSVC 19.51, x64, optimized Release builds;
   ezEngine uses its optimized Shipping configuration. No debug graphics device.
-- Motor commit `cc4c402daf10b05404c1e158f15beb2449447330`;
+- motor commit `cc4c402daf10b05404c1e158f15beb2449447330`;
   suites base commit `d68f55c942191b2816a68e8b36d895d54e014c6f` plus these adapters.
 - Other source revisions are pinned in [dependencies.json](dependencies.json).
 - 1280 x 720, unlit cubes, one indexed draw per cube, no instancing or scene graph.
-- Motor: existing `05_scene_benchmark --path direct --lights 0`.
+- motor: existing `05_scene_benchmark --path direct --lights 0`.
 - 120 warmup frames, 300 measured intervals, three fresh-process repetitions per case.
 - Sequential runs, reversed order on repetition two. No builds running during measurement.
 
@@ -35,8 +35,8 @@ These are not GPU timestamps, presentation latency or measured display FPS.
 
 | Adapter | Backend | 100 cubes | 1,000 cubes | 5,000 cubes |
 |---|---|---:|---:|---:|
-| Motor | OpenGL | 1.937 | 9.707 | 37.815 |
-| Motor | D3D11 | 0.725 | 3.848 | 30.630 |
+| motor | OpenGL | 1.937 | 9.707 | 37.815 |
+| motor | D3D11 | 0.725 | 3.848 | 30.630 |
 | raylib | OpenGL | 0.792 | 3.598 | 17.492 |
 | bgfx | OpenGL | 0.421 | 0.825 | 2.369 |
 | bgfx | D3D11 | 0.194 | 0.412 | 1.858 |
@@ -47,8 +47,8 @@ There was visible run-to-run variation. At 5,000 cubes:
 
 | Adapter / backend | Range of run medians (ms) | Median of run p95 values (ms) |
 |---|---:|---:|
-| Motor / OpenGL | 36.985-45.459 | 51.978 |
-| Motor / D3D11 | 30.413-31.594 | 40.093 |
+| motor / OpenGL | 36.985-45.459 | 51.978 |
+| motor / D3D11 | 30.413-31.594 | 40.093 |
 | raylib / OpenGL | 17.324-18.007 | 20.421 |
 | bgfx / OpenGL | 1.815-2.375 | 3.260 |
 | bgfx / D3D11 | 1.726-2.260 | 3.220 |
@@ -62,7 +62,7 @@ environment details are under
 
 ## Validation
 
-- All four external adapters built successfully; Motor's reference was rebuilt too.
+- All four external adapters built successfully; motor's reference was rebuilt too.
 - The shared CPU workload test passed in all four external build configurations.
 - All five optional graphical smoke CTests passed too: nine passing CTests in total.
 - Every measurement exited with code 0 and reported all 300 requested samples.
@@ -71,28 +71,28 @@ environment details are under
   Their first-frame RGB pixels matched exactly. Captures were not taken in timing runs.
 - bgfx reported the expected actual draw count in every run. Other draw counts are
   expected from the submission loop, not independently verified GPU draw counts.
-- Motor reported the expected variable-set count and an empty memory-manager dump.
-- Motor's OpenGL runs logged the existing `wglMakeCurrent(00)` error during shutdown,
+- motor reported the expected variable-set count and an empty memory-manager dump.
+- motor's OpenGL runs logged the existing `wglMakeCurrent(00)` error during shutdown,
   after the result was printed. There were no benchmark timeouts or process crashes.
 
 ## Interpretation
 
-Motor's current direct path is measurably slower here, especially at high draw counts.
+motor's current direct path is measurably slower here, especially at high draw counts.
 This is useful evidence for profiling its frame synchronization, backend processing
 and variable handling; it does not identify which of them is the bottleneck.
 The relatively small measured transform and frontend-recording times alone do not
 explain the full frame interval.
 
-The adapters do not have identical internal work: Motor keeps a variable set per
+The adapters do not have identical internal work: motor keeps a variable set per
 object and runs its application services; bgfx records submissions for its render
 thread; raylib uses DrawMesh; Cinder uses Batch; ezEngine uses RendererCore directly
 without a world or editor scene. The external adapters also share simpler transform
 evaluation. No attempt was made to tune each framework to its fastest possible path.
 
 This baseline cannot predict a lit game's frame time, GPU-heavy scenes, streaming,
-multiple windows or the development effort saved by higher-level Motor features.
+multiple windows or the development effort saved by higher-level motor features.
 It records a baseline workload. Longer runs and targeted profiling should
-precede architectural conclusions. No Motor source was changed for this comparison.
+precede architectural conclusions. No motor source was changed for this comparison.
 
 ## Draw-path analysis
 
@@ -104,11 +104,11 @@ analysis.
 
 ### Synchronization around backend data access
 
-In Motor's [datas.hpp](../motor/platform/graphics/datas.hpp), `access` and
+In motor's [datas.hpp](../motor/platform/graphics/datas.hpp), `access` and
 `try_access` protect the container with an `mrsw_t` reader lock and protect the
 selected entry with a guard. `guard_data::enter`, `try_enter` and `leave` acquire
 a mutex, including the same-thread recursive path. Rendering accesses several
-containers, including MSL objects, render objects, shaders and geometry.
+containers, including msl objects, render objects, shaders and geometry.
 
 This makes a backend lookup more than an indexed array access. Uncontended locks
 still have a cost, but a mutex operation does not imply an OS sleep, and notifying
@@ -131,7 +131,7 @@ this comparison does not depend on bgfx sorting different materials together.
 
 ### OpenGL error queries in the release path
 
-Motor's `uniform_data::do_uniform_funk` checks for errors after uniform uploads,
+motor's `uniform_data::do_uniform_funk` checks for errors after uniform uploads,
 and several binding operations do so as well. The implementation in
 [error.hpp](../motor/ogl/gl/error.hpp), `check_and_log`, calls `glGetError` without
 a release-build exclusion.
@@ -143,7 +143,7 @@ changing resource management or rendering semantics.
 
 ### D3D11 variable storage and binding
 
-Motor keeps separate variable sets for the objects in this workload. In
+motor keeps separate variable sets for the objects in this workload. In
 [d3d11.cpp](../motor/platform/graphics/d3d/d3d11.cpp), `update_variables` copies
 the selected set's values into constant-buffer memory and calls
 `UpdateSubresource`. The draw path binds shader stages and constant buffers,
@@ -159,14 +159,14 @@ separately.
 ### Frame handoff and overlap
 
 Follow-up source inspection on 2026-10-12 also identified an unconditional
-`glFlush(); glFinish();` in Motor GL4's `end_frame`, before presentation. That
+`glFlush(); glFinish();` in motor GL4's `end_frame`, before presentation. That
 forced GPU-completion policy was present in this baseline and is absent from the
 Windows/GLFW raylib draw loop. It is an additional confounder, not a measured
 explanation of the whole gap. See the [native raylib synchronization follow-up](../suite_raylib/RESULTS.md#per-frame-gpu-synchronization-follow-up).
 The archived timings and raw CSV remain unchanged. A later
 [finish-on/off A/B experiment](../suite_raylib/GLFINISH.md) is recorded separately.
 
-In Motor's [render_engine.cpp](../motor/graphics/render_engine.cpp),
+In motor's [render_engine.cpp](../motor/graphics/render_engine.cpp),
 `execute_frame` processes and clears the command lists before changing the
 `_has_commands` state checked by `can_enter_frame`. This restricts reuse of that
 submission buffer until backend command execution finishes. It does not mean
@@ -180,9 +180,9 @@ alone cannot explain the gap.
 
 ### What this does not establish
 
-- Scene Graph and Wire execution are not involved in Motor's direct benchmark.
+- Scene Graph and Wire execution are not involved in motor's direct benchmark.
 - bgfx reports one draw per cube; it is not secretly replacing the workload with instancing.
-- Motor's measured transform and frontend-recording phases are too small to explain
+- motor's measured transform and frontend-recording phases are too small to explain
   the whole frame interval on their own. Backend execution and waits remain unprofiled.
 - Existing variable-set hashes and geometry-link checks do not imply that every
   draw reconnects or reallocates resources. Unchanged resources follow their checks.

@@ -157,7 +157,7 @@ namespace sample
             )" ;
             if( single_pass() )
             {
-                // Generate ordinary named uniforms and unrolled expressions, not MSL arrays.
+                // Generate ordinary named uniforms and unrolled expressions, not msl arrays.
                 for( size_t light = 0 ; light < _opts.lights ; ++light )
                 {
                     code += "vec3_t light_dir_" + motor::to_string( light ) + " ;\n" ;
@@ -311,7 +311,7 @@ namespace sample
             {
                 motor::application::window_info_t wi ;
                 bool_t const d3d = _opts.backend == "d3d" || i == 1 ;
-                wi.window_name = d3d ? "Motor benchmark | D3D11" : "Motor benchmark | GL4" ;
+                wi.window_name = d3d ? "motor benchmark | D3D11" : "motor benchmark | GL4" ;
                 wi.window_name += " | " + _opts.path + " | " + _opts.lighting + " | " + motor::to_string( _opts.objects ) +
                     " objects | " + motor::to_string( _opts.lights ) + " lights" ;
                 wi.x = int_t(20+i*50) ; wi.y = int_t(30+i*50) ; wi.w = 1280 ; wi.h = 720 ;

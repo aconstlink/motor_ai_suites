@@ -1,7 +1,7 @@
 # Math Tests
 
-Five independent console applications test Motor's math library without windows,
-graphics backends or external assets. They use `motor::log`, Motor's memory dump
+Five independent console applications test motor's math library without windows,
+graphics backends or external assets. They use `motor::log`, motor's memory dump
 and ordinary runtime checks, so checks also execute in Release builds.
 
 ## Build and Run
@@ -46,7 +46,7 @@ and Release. Failing cases are intentionally not skipped or marked `WILL_FAIL`.
 ## Conventions and Limits
 
 - Matrix tests use row-major element storage and column-vector multiplication.
-  Expected products are computed by a scalar loop, not another Motor multiply.
+  Expected products are computed by a scalar loop, not another motor multiply.
   Twelve deterministic, nonsymmetric signed fixtures exercise each matrix type.
 - `mat4 * vec3` only uses the upper 3x3. Points are explicitly represented as
   `vec4(position, 1)`, directions as `vec4(direction, 0)`.
@@ -70,7 +70,7 @@ and Release. Failing cases are intentionally not skipped or marked `WILL_FAIL`.
 
 ## Initial Findings
 
-Motor revision `0b82b20`, Windows/MSVC, 2026-10-08. Debug and Release both built
+motor revision `0b82b20`, Windows/MSVC, 2026-10-08. Debug and Release both built
 successfully and executed 23 cases with 3,745 individual checks per configuration.
 Both runs found the same seven failing cases (118 failed individual checks);
 the other sixteen cases passed. All 23 memory dumps per configuration were empty.

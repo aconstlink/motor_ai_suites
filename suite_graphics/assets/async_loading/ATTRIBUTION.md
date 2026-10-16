@@ -30,14 +30,14 @@ are not bundled; use the upstream links above to see those images.
 repository. No network download is performed by the build or application.
 
 - Remove texture/image/sampler declarations and material texture references.
-- Add missing material names for Motor's current importer.
+- Add missing material names for motor's current importer.
 - List position and normal attributes first for the current D3D11 layout path.
 - Add an `asset.copyright` pointer to these upstream notices.
 - Copy each `.bin` unchanged and verify its SHA-256 against the source file.
 - Preserve original base-color factors, transforms, accessors and mesh topology.
 
 The original model notices are retained as supplied; no additional license or
-copyright ownership by Khronos, Motor, or this sample's author is asserted.
+copyright ownership by Khronos, motor, or this sample's author is asserted.
 
 ```powershell
 ./prepare_assets.ps1 -Source E:/repositories_github/KhronosGroup/glTF-Sample-Models -Destination .

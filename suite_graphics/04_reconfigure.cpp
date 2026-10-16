@@ -147,7 +147,7 @@ namespace sample
 
         void_t configure( window_data & w, frontend fe ) noexcept
         {
-            // Geometry and images must exist before MSL creates its bindings.
+            // Geometry and images must exist before msl creates its bindings.
             bool_t const a = fe->configure<motor::graphics::state_object_t>( &_state ) ;
             bool_t const b = fe->configure<motor::graphics::geometry_object_t>( &_geometry ) ;
             bool_t const d = fe->configure<motor::graphics::image_object_t>( &_textures[0] ) ;
@@ -435,7 +435,7 @@ namespace sample
                     ImGui::Text( "%s | completed: %llu | %s", w.label,
                         static_cast<unsigned long long>( w.completed ),
                         w.current == phase::failed ? "FAILED" : ( w.current == phase::idle ? "idle" : "pending" ) ) ;
-                    char_cptr_t const labels[5] = { "State", "Geometry", "MSL", "Texture A", "Texture B" } ;
+                    char_cptr_t const labels[5] = { "State", "Geometry", "msl", "Texture A", "Texture B" } ;
                     for( size_t j = 0 ; j < 5 ; ++j )
                         ImGui::Text( "%s: %s / %s", labels[j], name( w.states[j].first ), name( w.states[j].second ) ) ;
                 }

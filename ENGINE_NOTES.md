@@ -3,10 +3,10 @@
 ## Concurrent tests (2026-09-30)
 
 Added `suite_concurrent/00_threads_parallel_for.cpp`, based on the existing
-Motor suites' thread-pool and parallel-for usage, with bounded workloads and
+motor suites' thread-pool and parallel-for usage, with bounded workloads and
 explicit correctness checks rather than timing assumptions or Release-disabled
 assertions. All five scenarios passed locally in Windows x64 Debug and Release.
-Linux execution is left to CI. No Motor source changes were made.
+Linux execution is left to CI. No motor source changes were made.
 
 ### Remainder task borrows a range past its scope
 
@@ -37,7 +37,7 @@ Windows x64, Release. No motor source changes were made.
 - OpenGL and D3D11 rendered the same triangle and gradient in separate windows;
   both windows were visually inspected and both shader compilations succeeded.
 - Closing the OpenGL window ended the dual-window application with code 0.
-- Motor's final memory-manager report contained no entries in these runs.
+- motor's final memory-manager report contained no entries in these runs.
 
 These are smoke tests, not a GPU leak audit or pixel-exact regression test.
 Debug builds and other platforms are not tested yet. Runtime window recreation
@@ -45,7 +45,7 @@ is covered by the subsequent lifecycle sample below.
 
 ## Findings
 
-### Scalar vector construction in MSL
+### Scalar vector construction in msl
 
 The original expression `in.pos.xy * 0.5 + vec2_t( 0.5 )` compiled on OpenGL,
 but the D3D11 vertex shader failed with HLSL error X3014 (incorrect number of
@@ -92,7 +92,7 @@ OpenGL window continues rendering. Neither motor nor `00_triangle` was changed.
   triangles in OpenGL and D3D11, verified visually.
 - Closing D3D11 through its native close button left OpenGL running and reset
   the checkbox. Reopening displayed the same chosen color, verified visually.
-- The interactive run ended with code 0 and no Motor memory-manager entries.
+- The interactive run ended with code 0 and no motor memory-manager entries.
 
 D3D11 logged `D3D11 context resize failed` during secondary-window teardown,
 including in the successful smoke test. Automatic application shutdown also
@@ -105,10 +105,10 @@ has not been verified; this is not established as an engine defect.
 
 ## Dynamic geometry sample
 
-`02_dynamic_geometry` uses one MSL object, two geometries and independent
+`02_dynamic_geometry` uses one msl object, two geometries and independent
 variable sets. Initial triangle rendering, first square addition, and square
 removal worked visually. The dual-backend lifecycle smoke completed with exit
-code 0, without reconfiguring the shared shader, and with no final Motor
+code 0, without reconfiguring the shared shader, and with no final motor
 memory-manager entries. This does not certify rendering correctness.
 
 ### Reused variable-set ID retains old data
@@ -121,7 +121,7 @@ Reproduced interactively on both OpenGL and D3D11 at motor `ff2211c`:
 4. Enable Square again: it incorrectly remains blue in both windows.
 
 The application creates a new variable set and writes the new color before
-adding it to the MSL object. The free variable-set index is reused. Suspected
+adding it to the msl object. The free variable-set index is reused. Suspected
 cause from code inspection: backend caches detect missing sets, but do not
 reconnect an existing index when its variable-set hash changes. Relevant code:
 `graphics/object/render_object.cpp` (`add_variable_set`, `drop_variable_set`),

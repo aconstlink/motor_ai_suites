@@ -1,6 +1,6 @@
 # Scene Light Components
 
-`14_light_components` exercises Motor's actual `light_component`,
+`14_light_components` exercises motor's actual `light_component`,
 `light_collector_visitor` and `light_pass_render_visitor`. It does not change the
 engine or replace the light visitor with sample-local rendering logic.
 
@@ -21,7 +21,7 @@ Graphics smoke runs require a working desktop and are not added to headless CTes
 
 ## Scene and Data Flow
 
-- Six colored boxes and a floor use two MSL components: ambient/base and lighting.
+- Six colored boxes and a floor use two msl components: ambient/base and lighting.
 - A group owns one light component with a directional light and a point light.
 - A child leaf owns another component with a second point light.
 - A soft warm directional light (intensity 0.32), an orange point light (1.4),
@@ -44,7 +44,7 @@ shadow maps, HDR pipeline, tone mapping or antialiasing.
 The light render ID is `window_index * 3 + active_light_index`. Each object gets
 its own component-managed variable subset for that ID; no light pass overwrites
 another queued pass. Reversing the light order deliberately reuses the same IDs
-for different light types. Original material values are propagated by Motor's
+for different light types. Original material values are propagated by motor's
 base/subset bridges. The application does not manually supply light uniforms.
 
 ## Current API Boundary
@@ -73,13 +73,13 @@ lights in reverse order. Assertions inspect the actual component-created subsets
 - Recovery from zero lights and reuse of IDs by a different light type.
 
 The test has a 60-second application timeout, logs via `motor::log::test`, and
-returns failure for smoke assertions or a nonempty Motor memory dump. A fence
+returns failure for smoke assertions or a nonempty motor memory dump. A fence
 confirms CPU command execution, not pixel correctness. Illumination, occlusion
 and visible attenuation still require visual verification.
 
 ## Verification (2026-10-13)
 
-Windows/MSVC Release, Motor `1418eff`:
+Windows/MSVC Release, motor `1418eff`:
 
 | Run | Result |
 | --- | --- |

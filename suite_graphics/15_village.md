@@ -47,9 +47,9 @@ Closing either window closes the application.
   wheels have iron tires and sculpted hubs.
 - Beveled individual paving stones, a roofed well, a cart with spoked wheels,
   barrels, stacked wood, fences, trees and grass.
-- A shared MSL surface shader evaluates cool directional moonlight, sky fill,
+- A shared msl surface shader evaluates cool directional moonlight, sky fill,
   a flickering local fire light, modest specular highlights and distance fog.
-- Motor's HDR postprocess pipeline provides bloom, tone mapping and FXAA.
+- motor's HDR postprocess pipeline provides bloom, tone mapping and FXAA.
 - Geometry belongs to eight logical groups: four houses, ground, props,
   vegetation and dragon. It is split into **41 material batches** (37 village,
   four dragon). Each material batch is a scene leaf; there is no instancing.
@@ -63,7 +63,7 @@ water, dragon scales, wing membrane, and horn/claws.
 
 Startup splits each logical mesh by material, remapping indices and preserving
 every triangle, normal, color and procedural joint tag. Every resulting mesh
-has its own geometry link, MSL component and base variable set. `u_material`
+has its own geometry link, msl component and base variable set. `u_material`
 contains specular weight, Blinn-Phong exponent and an emission multiplier.
 All material batches share one shader; they do not compile a shader per material.
 
@@ -86,7 +86,7 @@ The light group owns two directional lights (moon/fill) and one point light
 (fire) through `light_component`. `light_collector_visitor` collects them every
 frame. Color times intensity, direction, position and radius flow through Wire
 outputs into the components' shader input slots. The shader evaluates all three
-lights in one color draw per mesh, not three additive light passes. Motor's
+lights in one color draw per mesh, not three additive light passes. motor's
 `light_pass_render_visitor` supplies the moon's shadow bindings for that draw;
 the other two lights continue to arrive through Wire.
 
@@ -101,7 +101,7 @@ without destroying the node or its resources.
 
 Transform feedback and particle display remain explicit GPU passes surrounding
 the scene rendering. The particle capture uses the same flight pose as the
-dragon's component. Postprocessing remains Motor's existing HDR pipeline.
+dragon's component. Postprocessing remains motor's existing HDR pipeline.
 
 The default scene contains **725,333 vertices and 323,145 triangles**, plus the
 particle points and generated billboards. All architectural detail is geometry;
@@ -116,8 +116,8 @@ no normal maps or hidden imported assets are involved.
 ## Moon Shadows
 
 The existing directional key light is now the moon. Shadow rendering uses only
-Motor objects and APIs: `generic_camera`, a depth-only `framebuffer_object`
-(2048 x 2048, `depth32`), `state_object`, `msl_object`, MSL components and visitors.
+motor objects and APIs: `generic_camera`, a depth-only `framebuffer_object`
+(2048 x 2048, `depth32`), `state_object`, `msl_object`, msl components and visitors.
 There are no raw OpenGL/D3D calls or additional rendering libraries in the sample.
 
 The moon orbits independently of the viewing camera, initially at 3 degrees per
@@ -126,7 +126,7 @@ horizon (10 to 80 degrees). `Moon speed` accepts -15 to +15 degrees per second,
 including reverse motion. Disabling `Moon orbit` holds the current direction;
 reenabling it continues there without a jump. `Pause` and `--still` also stop
 automatic moon motion. Manual angle changes remain available while paused.
-The shared `on_graphics` update sets the directional light and aims the Motor
+The shared `on_graphics` update sets the directional light and aims the motor
 shadow camera from that same direction before collecting lights and rendering
 either window. The shadow map is redrawn from the updated camera each frame.
 This animates the light, not a visible moon mesh or a day/night cycle.
@@ -140,7 +140,7 @@ bindings. Both backends configure their own resources from the shared objects.
 The orthographic camera covers 64 x 64 world units. Casters are placed inside
 both APIs' clip volumes despite the shared GL-style projection. The depth shader
 explicitly writes `clip.z / clip.w * 0.5 + 0.5`, matching the receiver calculation.
-`rt_texture` supplies Motor's render-target UV convention. A 3 x 3 PCF kernel and
+`rt_texture` supplies motor's render-target UV convention. A 3 x 3 PCF kernel and
 constant plus angle-dependent receiver bias soften the shadow and reduce acne.
 Outside the shadow volume, the moon remains unshadowed.
 
@@ -163,7 +163,7 @@ The surface shader is shared with the village. Scene components create one
 render-data subset per view on demand. For this sample only,
 negative vertex-color alpha values encode wing/tail regions; positive alpha
 continues to encode emission. No imported rig or general skeletal animation is
-involved. Collected light data is evaluated directly in MSL.
+involved. Collected light data is evaluated directly in msl.
 
 One eighth of the particle seeds forms the optional fire breath, reusing the
 capture/display shaders and their existing two draws. The flame is an analytic
@@ -192,7 +192,7 @@ the numbers count submitted work, not necessarily successful hardware draws.
 
 1. The CPU builds immutable particle seeds once: chimney origins, fire origin,
    ambient positions and deterministic random parameters.
-2. An MSL vertex shader evaluates time-dependent smoke, sparks and drifting motes.
+2. An msl vertex shader evaluates time-dependent smoke, sparks and drifting motes.
 3. A geometry shader removes particles below an opacity threshold and writes
    position/radius and color/opacity into a `streamout_object`. There is no pixel
    stage in this capture pass.
@@ -241,7 +241,7 @@ motion while still exercising the manual angle changes. It
 checks submission counters including the
 final 97 draws per window, then closes normally. It has a 75-second
 application timeout. Exit status is nonzero for a failed smoke or a nonempty
-Motor memory dump. Graphics tests are not added to headless CTest.
+motor memory dump. Graphics tests are not added to headless CTest.
 
 A passing smoke test verifies initialization, submission and teardown, **not**
 pixel accuracy or the exact GPU-generated particle count. It is not a performance
@@ -261,12 +261,12 @@ Moon-orbit verification on 2026-10-15 (MSVC Release):
   stop/resume, manual angles and light/shadow subset checks passed.
 - `--dual --smoke --still --detail low --particles 256`: frozen automatic
   motion and manual angle changes passed on both backends.
-- Both runs exited with code 0 and empty Motor memory dumps. The targeted build
+- Both runs exited with code 0 and empty motor memory dumps. The targeted build
   produced no compiler warnings. The existing GL4 unused-normal and shutdown
   `wglMakeCurrent(00)` messages remain. These are data/submission checks, not
   a visual comparison of moving shadows.
 
-The targeted shadow build reported no compiler warnings. These runs use Motor's
+The targeted shadow build reported no compiler warnings. These runs use motor's
 original locking implementation, without the earlier local `datas` experiment.
 No engine changes are required for this sample.
 Automated screenshot access was not authorized, so visual correctness still
@@ -286,4 +286,4 @@ Source split:
 - [Geometry](village/geometry.hpp): procedural mesh construction.
 - [Dragon](village/dragon.hpp): body, wings, tail and procedural joint tags.
 - [Shaders](village/shaders.hpp): shared surface/depth vertex stage, moon shadow,
-  surface lighting, capture and particle display MSL.
+  surface lighting, capture and particle display msl.

@@ -400,7 +400,7 @@ namespace sample
             {
                 motor::application::window_info_t wi ;
                 bool_t const d3d = _opts.d3d_only || w == 1 ;
-                wi.window_name = d3d ? "Motor | lighting gallery | D3D11" : "Motor | lighting gallery | GL4" ;
+                wi.window_name = d3d ? "motor | lighting gallery | D3D11" : "motor | lighting gallery | GL4" ;
                 wi.x = int_t(30+w*780) ; wi.y = 60 ; wi.w = 760 ; wi.h = 620 ;
                 wi.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 : motor::application::graphics_generation::gen4_gl4 ;
                 _windows[w].id = create_window(wi) ;

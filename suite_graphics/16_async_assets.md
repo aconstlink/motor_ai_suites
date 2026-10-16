@@ -1,6 +1,6 @@
 # Async Asset Loading: Sponza + Suzanne
 
-`16_async_assets` loads external model data through Motor's own IO/database and
+`16_async_assets` loads external model data through motor's own IO/database and
 glTF module. Sponza is imported first. After it has been submitted with ready
 shaders for 20 frames, Suzanne is requested and inserted into the live scene.
 The frame loop polls futures without waiting for them.
@@ -36,7 +36,7 @@ uniformly scaled fixtures.
 1. Construct `motor::io::database` and register default import modules.
 2. Call `module_registry::import_from` for `Sponza.Sponza.gltf`.
 3. Poll `future_item_t::wait_for(0)` from `on_graphics`; call `get()` only when ready.
-4. Move the imported root into a placement group, collect MSL components and
+4. Move the imported root into a placement group, collect msl components and
    update variables/transforms using the existing scene APIs.
 5. `render_visitor` configures geometry/shaders and renders the imported nodes.
 6. Request Suzanne while the first model is already active; use the same path.
@@ -45,7 +45,7 @@ The importer borrows the database. Pending futures are therefore drained during
 shutdown before releasing the registry/database. This can wait at shutdown; it
 does not wait in the active frame loop. There is no claim of import cancellation.
 Borrowed component/shader pointers remain valid while their scene root is owned.
-MSL resources are released in `on_last_frame`. Imported geometry belongs to
+msl resources are released in `on_last_frame`. Imported geometry belongs to
 configuration components; backend teardown releases its GPU buffers. The test
 does not yet cover repeated asset unload/reload in a surviving window.
 
@@ -60,7 +60,7 @@ build/bin/Release/16_async_assets.exe --gl-only --close-loading
 `--smoke` requires imported primitives (103 Sponza, 1 Suzanne for these fixtures),
 successful GPU configuration and 90 submitted frames with both models ready.
 It times out after 90 seconds and exits nonzero on failure or outstanding
-Motor-tracked allocations. It is a lifecycle/submission test, not pixel validation.
+motor-tracked allocations. It is a lifecycle/submission test, not pixel validation.
 
 `--close-loading` requests both imports and closes immediately, without consuming
 either future in the frame loop. Shutdown checks both returned scenes and drains
@@ -71,8 +71,8 @@ The logged pending-poll count shows whether frames ran while an import was not
 ready. No artificial delay is inserted, and zero is valid on sufficiently fast
 loads. Import timings include polling latency and scene adoption, not just IO.
 
-Verified on Windows/MSVC Release with Motor `33c6422` (2026-10-15): GL4 and D3D11
-smoke tests, plus GL4 pending-import shutdown. Motor memory dump: 0 bytes.
+Verified on Windows/MSVC Release with motor `33c6422` (2026-10-15): GL4 and D3D11
+smoke tests, plus GL4 pending-import shutdown. motor memory dump: 0 bytes.
 The existing GL shutdown message `wglMakeCurrent(00)` still appears. No engine
 changes were made. Linux and final image appearance were not verified here.
 

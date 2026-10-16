@@ -1,4 +1,4 @@
-# Motor GL4 frame-end glFinish A/B benchmark
+# motor GL4 frame-end glFinish A/B benchmark
 
 This follow-up isolates removal of the unconditional `glFinish()` in GL4
 `end_frame()`. `glFlush()`, buffer swapping, CPU command handoff, resource
@@ -14,7 +14,7 @@ diff: one deleted `glFinish()` call. Both binaries run in the same measurement
 series, alongside both raylib variants, with rotated ordering between repeats.
 
 - Windows 11, i7-6700, RTX 2060, driver 32.0.15.9621; x64 Release.
-- Motor base revision `cc4c402daf10b05404c1e158f15beb2449447330`.
+- motor base revision `cc4c402daf10b05404c1e158f15beb2449447330`.
 - 1280x720 client area and matching 144 DPI, verified on every run.
 - 100 / 1000 / 5000 unlit cubes, one draw per cube, no instancing or Scene Graph.
 - 180 warmup frames and 600 measured intervals; three repeats per case.
@@ -23,14 +23,14 @@ series, alongside both raylib variants, with rotated ordering between repeats.
 
 The measure is the CPU frame-start interval, **not** a GPU timestamp, display FPS
 or end-to-end latency. Removing the finish permits GPU overlap but does not remove
-driver/presentation backpressure. See the original report for the remaining Motor
+driver/presentation backpressure. See the original report for the remaining motor
 versus raylib implementation differences and non-equivalent phase timings.
 
 ## Results on 2026-10-12
 
 Milliseconds per CPU frame-start interval, median of three run medians:
 
-| Objects / draws | Motor finish on | Motor finish off | Raylib three matrices | Raylib combined MVP |
+| Objects / draws | motor finish on | motor finish off | Raylib three matrices | Raylib combined MVP |
 |---|---:|---:|---:|---:|
 | 100 | 2.053 | 1.881 | 0.771 | 0.922 |
 | 1000 | 10.424 | 9.632 | 4.809 | 4.005 |
@@ -55,14 +55,14 @@ it to uniforms, locking or GPU execution. A GPU-heavier scene may behave differe
 The removal avoids an unconditional GPU drain; it does **not** fix variable-set
 snapshotting or otherwise make the entire backend fully asynchronous.
 
-All 36 runs exited with code 0 and 600 measured samples. All 18 Motor runs had
+All 36 runs exited with code 0 and 600 measured samples. All 18 motor runs had
 empty memory-manager dumps; the known WGL shutdown diagnostic appeared in each.
 All stderr files were empty. Reported draw counts remain application-side counts,
 not an independent GPU capture.
 
 ## Lifecycle regression checks
 
-All seven launches below exited with code 0 and an empty Motor memory-manager dump:
+All seven launches below exited with code 0 and an empty motor memory-manager dump:
 
 | Executable | Arguments | Coverage |
 |---|---|---|
@@ -85,7 +85,7 @@ runs also logged D3D11 `GetClientRect failed` during closure, without a failed t
 or crash. Removing a GL frame-end wait does not fix window teardown ordering.
 
 CPU borrowed-resource lifetime and GPU completion remain separate contracts.
-Motor's frontend `fence` is a command-list callback, not a GPU fence. Cross-context
+motor's frontend `fence` is a command-list callback, not a GPU fence. Cross-context
 resource handoffs still require their own visibility/order protocol; a blanket
 frame-end finish is not a substitute.
 

@@ -1,7 +1,7 @@
 # Live Recompile and Lock Costs
 
 The [render-access and runtime compilation comparison](RENDER_ACCESS_AND_COMPILE_COSTS.md)
-adds actual OID/status/variable lookup measurements and compares Motor GL4's
+adds actual OID/status/variable lookup measurements and compares motor GL4's
 support thread with synchronous raylib and a test-supplied raylib compiler worker.
 
 Two focused tests for the existing renderer. Neither introduces frame snapshots,
@@ -40,9 +40,9 @@ successful layout recompilation when the error-handling path itself is broken;
 it does not replace the original negative test. `--close-on-submit` closes the
 application after submitting the first tested shader configuration. Compilation
 may already have finished by shutdown, so this is not a deterministic test of
-compiler overlap. A crash, timeout, or non-empty Motor memory dump still fails.
+compiler overlap. A crash, timeout, or non-empty motor memory dump still fails.
 
-- Twelve quads share one MSL object and geometry, with separate variable sets.
+- Twelve quads share one msl object and geometry, with separate variable sets.
 - A uses `u_color`. B adds `u_tint`, changing the shader's active uniform layout.
 - The smoke sequence is invalid -> A -> B -> A -> B -> invalid -> A -> B -> A.
 - The invalid variant deliberately references an undeclared variable. Compiler
@@ -50,7 +50,7 @@ compiler overlap. A crash, timeout, or non-empty Motor memory dump still fails.
 - Each backend must independently acknowledge the expected result. A shared
   compilation listener is deliberately not used as a per-backend completion flag.
 - A fresh invalid shader must reach `raw / failed`. After an earlier successful
-  configure, Motor deliberately preserves `ready / ok` for the existing resource
+  configure, motor deliberately preserves `ready / ok` for the existing resource
   (`object::data_manipulator::change_to_ready`). The test accepts that policy for
   the later invalid recompile; that state alone does **not** prove the latest
   compilation succeeded or failed. Compiler diagnostics establish the negative
@@ -107,7 +107,7 @@ for the short smoke runs. Repeat benchmark runs before drawing conclusions.
 
 The engine's `datas<T>` is restored to its version before the diagnostic changes
 in commit `59fe05f`. No diagnostics header, template parameter or build entry
-remains in Motor. The uninstrumented baseline uses this actual engine template.
+remains in motor. The uninstrumented baseline uses this actual engine template.
 
 Only the test uses a separate copy,
 [`support/measured_datas.hpp`](../suite_concurrent/support/measured_datas.hpp),
@@ -135,14 +135,14 @@ threads, not frame latency. Lock release, name lookup, allocation and callable
 wrapping are not separately instrumented; they still contribute to wall time.
 Clock calls themselves perturb this small workload, hence the controls.
 
-This is a CPU microbenchmark comparing Motor's actual `datas` template with a
+This is a CPU microbenchmark comparing motor's actual `datas` template with a
 test-only instrumented copy and dummy payloads, not GPU profiling or real shader-compilation
-contention. In particular, it cannot attribute the Motor/raylib frame-time gap to
+contention. In particular, it cannot attribute the motor/raylib frame-time gap to
 locks. The structural-writer workload only models concurrent container access.
 
 ## Verification: 2026-10-13
 
-Windows, MSVC Release; Motor baseline `1b40c53`, suites baseline `20c636f`, plus
+Windows, MSVC Release; motor baseline `1b40c53`, suites baseline `20c636f`, plus
 the test and diagnostic changes described here:
 
 | Check | Result |
@@ -168,5 +168,5 @@ After restoring the original engine files and moving diagnostics into the suite,
 the Release targets `04_datas_locking`, `05_datas_cost` and `07_owner_queue_cost`
 rebuilt successfully. All eight selected CTests (`concurrent_datas_*` plus
 `concurrent_owner_queue_cost`) passed. The full `05_datas_cost --benchmark` also
-passed with an empty Motor memory dump. Graphics tests were not rerun for this
+passed with an empty motor memory dump. Graphics tests were not rerun for this
 restoration.

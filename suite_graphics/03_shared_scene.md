@@ -1,6 +1,6 @@
 # Shared Scene Regression Test
 
-## Motor Camera Update
+## motor Camera Update
 
 The manual view/projection construction has been replaced with
 `motor::gfx::generic_camera`. Release builds and dual-backend smoke runs
@@ -10,14 +10,14 @@ visually reverified; the smoke tests do not compare pixels.
 
 ## Earlier Retest
 
-Motor 5f8f05b plus the user's local GL4/D3D11 MSL release implementations:
+motor 5f8f05b plus the user's local GL4/D3D11 msl release implementations:
 Release build passes, and `--smoke` now completes the dual-window lifecycle
-with exit 0 and no remaining Motor allocations. The previous access violation
+with exit 0 and no remaining motor allocations. The previous access violation
 was not reproduced in this run. Shutdown still logs `GetClientRect failed`
 and `wglMakeCurrent(00)`. Pixel correctness was not inspected by the agent.
 The earlier verification notes below are historical.
 
-Three cubes share one geometry and one MSL object. Each cube has its own
+Three cubes share one geometry and one msl object. Each cube has its own
 variable set. Sets are drawn in order 3, 0, 2; set 1 is removed before use.
 Animation is updated once in on_graphics, then rendered in both windows.
 View and projection come from `motor::gfx::generic_camera`, using
@@ -58,7 +58,7 @@ backend result of each recorded draw. Visual verification remains required.
 
 ## Verification (2026-10-04)
 
-Motor was updated to origin/main at 29b2a89 at the user's request. No engine
+motor was updated to origin/main at 29b2a89 at the user's request. No engine
 source changes were made. This fixes the previous slot-sheet reference/pointer
 build errors. The full Release build of 03_shared_scene succeeds.
 
@@ -76,7 +76,7 @@ startup that appeared after reopening the secondary window.
 
 ## Dynamic D3D11 Fix
 
-The Motor submodule now contains a local, uncommitted fix in
+The motor submodule now contains a local, uncommitted fix in
 platform/graphics/d3d/d3d11.cpp:
 
 - Check existing variable-set IDs using the ID map, not the dense array size.

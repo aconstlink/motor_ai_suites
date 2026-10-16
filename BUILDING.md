@@ -4,7 +4,7 @@
 
 `MOTOR_AI_BUILD_RAYLIB=ON` adds raylib under `externals/raylib` and the regular
 `00_raylib_benchmark` executable under `suites/suite_raylib`. Build and start it
-like a Motor sample, using the same solution and configuration. No nested builds
+like a motor sample, using the same solution and configuration. No nested builds
 are used. Other frameworks have their own opt-in flags; see the
 [raylib guide](suite_raylib/README.md) and [reference guide](suite_reference/README.md).
 
@@ -20,9 +20,9 @@ The slot test covers initial values, fan-out, explicit exchange, independent
 change flags, disconnect/reconnect, type rejection and release. The bridge
 test covers input transfer, output-to-two-subsets transfer, staged updates,
 independent variable ownership and rebinding. Assertions remain active in
-Release through explicit checks, and remaining Motor allocations fail the run.
+Release through explicit checks, and remaining motor allocations fail the run.
 
-Motor is pinned to `52b0177`, with separate input/output bridges. All bridge
+motor is pinned to `52b0177`, with separate input/output bridges. All bridge
 tests run without a compatibility/skip path. Additional scenarios verify
 replacement of whole variable sets while preserving same-type connections,
 and float-to-int slot replacement with disconnection of old endpoints.
@@ -41,11 +41,11 @@ cmake --build build --config Release --target 00_threads_parallel_for --parallel
 ctest --test-dir build -C Release -L concurrent --output-on-failure --no-tests=error
 ```
 
-The five scenarios cover four native threads, Motor's thread pool, empty/small/
+The five scenarios cover four native threads, motor's thread pool, empty/small/
 threshold/large parallel ranges with nonzero offsets, repeated remainder ranges,
 and nested `parallel_for` calls. Atomic visit counters and a serial checksum
 detect missing, duplicate and out-of-range work. Checks remain active in Release.
-Motor's final memory report must be empty. CTest enforces a 90-second timeout per
+motor's final memory report must be empty. CTest enforces a 90-second timeout per
 scenario and runs them serially to avoid competing pools.
 
 No window, graphics backend, audio device or assets are used. The Windows and Linux
@@ -74,7 +74,7 @@ cmake --build build --config Release --target 00_triangle --parallel
 ```
 
 Run `build/bin/Release/00_triangle.exe` for an OpenGL window, or pass `--dual`
-for OpenGL and D3D11 windows rendering the same geometry with the same MSL
+for OpenGL and D3D11 windows rendering the same geometry with the same msl
 shader. Closing either window ends this first sample. `--frames 180` provides
 a bounded smoke-test run; it is not an image correctness test.
 
@@ -95,7 +95,7 @@ Run `build/bin/Release/01_window_lifecycle.exe`. The OpenGL window contains
 an ImGui checkbox for opening/closing a D3D11 window and a shared color editor.
 The D3D11 window can also be closed using its title-bar close button, then
 reopened from the checkbox. Closing the OpenGL window ends the application.
-Geometry, MSL and the color variable set are shared between the windows.
+Geometry, msl and the color variable set are shared between the windows.
 
 On Linux, run `build/bin/01_window_lifecycle`. Both windows use GL4 with
 independent GLX contexts. An X11 display (including XWayland/WSLg) with OpenGL 4
@@ -120,7 +120,7 @@ build/bin/01_window_lifecycle --smoke
 This opens/closes the secondary window twice, changes colors between steps, checks that the
 shader becomes ready after both openings, and exits. It returns a nonzero
 code if the sequence fails, times out after 30 seconds, or leaves entries in
-Motor's memory manager. On Windows the default requires OpenGL and D3D11 support;
+motor's memory manager. On Windows the default requires OpenGL and D3D11 support;
 `--gl-only` uses OpenGL for both windows, including the reopened secondary window.
 On Linux only OpenGL is used. It does not compare rendered pixels or certify
 that native graphics resources are leak-free.
@@ -132,7 +132,7 @@ cmake --build build --config Release --target 02_dynamic_geometry --parallel
 build/bin/Release/02_dynamic_geometry.exe --dual
 ```
 
-One MSL object renders a triangle and an optional square with separate color
+One msl object renders a triangle and an optional square with separate color
 and position variable sets. Toggle Square to link/unlink its geometry and
 create/drop its variable set at runtime. The shader is configured only once
 per backend. Square geometry remains allocated until shutdown; toggling tests

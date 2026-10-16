@@ -240,7 +240,7 @@ namespace village
                 _fire_light = fire ; lc->add_light(motor::move(fire)) ;
                 lights->add_component(motor::move(lc)) ; _root->add_child(motor::move(lights)) ;
             }
-            // Motor uses one GL-style projection for both APIs. Keep the whole scene in
+            // motor uses one GL-style projection for both APIs. Keep the whole scene in
             // positive clip Z as well, so D3D's near clipping does not remove casters.
             _moon_camera.make_orthographic(64,64,0.1f,160.0f) ;
             auto const direction = _directional[0]->get_direction() ;
@@ -685,7 +685,7 @@ namespace village
             {
                 motor::scene::light_pass_render_visitor_t visitor(0,w,fe,&window.camera,_directional[0],&_moon_shadow) ;
                 motor::scene::node_t::traverser(_village).apply(&visitor) ;
-                // One ready MSL leaf per object/material pair.
+                // One ready msl leaf per object/material pair.
                 window.draws.scene = _village_draws ;
             }
             if( _frame_dragon )

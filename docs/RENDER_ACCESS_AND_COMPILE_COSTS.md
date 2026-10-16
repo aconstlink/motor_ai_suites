@@ -1,7 +1,7 @@
 # Render Access and Runtime Shader Compilation
 
 This is a bounded measurement, not a lock-removal patch or a renderer rewrite.
-No Motor source was changed for these tests.
+No motor source was changed for these tests.
 
 ## Tests
 
@@ -11,7 +11,7 @@ No Motor source was changed for these tests.
   MRSW reader. One and two workers read immutable data; there are no concurrent
   writes to shader values. The four-ID case models call count, not an entire draw.
 - [`13_live_recompile --benchmark`](../suite_graphics/13_live_recompile.cpp)
-  measures Motor's existing GL4 support thread, including MSL processing and
+  measures motor's existing GL4 support thread, including msl processing and
   backend installation. The original interactive and negative smoke modes remain.
 - [`01_raylib_compile_cost`](../suite_raylib/01_raylib_compile_cost.cpp) compares
   synchronous compile/link with a test-supplied worker/shared GLFW context.
@@ -44,7 +44,7 @@ fresh `-SeedBase` as needed. Graphics programs are not registered in headless CI
 The graphics tests use a 640 x 640 window with VSync off, thirteen cheap quad
 draws, six compilations and settling intervals between requests. The compiled
 program is used once on delivery; the steady workload does not retain its costly
-pixel shader. No ImGui panel is drawn in Motor's benchmark mode.
+pixel shader. No ImGui panel is drawn in motor's benchmark mode.
 
 The shared source helper emits 128 dependent `sin` operations. Values depend on
 a uniform, and constants vary by seed/revision. This is an intentionally
@@ -53,7 +53,7 @@ Seeds differ between modes to avoid deliberately warming the exact source for
 the next mode. Reusing a seed permits cache reuse. We do not clear the driver
 cache and do not claim a fully cold compiler.
 
-Motor checks both backend readiness and the compilation listener for every
+motor checks both backend readiness and the compilation listener for every
 revision. Its progress counter is incremented by executed command fences.
 Raylib checks for successful non-default programs and required uniforms; its
 progress counter counts completed main-loop frames before readiness is observed.
@@ -70,12 +70,12 @@ There is **no per-frame glFinish**. This is not simply the timing of an unmodifi
 worker path's use of shared global state.
 
 Frame samples are CPU/application cadence, not GPU timestamps or measured
-display presentation. Motor samples `on_frame_done` intervals; raylib samples
+display presentation. motor samples `on_frame_done` intervals; raylib samples
 whole main-loop iterations through `EndDrawing`. Compile-phase samples include
 submission and delivery/first-use frames. Idle samples exclude startup and the
 first settling frames. Cross-engine absolute frame times are not an isolated
-API-overhead comparison: Motor also runs its application infrastructure and
-MSL frontend, and the generated shader interfaces differ.
+API-overhead comparison: motor also runs its application infrastructure and
+msl frontend, and the generated shader interfaces differ.
 
 The CPU test uses 200,000 operations per worker, three repetitions with rotated
 case order and warmup outside timing. Checksums prevent dead-code elimination;
@@ -88,7 +88,7 @@ they are not safe replacements for concurrently mutated object state.
 ## Results: 2026-10-14
 
 Windows, MSVC Release, Intel Core i7-6700, NVIDIA RTX 2060,
-driver `32.0.16.1088`. Motor `1ebdc51` **plus the already-present experimental
+driver `32.0.16.1088`. motor `1ebdc51` **plus the already-present experimental
 GL4 `datas` lock bypass** from the [owner-thread experiment](GL4_OWNER_THREAD_EXPERIMENT.md).
 Object/status and variable-set locks remain enabled. `MOTOR_PROFILING=OFF`.
 Raylib is pinned by its wrapper to `fdc8b37391b52fdc8cc62af37d02235c9ec59daa`.
@@ -126,13 +126,13 @@ Ranges below are the three per-run values; latency is pooled over 18 requests.
 
 | Mode | Idle frame mean | Compile-phase frame p95 | Worst frame per run | Mean request-to-ready | Progress per run |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Motor GL4 support thread | 1.10-1.13 ms | 2.11-2.20 ms | 59-70 ms | 142.8 ms | 423-435 command rounds |
+| motor GL4 support thread | 1.10-1.13 ms | 2.11-2.20 ms | 59-70 ms | 142.8 ms | 423-435 command rounds |
 | raylib synchronous control | 0.41-0.43 ms | 84-103 ms | 139-149 ms | 87.9 ms | 0 frames |
 | raylib + shared-context worker | 0.33-0.43 ms | 0.63-0.87 ms | 57-64 ms | 95.1 ms | 461-629 frames |
 
 The synchronous phase has only one sample per compile, so its p95 is based on
 six samples per run. Worker phases have hundreds of samples: p95 alone can hide
-the remaining spikes. Motor had 7 frames above 16.667 ms per run; the raylib
+the remaining spikes. motor had 7 frames above 16.667 ms per run; the raylib
 worker also had 7. Both still had roughly one >33 ms stall per revision.
 
 **Conclusion:** asynchronous compilation demonstrably permits useful rendering
@@ -140,17 +140,17 @@ progress while awaiting a program. It did not reduce total compilation latency
 in the raylib control. It also did not eliminate long frames in either worker
 implementation. These measurements cannot separate driver contention, result
 installation, first-use work and other synchronization as causes of those stalls.
-Motor's extra latency cannot be attributed solely to locks: it includes MSL and
-different backend integration work. There is no synchronous Motor A/B in this test.
+motor's extra latency cannot be attributed solely to locks: it includes msl and
+different backend integration work. There is no synchronous motor A/B in this test.
 
 ### Verification and Limits
 
 - All nine graphics benchmark processes exited 0; all 54 new programs were
   reported successful and submitted for drawing.
-- Both CPU benchmarks passed checksums with empty Motor memory dumps.
+- Both CPU benchmarks passed checksums with empty motor memory dumps.
 - The three selected CTests passed.
 - The existing GL4 invalid-shader/recovery smoke test also passed after the extension.
-- Motor's pre-existing `wglMakeCurrent(00)` shutdown diagnostic remains.
+- motor's pre-existing `wglMakeCurrent(00)` shutdown diagnostic remains.
 - Linux, D3D11 performance and pixel correctness were not established here.
 - No new locks were removed, and no unsafe unlocked status/value experiment was
   run during concurrent compilation. The previous GL4 `datas` experiment remains

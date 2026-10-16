@@ -3,7 +3,7 @@
 Target: `12_scene_wire_lighting`. The low-level `11_lighting_scene` remains
 unchanged as a comparison. This sample extends the 12-object gallery with a small
 emissive sphere in the foreground (13 objects total), using the same four
-shared meshes and three directional lighting terms, but renders through Motor's
+shared meshes and three directional lighting terms, but renders through motor's
 scene graph and supplies animation/material/light data through Wire slots.
 The existing `gfx::hdr_postprocess_pipeline` handles HDR, Bloom, tone mapping
 and FXAA after the scene traversal. No post-processing shader is duplicated here.
@@ -23,7 +23,7 @@ Run from `build/bin/Release`:
 ./12_scene_wire_lighting.exe --smoke --gl-only --still
 ```
 
-Windows defaults to GL4 plus D3D11. Both render the same graph and shared MSL
+Windows defaults to GL4 plus D3D11. Both render the same graph and shared msl
 object. Other platforms default to GL4. `--still` starts paused. Closing either
 window closes the sample. The tool panel changes three light intensities,
 ambient, material tint, exhibit-group height, camera angle and animation pause.
@@ -48,7 +48,7 @@ intensities do not modulate emission.
 
 An individual `output_slot<vec3>` publishes each object's emission through the
 same base/subset bridges as its material. All other objects emit zero.
-The existing sphere mesh and shared MSL object are reused.
+The existing sphere mesh and shared msl object are reused.
 
 This is a self-lit material with screen-space Bloom, not a point light or global
 illumination: the sphere does not illuminate the floor or neighboring objects.
@@ -87,7 +87,7 @@ The root owns a sample-local `lighting_controls` component. Static geometry is
 attached directly to the root. The five spinning objects are children of an
 exhibit group with its own `trafo3d_component`. Every rendered leaf owns an
 `object_controls` component, a `trafo3d_component` and an `msl_set_component`
-containing one `msl_component`. All MSL components reference the same shader.
+containing one `msl_component`. All msl components reference the same shader.
 
 The controls components use `icomponent::create_output_slot`; their raw slot
 pointers are borrowed. `icomponent` disconnects and releases these slots at
@@ -127,8 +127,8 @@ camera data; they are not backend resource IDs. The scene component creates the
 subsets, rather than the application maintaining per-window copies of all sets.
 Compilation readiness is gated before the first visible scene traversal.
 
-Graphics geometry, state and MSL configure/release remain explicit in the
-application. The MSL object is marked managed because this application owns
+Graphics geometry, state and msl configure/release remain explicit in the
+application. The msl object is marked managed because this application owns
 that lifecycle, using `on_first_frame` and `on_last_frame` for graphics resources.
 The graph stays alive until all last-frame releases have been
 submitted and application shutdown is reached.
@@ -136,7 +136,7 @@ submitted and application shutdown is reached.
 ## Scope
 
 - Single-pass, three explicitly named direction/energy pairs; no uniform arrays.
-- World, view, projection and camera-position use existing MSL semantics.
+- World, view, projection and camera-position use existing msl semantics.
 - Light color times intensity uses ordinary named slots because the corresponding
   automatic light bindings are not present yet.
 - This tests Wire slots and both internal variable bridges, not task-graph
@@ -174,7 +174,7 @@ After startup, assertions inspect CPU-side render subsets and verify:
 - HDR framebuffer readiness on each backend, availability of all five stage
   property sheets and the expected bright-pass threshold.
 - Both post-processed and direct rendering paths have executed.
-- Empty Motor memory-manager dump at shutdown.
+- Empty motor memory-manager dump at shutdown.
 
 Smoke resolves subset IDs through an additional `render_update` before queuing
 draws and performs name-based checks afterward. These extra checks are only

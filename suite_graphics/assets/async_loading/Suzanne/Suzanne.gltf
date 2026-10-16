@@ -85,7 +85,7 @@
   "asset": {
     "generator": "VKTS glTF 2.0 exporter",
     "version": "2.0",
-    "copyright": "Model authors and notices: see UPSTREAM_README.md; source: KhronosGroup/glTF-Sample-Models/2.0/Suzanne. Textures omitted for the Motor async-loading sample."
+    "copyright": "Model authors and notices: see UPSTREAM_README.md; source: KhronosGroup/glTF-Sample-Models/2.0/Suzanne. Textures omitted for the motor async-loading sample."
   },
   "bufferViews": [
     {

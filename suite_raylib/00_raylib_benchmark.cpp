@@ -96,7 +96,7 @@ namespace this_file
 
     Matrix world_matrix( object_data const & object, float_t const angle )
     {
-        // Use the same transform evaluation as Motor's direct benchmark.
+        // Use the same transform evaluation as motor's direct benchmark.
         motor::math::m3d::trafof_t const transform( motor::math::vec3f_t(object.scale),
             motor::math::vec3f_t(0.3f, angle, 0.0f), object.position ) ;
         auto const m = transform.get_transformation() ;

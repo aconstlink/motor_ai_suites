@@ -18,7 +18,7 @@ namespace compile_cost
     inline double_t ms( clock::time_point const a, clock::time_point const b )
     { return std::chrono::duration<double_t, std::milli>( b - a ).count() ; }
 
-    // Same dependent arithmetic in GLSL and MSL. Constants change actual source,
+    // Same dependent arithmetic in GLSL and msl. Constants change actual source,
     // not just comments. A repeated seed deliberately permits driver-cache reuse.
     inline motor::string_t body( uint32_t const seed, size_t const revision, bool_t const msl )
     {

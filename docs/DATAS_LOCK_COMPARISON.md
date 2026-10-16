@@ -1,6 +1,6 @@
 # Datas locks: GL4 and D3D11
 
-Measured on 2026-10-15 with Motor `306e7c5` (`unlocking-datas`). This compares
+Measured on 2026-10-15 with motor `306e7c5` (`unlocking-datas`). This compares
 `USE_DATAS_LOCKS=1` and `USE_DATAS_LOCKS=0` on the same revision. It supersedes the
 [earlier GL4-only experiment](GL4_OWNER_THREAD_EXPERIMENT.md) for this revision;
 it does not replace the historical measurements in that report.
@@ -66,7 +66,7 @@ setting; do not mix incompatible container definitions within a build.
 ```
 
 The recorded series used separately built platform DLLs for the two settings.
-The original source setting and unlocked DLL were restored afterward. No Motor
+The original source setting and unlocked DLL were restored afterward. No motor
 source changes or submodule-pointer update are part of this documentation.
 
 Raw records: [all process outcomes](results/datas-locks-20261015/results.csv),
@@ -87,7 +87,7 @@ Each case ran once with locks and once without locks:
 | `13_live_recompile --gl-only --close-on-submit` | Early close after compilation submission | Passed |
 
 All 34 processes (10 functional, 24 benchmark) exited with code 0, no `[FAIL]`
-records and empty Motor memory dumps. The known WGL shutdown diagnostic
+records and empty motor memory dumps. The known WGL shutdown diagnostic
 `wglMakeCurrent(00)` remains. Empty dumps do not prove the absence of driver/GPU
 resource leaks, and these tests do not prove race freedom. Early close does not
 guarantee that compilation was still active at shutdown. Generic concurrent
@@ -97,16 +97,16 @@ must be checked separately before removing synchronization in other callers.
 ## Historical framework reference
 
 These are **not fresh side-by-side measurements**. The external framework values
-below are from 2026-10-12 and are included only for orientation beside Motor's
+below are from 2026-10-12 and are included only for orientation beside motor's
 new direct/unlit results. Different adapters, sampling and frame policies limit
 comparability; no relative speedup against another engine is inferred here.
 
 | Framework / path | Backend | 1,000-object median, ms | Series |
 | --- | --- | ---: | --- |
-| Motor, direct, locks on | GL4 | 9.096 | 2026-10-15 |
-| Motor, direct, locks off | GL4 | 6.281 | 2026-10-15 |
-| Motor, direct, locks on | D3D11 | 3.801 | 2026-10-15 |
-| Motor, direct, locks off | D3D11 | 3.269 | 2026-10-15 |
+| motor, direct, locks on | GL4 | 9.096 | 2026-10-15 |
+| motor, direct, locks off | GL4 | 6.281 | 2026-10-15 |
+| motor, direct, locks on | D3D11 | 3.801 | 2026-10-15 |
+| motor, direct, locks off | D3D11 | 3.269 | 2026-10-15 |
 | raylib, three matrices | OpenGL | 4.809 | Historical glFinish comparison |
 | raylib, combined MVP | OpenGL | 4.005 | Historical glFinish comparison |
 | bgfx | OpenGL | 0.825 | Historical adapter comparison |

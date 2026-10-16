@@ -333,7 +333,7 @@ namespace sample
                 _windows[w].base_state.add_render_state_set(s) ;
                 motor::application::window_info_t info ;
                 bool_t const d3d = _opts.d3d || w == 1 ;
-                info.window_name = d3d ? "Motor | light components | D3D11" : "Motor | light components | GL4" ;
+                info.window_name = d3d ? "motor | light components | D3D11" : "motor | light components | GL4" ;
                 info.x = int_t(30+w*780) ; info.y = 60 ; info.w = 760 ; info.h = 620 ;
                 info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 : motor::application::graphics_generation::gen4_gl4 ;
                 _windows[w].id = create_window(info) ;

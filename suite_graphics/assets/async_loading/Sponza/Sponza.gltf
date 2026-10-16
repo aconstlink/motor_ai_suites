@@ -2,7 +2,7 @@
   "asset": {
     "generator": "glTF-Transform v1.2.3",
     "version": "2.0",
-    "copyright": "Model authors and notices: see UPSTREAM_README.md; source: KhronosGroup/glTF-Sample-Models/2.0/Sponza. Textures omitted for the Motor async-loading sample."
+    "copyright": "Model authors and notices: see UPSTREAM_README.md; source: KhronosGroup/glTF-Sample-Models/2.0/Sponza. Textures omitted for the motor async-loading sample."
   },
   "accessors": [
     {

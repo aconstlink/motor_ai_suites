@@ -6,7 +6,7 @@ same graphics objects. Other platforms default to OpenGL 4.
 
 ## Expected image
 
-- Left: position and color fetched from an `array_object` using MSL `vertex_id`
+- Left: position and color fetched from an `array_object` using msl `vertex_id`
   and `fetch_data`. The shader has no ordinary vertex inputs.
 - Right: the same position and color supplied as vertex attributes.
 - Both quads should have matching shapes and color gradients, apart from their
@@ -41,7 +41,7 @@ cmake --build build --config Release --target 06_vertex_pulling --parallel 4
 Closing either window exits the app. The smoke mode waits for both shaders to
 be ready on each active backend, at least 180 draw submissions and 60 buffer
 updates per window (one update with `--still`). It has a 30-second timeout.
-Exit code 1 indicates timeout, early closure, or a nonempty Motor memory dump.
+Exit code 1 indicates timeout, early closure, or a nonempty motor memory dump.
 This is a lifecycle/submission smoke test, not an automated pixel comparison:
 the frontend does not expose the result of every queued update/draw here.
 

@@ -3,7 +3,7 @@
 Standalone console benchmark inspired by the two search loops in GL4's
 `shader_data`: an index-based `while` and iterator-based `std::find_if`.
 The current version searches plain `std::vector<std::string>`,
-`std::vector<std::uint32_t>` and `std::vector<std::uint64_t>`. It uses no Motor
+`std::vector<std::uint32_t>` and `std::vector<std::uint64_t>`. It uses no motor
 objects, allocators, containers, graphics types or locks in the measured work.
 Only diagnostic output uses `motor::log`, outside timing. No engine changes.
 
@@ -54,7 +54,7 @@ and repeat before interpreting small differences. Logging uses `motor::log`.
 ## Standard-Only Result (2026-10-13)
 
 Windows/MSVC Release, three sequential process runs; all checks passed, including
-the separate CTest. Motor's memory dump is not used to validate standard allocations.
+the separate CTest. motor's memory dump is not used to validate standard allocations.
 Mixed requests below contain 75% hits and 25% misses. Values are ns per lookup,
 the median of three process medians, not pooled frame or lookup samples.
 
@@ -80,21 +80,21 @@ the median of three process medians, not pooled frame or lookup samples.
 Neither loop wins every case. In the 256-entry uint64 mixed case all three process
 medians favored find_if (65.71-78.94 ns vs. 99.39-121.64 ns). Smaller differences
 overlap the measured run-to-run variation. Strings show a different pattern from
-the earlier struct-based test; this does not isolate Motor allocator overhead.
+the earlier struct-based test; this does not isolate motor allocator overhead.
 No assembly-based explanation or inline-call performance is claimed.
 
 [Standard-only per-run results](results/2026-10-13-std-search.csv).
 
-## Historical Motor-Container Result (2026-10-13)
+## Historical motor-Container Result (2026-10-13)
 
-The measurements below belong to the previous implementation with Motor containers
+The measurements below belong to the previous implementation with motor containers
 and `{vertex_attribute, motor::string_t}` records. They are retained as history,
 not current results. The standard-only version changes element layout, output
 handling and iteration counts as well, so differences cannot be attributed solely
 to changing the container allocator.
 
 Windows/MSVC Release, three sequential process runs, all correctness checks passed
-and all Motor memory dumps empty. The corresponding CTest passed as well.
+and all motor memory dumps empty. The corresponding CTest passed as well.
 The table uses the median of the three per-process medians, in ns per lookup,
 for mixed queries (75% hits). These are not pooled sample medians.
 

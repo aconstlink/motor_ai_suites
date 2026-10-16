@@ -5,7 +5,7 @@
 Windows x64, Visual Studio 2026 / MSVC, Release, NVIDIA GeForce RTX 2060.
 The direct OpenGL context reported NVIDIA driver 610.88. The documented pinned
 bgfx/Cinder checkouts were supplied through source overrides; the already enabled
-raylib supplied GLFW. No Motor source changes were needed.
+raylib supplied GLFW. No motor source changes were needed.
 
 - `00_opengl_benchmark`, `00_bgfx_benchmark`, `00_cinder_benchmark` and
   `00_reference_workload_test` built successfully as native solution targets.

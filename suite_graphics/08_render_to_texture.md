@@ -1,8 +1,8 @@
 # Render to texture
 
-`08_render_to_texture` renders three animated cubes with a Motor camera into an
+`08_render_to_texture` renders three animated cubes with a motor camera into an
 RGBA8 framebuffer with a depth32 target, then presents its color target through
-an MSL post-processing shader. No external assets or scene graph are required.
+an msl post-processing shader. No external assets or scene graph are required.
 The same CPU-side graphics objects are configured independently on GL4 and D3D11.
 
 ## Build and run
@@ -56,7 +56,7 @@ is deliberately stretched if the window has a different aspect ratio.
 
 ## Rendering and lifetime
 
-1. Configure geometry, states and framebuffer before configuring MSL objects.
+1. Configure geometry, states and framebuffer before configuring msl objects.
 2. Wait for resource readiness separately for each backend.
 3. Bind the framebuffer and push its clear/depth/viewport state.
 4. Draw the orientation background with depth disabled; pop back to scene state.
@@ -72,7 +72,7 @@ The three viewport sizes are immutable entries in one state object; another
 three entries provide the no-clear explicit-state reference.
 
 CPU resources and borrowed variable pointers remain alive through the window
-release callbacks. `on_last_frame` queues backend releases; MSL CPU ownership is
+release callbacks. `on_last_frame` queues backend releases; msl CPU ownership is
 released in `on_shutdown`. This follows the existing suite's application lifetime.
 
 ## Smoke coverage
@@ -81,7 +81,7 @@ The smoke test waits for at least 90 submitted frames per active window in each
 drawing phase. It runs 640x480/original, 320x240/greyscale, 1280x960/inverted,
 closes and reopens the secondary window in dual mode, and returns to
 640x480/original. It checks readiness/results, target revisions, lifecycle counts,
-a 60-second timeout and the final Motor memory dump.
+a 60-second timeout and the final motor memory dump.
 
 A successful smoke exit proves the control/resource path completed; it does NOT
 prove pixel correctness, GPU completion timing or the absence of driver leaks.
@@ -111,7 +111,7 @@ the optional explicit state is a diagnostic reference, not a backend fix.
 ## Verification
 
 Release build and dual-backend smoke runs with and without the explicit-state
-reference completed with exit code 0 and an empty Motor memory dump. The GL4-only
+reference completed with exit code 0 and an empty motor memory dump. The GL4-only
 and D3D11-only smoke runs also completed with exit code 0 and an empty dump.
 
 Static original-mode images were inspected on both backends, including the

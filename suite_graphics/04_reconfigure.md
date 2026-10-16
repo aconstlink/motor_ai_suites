@@ -2,7 +2,7 @@
 
 Build target: `04_reconfigure`.
 
-The app shares one quad geometry, MSL object, two active variable sets,
+The app shares one quad geometry, msl object, two active variable sets,
 two procedural textures and a render-state object between GL4 and D3D11 windows.
 Two textured quads are the visual reference. Initially the left quad has a blue,
 coarse checkerboard (A), the right quad an orange, fine checkerboard (B).
@@ -82,8 +82,8 @@ checkerboards. A passing smoke alone does not verify those pixels.
 
 ## Historical Results Before the Texture Extension
 
-These results refer to the earlier, single-color triangle version, on Motor
-5f8f05b plus local MSL release implementations, not the new texture regression.
+These results refer to the earlier, single-color triangle version, on motor
+5f8f05b plus local msl release implementations, not the new texture regression.
 
 Release builds of 04_reconfigure and 03_shared_scene passed. Retested with
 the user's uncommitted release implementations in gl4.cpp and d3d11.cpp:
@@ -97,12 +97,12 @@ the user's uncommitted release implementations in gl4.cpp and d3d11.cpp:
 | Both, two reconfigure + two release/configure cycles | Exit 0 |
 | 03_shared_scene, secondary window close/reopen/close | Exit 0 |
 
-All six runs ended with an empty Motor memory dump. Release now reports
+All six runs ended with an empty motor memory dump. Release now reports
 success and each release/configure cycle reaches rendering again.
 The known `wglMakeCurrent(00)` shutdown message remains in GL4 runs;
 the window lifecycle test also logs `GetClientRect failed` while closing.
 
-Review caveat: the new release_msl_data currently invalidates only the MSL
+Review caveat: the new release_msl_data currently invalidates only the msl
 entry. It does not invalidate the corresponding _renders and _shaders entries.
 Those backend resources and variable-set references can remain resident until
 later reconfiguration or backend destruction. Passing this smoke test does
