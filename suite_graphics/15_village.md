@@ -33,6 +33,14 @@ postprocessing and emission. Geometry density and seed count are startup options
 so camera movement does not trigger mesh construction or buffer reallocation.
 Closing either window closes the application.
 
+The `Light colors / intensity` section provides an HDR-capable linear RGB color
+editor, an intensity slider (0 to 10) and an individual reset for Moon, Sky fill
+and Fire. Initial values preserve the existing appearance; zero intensity turns
+off that light's contribution. The panel scrolls when it exceeds the window height.
+These controls change illumination, not the separate emissive window/particle
+colors or the shader's constant ambient term. The existing Emission control
+continues to adjust emissive surfaces.
+
 ## Scene and Rendering
 
 - Four houses with timber framing, individual roof tiles, chimneys, shutters,
@@ -89,6 +97,12 @@ outputs into the components' shader input slots. The shader evaluates all three
 lights in one color draw per mesh, not three additive light passes. motor's
 `light_pass_render_visitor` supplies the moon's shadow bindings for that draw;
 the other two lights continue to arrive through Wire.
+
+The current `gfx::light` API only exposes color/intensity getters. Editable
+overrides therefore live in the sample, initialized/reset from the collected
+light objects. The collection step publishes each override's `color * intensity`
+through the existing energy slots, without replacing lights, recompiling shaders
+or modifying the engine. Direction, position and radius still come from the lights.
 
 `on_graphics` processes shader compilation listeners, publishes controls and
 runs `variable_update_visitor` followed by `trafo_visitor`. Per-window rendering
@@ -238,6 +252,9 @@ also checks directional-light values in every color subset, orbit motion,
 holding the shadow camera while orbit is disabled, and manual yaw/elevation
 changes followed by resumed motion. With `--still`, it checks frozen automatic
 motion while still exercising the manual angle changes. It
+changes all three lights' color/intensity settings, including HDR RGB values and
+zero intensity, then resets them. Expected energy is checked directly against the
+editable settings in every view subset, not just against the intermediate slots. It
 checks submission counters including the
 final 97 draws per window, then closes normally. It has a 75-second
 application timeout. Exit status is nonzero for a failed smoke or a nonempty
@@ -265,6 +282,12 @@ Moon-orbit verification on 2026-10-15 (MSVC Release):
   produced no compiler warnings. The existing GL4 unused-normal and shutdown
   `wglMakeCurrent(00)` messages remain. These are data/submission checks, not
   a visual comparison of moving shadows.
+
+Light-control verification on 2026-10-15: Release build and `--dual --smoke`
+passed with 160 frames per backend. The test changes colors/intensities, turns
+fill/fire contributions off via zero intensity and restores defaults, checking
+every color subset against the control values. Exit 0, empty memory dump; the
+existing WGL shutdown message remains. UI interaction was not automated.
 
 The targeted shadow build reported no compiler warnings. These runs use motor's
 original locking implementation, without the earlier local `datas` experiment.

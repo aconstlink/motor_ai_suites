@@ -61,6 +61,22 @@ namespace village
     class village_app : public motor::application::app
     {
         struct particle { vec4 position, color ; } ;
+        struct light_controls
+        {
+            float_t color[3] = {1,1,1} ;
+            float_t intensity = 1 ;
+
+            void_t reset( motor::gfx::light_mtr_t light ) noexcept
+            {
+                for( size_t i = 0 ; i < 3 ; ++i ) color[i] = light->color()[i] ;
+                intensity = light->intensity() ;
+            }
+
+            vec3 energy( void_t ) const noexcept
+            {
+                return vec3(color[0],color[1],color[2])*intensity ;
+            }
+        } ;
         struct draw_counts
         {
             uint_t scene = 0, shadow = 0, capture = 0, particles = 0, post = 0 ;
@@ -120,6 +136,7 @@ namespace village
         motor::scene::light_collector_visitor_t _light_collector ;
         motor::gfx::directional_light_mtr_t _directional[2] = {} ; // borrowed
         motor::gfx::point_light_mtr_t _fire_light = nullptr ; // borrowed
+        light_controls _light_controls[3] ;
         size_t _collected_lights = 0 ;
         bool_t _scene_ready = false ;
         size_t _triangles = 0, _vertices = 0 ;
@@ -238,6 +255,8 @@ namespace village
                 }
                 auto fire = motor::shared(motor::gfx::point_light_t(3.0f,vec4(2.8f,0.72f,0.13f,1),vec3(2.8f,1.2f,2.6f),10.0f)) ;
                 _fire_light = fire ; lc->add_light(motor::move(fire)) ;
+                for( size_t l = 0 ; l < 2 ; ++l ) _light_controls[l].reset(_directional[l]) ;
+                _light_controls[2].reset(_fire_light) ;
                 lights->add_component(motor::move(lc)) ; _root->add_child(motor::move(lights)) ;
             }
             // motor uses one GL-style projection for both APIs. Keep the whole scene in
@@ -273,12 +292,12 @@ namespace village
                     for( size_t l = 0 ; l < 2 ; ++l ) if( light == _directional[l] )
                     {
                         _controls->direction[l]->set_and_exchange(_directional[l]->get_direction()) ;
-                        _controls->energy[l]->set_and_exchange(light->color()*light->intensity()) ;
+                        _controls->energy[l]->set_and_exchange(_light_controls[l].energy()) ;
                     }
                     if( light == _fire_light )
                     {
                         _controls->fire->set_and_exchange(vec4(_fire_light->get_position(),_fire_light->get_radius())) ;
-                        _controls->energy[2]->set_and_exchange(light->color()*light->intensity()) ;
+                        _controls->energy[2]->set_and_exchange(_light_controls[2].energy()) ;
                     }
                 }) ;
             }) ;
@@ -350,7 +369,7 @@ namespace village
                         !matches(shadow_vars,"u_view",_moon_shadow.view) || !matches(shadow_vars,"u_proj",_moon_shadow.proj) ||
                         !matches(shadow_vars,"u_clock",(object.model == 7 ? _controls->dragon_clock : _controls->clock)->get_value()) ) return false ;
                     for( size_t l = 0 ; l < 3 ; ++l )
-                        if( !matches(vars,("u_energy_"+motor::to_string(l)).c_str(),_controls->energy[l]->get_value()) ) return false ;
+                        if( !matches(vars,("u_energy_"+motor::to_string(l)).c_str(),_light_controls[l].energy()) ) return false ;
                     for( size_t l = 0 ; l < 2 ; ++l )
                         if( !matches(vars,("u_direction_"+motor::to_string(l)).c_str(),_directional[l]->get_direction()) ) return false ;
                 }
@@ -719,7 +738,9 @@ namespace village
         {
             if( id != _windows[0].id || _quitting || _opts.smoke ) return false ;
             ImGui::SetNextWindowPos(ImVec2(12,12),ImGuiCond_FirstUseEver) ;
-            ImGui::SetNextWindowSize(ImVec2(290,0),ImGuiCond_FirstUseEver) ;
+            ImGui::SetNextWindowSize(ImVec2(350,0),ImGuiCond_FirstUseEver) ;
+            float_t const panel_height = ImGui::GetIO().DisplaySize.y-24.0f ;
+            ImGui::SetNextWindowSizeConstraints(ImVec2(300,200),ImVec2(500,panel_height > 200 ? panel_height : 200)) ;
             if( ImGui::Begin("Village 1800",nullptr,ImGuiWindowFlags_NoSavedSettings) )
             {
                 ImGui::Text("Triangles: %llu",static_cast<unsigned long long>(_triangles)) ;
@@ -752,6 +773,26 @@ namespace village
                 ImGui::SliderFloat("Moon speed",&_moon_speed,-15,15,"%.1f deg/s") ;
                 ImGui::Checkbox("Moon orbit",&_moon_orbit) ;
                 ImGui::Checkbox("Moon shadows",&_shadows) ; ImGui::SliderFloat("Shadow bias",&_shadow_bias,0.0f,0.002f,"%.5f") ;
+                if( ImGui::TreeNodeEx("Light colors / intensity",ImGuiTreeNodeFlags_DefaultOpen) )
+                {
+                    char_cptr_t const names[] = {"Moon","Sky fill","Fire"} ;
+                    for( size_t l = 0 ; l < 3 ; ++l )
+                    {
+                        ImGui::PushID(int_t(l)) ;
+                        ImGui::TextUnformatted(names[l]) ;
+                        auto & controls = _light_controls[l] ;
+                        ImGui::ColorEdit3("Color (linear)",controls.color,ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float) ;
+                        ImGui::SliderFloat("Intensity",&controls.intensity,0,10,"%.2f",ImGuiSliderFlags_AlwaysClamp) ;
+                        if( ImGui::Button("Reset") )
+                        {
+                            motor::gfx::light_mtr_t light = l < 2 ?
+                                static_cast<motor::gfx::light_mtr_t>(_directional[l]) : _fire_light ;
+                            controls.reset(light) ;
+                        }
+                        ImGui::PopID() ;
+                    }
+                    ImGui::TreePop() ;
+                }
                 ImGui::Checkbox("HDR / bloom / FXAA",&_post_enabled) ; ImGui::SliderFloat("Emission",&_emission,0,3) ;
             }
             ImGui::End() ; return true ;
@@ -771,15 +812,25 @@ namespace village
             _smoke_moon_view = _moon_shadow.view ;
             if( _smoke_phase == 0 )
             {
+                _light_controls[0].color[0] = 0.2f ; _light_controls[0].intensity = 2.0f ;
+                _light_controls[1].intensity = 0.0f ;
+                _light_controls[2].color[2] = 1.7f ;
                 _breath = false ; _shadows = false ; _moon_orbit = false ; ++_smoke_phase ; return ;
             }
             if( _smoke_phase == 1 )
             {
                 _dragon_enabled = false ; _shadows = true ;
+                _light_controls[1].color[1] = 0.65f ; _light_controls[1].intensity = 1.5f ;
+                _light_controls[2].intensity = 0.0f ;
                 _moon_yaw += 90.0f ; _moon_elevation = 25.0f ; _moon_orbit = true ;
                 ++_smoke_phase ; return ;
             }
-            if( _smoke_phase == 2 ) { _dragon_enabled = true ; _breath = true ; ++_smoke_phase ; return ; }
+            if( _smoke_phase == 2 )
+            {
+                for( size_t l = 0 ; l < 2 ; ++l ) _light_controls[l].reset(_directional[l]) ;
+                _light_controls[2].reset(_fire_light) ;
+                _dragon_enabled = true ; _breath = true ; ++_smoke_phase ; return ;
+            }
             for( size_t w = 0 ; w < window_count() ; ++w )
             {
                 auto const & window = _windows[w] ;
@@ -793,6 +844,7 @@ namespace village
             motor::log::global_t::test("[village] scene hierarchy, material parameters, 3 collected lights, wire bridges and per-view subsets",true) ;
             motor::log::global_t::test("[village] 160 HDR + transform-feedback frames, moon shadow matrices and shadow/dragon/fire toggles on every backend",true) ;
             motor::log::global_t::test("[village] moon orbit, stop/resume, manual angles and matching light/shadow subsets",true) ;
+            motor::log::global_t::test("[village] light colors, HDR values, zero intensity and reset propagated to every view subset",true) ;
             *_passed = true ; _quitting = true ; close() ;
         }
 
