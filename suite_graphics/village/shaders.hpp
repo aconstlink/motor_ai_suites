@@ -146,6 +146,7 @@ namespace village
                 inout vec4_t color : color ;
                 vec4_t u_clock ;
                 vec4_t u_dragon ;
+                in vec4_t tile : texcoord0 ;
                 void main()
                 {
                     float_t seed = in.pos.w ;
@@ -174,10 +175,13 @@ namespace village
                         float_t spread = 0.08 + age * 0.85 ;
                         vec3_t local = vec3_t( sin( seed * 87.0 ) * spread, 0.1 - age * 0.9 + cos( seed * 53.0 ) * spread * 0.6, 2.8 + age * 6.0 ) ;
                         float_t a = u_dragon.w ;
-                        p = u_dragon.xyz + vec3_t( cos( a ) * local.x + sin( a ) * local.z, local.y, -sin( a ) * local.x + cos( a ) * local.z ) ;
+                        p = in.pos.xyz + u_dragon.xyz + vec3_t( cos( a ) * local.x + sin( a ) * local.z, local.y, -sin( a ) * local.x + cos( a ) * local.z ) ;
                         size = 0.07 + age * 0.28 ;
                         tint = vec4_t( 6.0, 2.4 * ( 1.0 - age ) + 0.12, 0.04, ( 1.0 - age ) * 0.32 * u_clock.w ) ;
                     }
+                    float_t tile_angle = in.tile.w ;
+                    p = in.tile.xyz + vec3_t( cos( tile_angle ) * p.x + sin( tile_angle ) * p.z,
+                        p.y, -sin( tile_angle ) * p.x + cos( tile_angle ) * p.z ) ;
                     out.pos = vec4_t( p, size ) ; out.color = tint ;
                 }
             }

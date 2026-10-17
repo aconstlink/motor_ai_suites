@@ -488,17 +488,9 @@ namespace village
         m.surface = material_id::wood ;
     }
 
-    inline void_t surroundings( mesh & ground, mesh & props, mesh & plants, int const detail )
+    inline void_t village_well( mesh & props )
     {
-        ground.surface = material_id::stone ; props.surface = material_id::stone ;
-        ground.box(vec3(0,-0.28f,0),vec3(33,0.5f,29),vec4(0.13f,0.19f,0.10f,0)) ;
-        float_t const step = detail == 0 ? 0.68f : detail == 1 ? 0.34f : 0.20f ;
-        for( float_t z = -11 ; z < 11 ; z += step ) for( float_t x = -13 ; x < 13 ; x += step )
-        {
-            float_t const shade = 0.82f+ground.random()*0.36f ;
-            ground.stone(vec3(x+(int((z+11)/step)%2)*step*0.48f,0.03f+ground.random()*0.025f,z),
-                vec3(step*0.94f,0.10f,step*0.91f),vec4(0.25f*shade,0.27f*shade,0.26f*shade,0)) ;
-        }
+        props.surface = material_id::stone ;
         for( int layer = 0 ; layer < 4 ; ++layer ) for( int i = 0 ; i < 24 ; ++i )
         {
             float_t const a = 2*pi*(float_t(i)+(layer%2)*0.5f+0.025f)/24.0f ;
@@ -522,6 +514,58 @@ namespace village
         props.beam(vec3(1.48f,1.88f,0),vec3(1.75f,1.88f,0),0.075f,vec4(0.12f,0.14f,0.15f,0)) ;
         props.surface = material_id::roof ;
         for( float_t const side : {-1.0f,1.0f} ) props.prism(vec3(side*0.7f,3.3f,0),vec3(0.75f,-side*0.35f,0),vec3(0,0.06f,0),vec3(0,0,0.95f),vec4(0.25f,0.095f,0.045f,0)) ;
+    }
+
+    inline void_t village_statue( mesh & m )
+    {
+        vec4 const stone(0.47f,0.45f,0.40f,0), bronze(0.17f,0.29f,0.24f,0), trim(0.38f,0.31f,0.16f,0) ;
+        m.surface = material_id::stone ;
+        m.stone(vec3(0,0.20f,0),vec3(3.1f,0.30f,3.1f),stone) ;
+        m.stone(vec3(0,0.45f,0),vec3(2.6f,0.25f,2.6f),stone) ;
+        m.box(vec3(0,1.03f,0),vec3(1.65f,0.94f,1.55f),stone) ;
+        m.stone(vec3(0,1.60f,0),vec3(2.05f,0.22f,1.95f),stone) ;
+        m.surface = material_id::metal ;
+        m.box(vec3(0,1.05f,0.79f),vec3(0.75f,0.42f,0.05f),trim) ;
+        // A stylized town guardian: boots, tunic, cloak, helmet, shield and staff.
+        for( float_t const side : {-1.0f,1.0f} )
+        {
+            m.ellipsoid(vec3(side*0.26f,1.86f,0.10f),vec3(0.20f,0.12f,0.35f),6,bronze) ;
+            m.beam(vec3(side*0.26f,1.94f,0),vec3(side*0.22f,2.74f,0),0.28f,bronze) ;
+        }
+        m.ellipsoid(vec3(0,2.87f,0),vec3(0.55f,0.40f,0.34f),8,bronze) ;
+        m.ellipsoid(vec3(0,3.42f,0),vec3(0.55f,0.62f,0.32f),10,bronze) ;
+        m.panel({vec3(-0.51f,3.91f,-0.26f),vec3(0.51f,3.91f,-0.26f),
+            vec3(0.72f,2.22f,-0.48f),vec3(-0.72f,2.22f,-0.48f)},vec3(0,0,0.07f),bronze) ;
+        m.cylinder(vec3(0,3.90f,0),0.16f,0.22f,12,bronze) ;
+        m.ellipsoid(vec3(0,4.35f,0),vec3(0.29f,0.38f,0.28f),10,bronze) ;
+        m.ellipsoid(vec3(0,4.59f,-0.02f),vec3(0.33f,0.24f,0.31f),8,bronze) ;
+        m.box(vec3(0,4.33f,0.28f),vec3(0.09f,0.17f,0.15f),trim) ;
+        m.beam(vec3(-0.43f,3.76f,0),vec3(-0.69f,3.30f,0.20f),0.25f,bronze) ;
+        m.beam(vec3(-0.69f,3.30f,0.20f),vec3(-0.58f,3.17f,0.45f),0.21f,bronze) ;
+        m.panel({vec3(-1.05f,3.63f,0.51f),vec3(-0.16f,3.63f,0.51f),
+            vec3(-0.16f,2.90f,0.51f),vec3(-0.60f,2.52f,0.51f),vec3(-1.05f,2.90f,0.51f)},
+            vec3(0,0,0.07f),bronze) ;
+        m.box(vec3(-0.60f,3.17f,0.60f),vec3(0.09f,0.74f,0.04f),trim) ;
+        m.box(vec3(-0.60f,3.29f,0.60f),vec3(0.60f,0.09f,0.04f),trim) ;
+        m.beam(vec3(0.44f,3.76f,0),vec3(0.73f,3.42f,0.18f),0.25f,bronze) ;
+        m.beam(vec3(0.73f,3.42f,0.18f),vec3(1.0f,3.62f,0.28f),0.21f,bronze) ;
+        m.ellipsoid(vec3(1.0f,3.62f,0.28f),vec3(0.13f,0.15f,0.13f),6,bronze) ;
+        m.beam(vec3(1.0f,1.74f,0.28f),vec3(1.0f,4.95f,0.28f),0.09f,trim) ;
+        m.panel({vec3(1.0f,5.35f,0.28f),vec3(1.18f,4.95f,0.28f),
+            vec3(1.0f,4.80f,0.28f),vec3(0.82f,4.95f,0.28f)},vec3(0,0,0.035f),trim) ;
+    }
+
+    inline void_t surroundings( mesh & ground, mesh & props, mesh & plants, int const detail )
+    {
+        ground.surface = material_id::stone ;
+        ground.box(vec3(0,-0.28f,0),vec3(33,0.5f,33),vec4(0.13f,0.19f,0.10f,0)) ;
+        float_t const step = detail == 0 ? 0.68f : detail == 1 ? 0.34f : 0.20f ;
+        for( float_t z = -11 ; z < 11 ; z += step ) for( float_t x = -13 ; x < 13 ; x += step )
+        {
+            float_t const shade = 0.82f+ground.random()*0.36f ;
+            ground.stone(vec3(x+(int((z+11)/step)%2)*step*0.48f,0.03f+ground.random()*0.025f,z),
+                vec3(step*0.94f,0.10f,step*0.91f),vec4(0.25f*shade,0.27f*shade,0.26f*shade,0)) ;
+        }
         props.surface = material_id::wood ;
         for( auto const p : {vec3(-3.6f,0.1f,-2.8f),vec3(-4.3f,0.1f,-2.5f),vec3(4,0.1f,-2),vec3(4.7f,0.1f,-2.1f)} ) barrel(props,p,0.9f+props.random()*0.4f) ;
         // Cart, planks, axle and spoked wheels.

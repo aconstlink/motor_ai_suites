@@ -32,8 +32,14 @@ Graphics smoke runs require a working desktop and are not added to headless CTes
 Every graphics update clears and reuses the collector, traverses the scene, and
 flattens the collected components through `for_each_light`. The test checks that
 exactly two components and three distinct expected lights were collected.
-Light positions/directions are world-space values; this test does not assume that
-the transform visitor transforms lights attached to nodes.
+Light positions/directions are authored in local space. A rotated/translated
+parent holds the directional light and Point A; Point B additionally inherits a
+child transform. The variable-update visitor runs before the transform visitor,
+which supplies world transforms to the lights. Collection and rendering follow.
+`get_position()` / `get_direction()` retain the authored values, while
+`get_transformed_position()` / `get_transformed_direction()` supply world values.
+Root-level point markers use independently computed expected world positions.
+Light colors are RGB `vec3` values, without an alpha component.
 
 The base pass writes ambient color and depth once. Each enabled collected light
 then traverses the scene with the engine light-pass visitor. Lighting accumulates
@@ -67,6 +73,8 @@ lights in reverse order. Assertions inspect the actual component-created subsets
 
 - Expected active-light counts and collector contents, without accumulation.
 - Point/directional boolean and the corresponding position/direction values.
+- Local values remain unchanged; transformed values match parent/child composition
+  every frame, and translation does not affect a directional-light vector.
 - RGB color and intensity match each source light, including after subset reuse
   and reversed light order; nonfinite values fail validation.
 - World and view matrices and unique subset IDs across lights/windows per object.
@@ -78,6 +86,15 @@ confirms CPU command execution, not pixel correctness. Illumination, occlusion
 and visible attenuation still require visual verification.
 
 ## Verification (2026-10-13)
+
+Updated API verification (2026-10-18, Windows/MSVC Release, motor `0322399`):
+`--dual --smoke` passed all five phases on GL4 and D3D11, including nested light
+transforms, unchanged local getters and RGB bindings. Exit 0, empty memory dump.
+No pixel comparison was performed. The existing unused-normal and WGL shutdown
+diagnostics remain. The sample includes `transformation.hpp` before the light
+header because the latter currently does not include its new transformation dependency.
+
+Earlier verification:
 
 Windows/MSVC Release, motor `1418eff`:
 

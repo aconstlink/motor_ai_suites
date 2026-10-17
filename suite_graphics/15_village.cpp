@@ -13,7 +13,7 @@
 #include <motor/scene/component/light_component.hpp>
 #include <motor/scene/component/graphics/msl_set_component.hpp>
 #include <motor/scene/visitor/light_collector_visitor.hpp>
-#include <motor/scene/visitor/variable_update_visitor.h>
+#include <motor/scene/visitor/variable_update_visitor.hpp>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/graphics/render_visitor.h>
 #include <motor/scene/visitor/graphics/light_pass_render_visitor.h>
@@ -32,11 +32,33 @@
 
 namespace village
 {
+    constexpr size_t tile_count = 4 ;
+    constexpr size_t model_count = 10 ; // houses, ground, props, plants, dragon, well, statue
+
+    vec3 tile_offset( size_t const tile ) noexcept
+    {
+        return vec3((float_t(tile%2)-.5f)*33.0f,0,(float_t(tile/2)-.5f)*33.0f) ;
+    }
+
+    float_t tile_angle( size_t const tile ) noexcept { return float_t(tile)*pi*0.5f ; }
+
+    motor::math::m3d::trafof_t tile_transform( size_t const tile ) noexcept
+    {
+        return motor::math::m3d::trafof_t(vec3(1),vec3(0,tile_angle(tile),0),tile_offset(tile)) ;
+    }
+
+    vec3 tile_point( size_t const tile, vec3 const p ) noexcept
+    {
+        float_t const a = tile_angle(tile) ;
+        return tile_offset(tile)+vec3(std::cos(a)*p.x()+std::sin(a)*p.z(),p.y(),
+            -std::sin(a)*p.x()+std::cos(a)*p.z()) ;
+    }
+
     template< typename T > using output = motor::wire::output_slot<T> ;
 
     struct scene_controls : motor::scene::icomponent
     {
-        output<vec4> * clock = nullptr, * dragon_clock = nullptr, * fire = nullptr ;
+        output<vec4> * clock = nullptr, * dragon_clock = nullptr, * fire[tile_count] = {} ;
         output<vec3> * direction[2] = {}, * energy[3] = {} ;
         output<vec3> * shadow_settings = nullptr ;
 
@@ -44,7 +66,7 @@ namespace village
         {
             clock = create_output_slot<vec4>(vec4(0)) ;
             dragon_clock = create_output_slot<vec4>(vec4(0)) ;
-            fire = create_output_slot<vec4>(vec4(0)) ;
+            for( auto & slot : fire ) slot = create_output_slot<vec4>(vec4(0)) ;
             shadow_settings = create_output_slot<vec3>(vec3(1,0.00035f,0.0008f)) ;
             for( auto & slot : direction ) slot = create_output_slot<vec3>(vec3(0)) ;
             for( auto & slot : energy ) slot = create_output_slot<vec3>(vec3(0)) ;
@@ -60,7 +82,7 @@ namespace village
 
     class village_app : public motor::application::app
     {
-        struct particle { vec4 position, color ; } ;
+        struct particle_seed { vec4 position, color, tile ; } ;
         struct light_controls
         {
             float_t color[3] = {1,1,1} ;
@@ -100,7 +122,7 @@ namespace village
 
         struct scene_object
         {
-            size_t model = 0 ;
+            size_t model = 0, tile = 0, geometry = 0, triangles = 0 ;
             material_id material = material_id::wood ;
             // Borrowed from the graph; the graph owns components and nodes.
             motor::scene::msl_component_mtr_t msl = nullptr ;
@@ -128,20 +150,20 @@ namespace village
         motor::scene::logic_group_mtr_t _root = nullptr ;
         motor::scene::logic_group_mtr_t _village = nullptr ; // borrowed
         motor::scene::logic_group_mtr_t _dragon_node = nullptr ; // borrowed
-        motor::scene::trafo3d_component_mtr_t _model_trafos[8] = {} ; // borrowed
+        motor::scene::trafo3d_component_mtr_t _model_trafos[tile_count][model_count] = {} ; // borrowed
         scene_controls * _controls = nullptr ; // borrowed
         motor::vector<scene_object> _objects ;
         uint_t _village_draws = 0, _dragon_draws = 0 ;
         size_t _material_draws[size_t(material_id::count)] = {} ;
         motor::scene::light_collector_visitor_t _light_collector ;
         motor::gfx::directional_light_mtr_t _directional[2] = {} ; // borrowed
-        motor::gfx::point_light_mtr_t _fire_light = nullptr ; // borrowed
+        motor::gfx::point_light_mtr_t _fire_light[tile_count] = {} ; // borrowed
         light_controls _light_controls[3] ;
         size_t _collected_lights = 0 ;
         bool_t _scene_ready = false ;
         size_t _triangles = 0, _vertices = 0 ;
         size_t _smoke_phase = 0 ;
-        float_t _time = 0, _yaw = 24, _height = 22, _distance = 33, _emission = 1.0f ;
+        float_t _time = 0, _yaw = 24, _height = 48, _distance = 86, _emission = 1.0f ;
         bool_t _orbit = false, _paused = false, _post_enabled = true, _particles_enabled = true ;
         bool_t _dragon_enabled = true, _breath = true, _frame_dragon = true ;
         bool_t _frame_fire = true ;
@@ -154,6 +176,7 @@ namespace village
         std::chrono::steady_clock::time_point _started ;
 
         size_t window_count( void_t ) const noexcept { return _opts.dual ? 2 : 1 ; }
+        size_t particle_count( void_t ) const noexcept { return tile_count*_opts.particles ; }
 
         static bool_t valid_mesh( mesh const & m ) noexcept
         {
@@ -188,20 +211,51 @@ namespace village
 
         void_t make_scene( void_t ) noexcept
         {
+            // Duplicate scene instances only; geometry links remain shared across tiles.
+            auto const prototypes = std::move(_objects) ;
+            _objects.clear() ; _triangles = 0 ; _village_draws = 0 ; _dragon_draws = 0 ;
+            for( auto & draws : _material_draws ) draws = 0 ;
+            for( size_t tile = 0 ; tile < tile_count ; ++tile )
+            {
+                for( auto const & prototype : prototypes )
+                {
+                    if( (prototype.model == 8 && tile%2 == 1) || (prototype.model == 9 && tile%2 == 0) ) continue ;
+                    auto object = prototype ; object.tile = tile ;
+                    _objects.emplace_back(object) ;
+                    _triangles += object.triangles ;
+                    ++_material_draws[size_t(object.material)] ;
+                    if( object.model == 7 ) ++_dragon_draws ; else ++_village_draws ;
+                }
+            }
             _root = motor::shared(motor::scene::logic_group_t()) ;
             auto controls = motor::shared(scene_controls()) ;
             _controls = controls ; _root->add_component(motor::move(controls)) ;
             auto group = motor::shared(motor::scene::logic_group_t()) ;
             _village = group ; _root->add_child(motor::move(group)) ;
-            motor::scene::logic_group_mtr_t models[8] = {} ; // borrowed
-            for( size_t i = 0 ; i < 8 ; ++i )
+            auto dragons = motor::shared(motor::scene::logic_group_t()) ;
+            _dragon_node = dragons ; _root->add_child(motor::move(dragons)) ;
+            motor::scene::logic_group_mtr_t models[tile_count][model_count] = {} ; // borrowed
+            for( size_t tile = 0 ; tile < tile_count ; ++tile )
             {
-                auto model = motor::shared(motor::scene::logic_group_t()) ;
-                models[i] = model ;
-                auto trafo = motor::shared(motor::scene::trafo3d_component_t()) ;
-                _model_trafos[i] = trafo ; model->add_component(motor::move(trafo)) ;
-                if( i == 7 ) { _dragon_node = model ; _root->add_child(motor::move(model)) ; }
-                else _village->add_child(motor::move(model)) ;
+                auto village_tile = motor::shared(motor::scene::logic_group_t()) ;
+                auto dragon_tile = motor::shared(motor::scene::logic_group_t()) ;
+                for( auto * node : {village_tile.mtr(),dragon_tile.mtr()} )
+                {
+                    auto trafo = motor::shared(motor::scene::trafo3d_component_t()) ;
+                    trafo->borrow_trafo_is()->set_value(tile_transform(tile)) ;
+                    node->add_component(motor::move(trafo)) ;
+                }
+                for( size_t i = 0 ; i < model_count ; ++i )
+                {
+                    auto model = motor::shared(motor::scene::logic_group_t()) ;
+                    models[tile][i] = model ;
+                    auto trafo = motor::shared(motor::scene::trafo3d_component_t()) ;
+                    _model_trafos[tile][i] = trafo ; model->add_component(motor::move(trafo)) ;
+                    if( i == 7 ) dragon_tile->add_child(motor::move(model)) ;
+                    else village_tile->add_child(motor::move(model)) ;
+                }
+                _village->add_child(motor::move(village_tile)) ;
+                _dragon_node->add_child(motor::move(dragon_tile)) ;
             }
             for( size_t i = 0 ; i < _objects.size() ; ++i )
             {
@@ -214,7 +268,7 @@ namespace village
                     vars->data_variable<motor::math::mat4f_t>(name)->set(motor::math::mat4f_t::make_identity()) ;
                 vars->data_variable<vec3>("u_eye")->set(vec3(0)) ;
                 auto const base = _surface->add_variable_set(motor::share(vars)) ;
-                auto comp = motor::shared(motor::scene::msl_component_t(motor::share(_surface),base,i)) ;
+                auto comp = motor::shared(motor::scene::msl_component_t(motor::share(_surface),base,_objects[i].geometry)) ;
                 _objects[i].msl = comp ;
                 auto const response = materials[size_t(_objects[i].material)].response ;
                 vars->data_variable<vec3>("u_material")->set(response) ;
@@ -224,7 +278,7 @@ namespace village
                     connect_shader(comp,vars,"u_direction_"+motor::to_string(l),_controls->direction[l]) ;
                 for( size_t l = 0 ; l < 3 ; ++l )
                     connect_shader(comp,vars,"u_energy_"+motor::to_string(l),_controls->energy[l]) ;
-                connect_shader(comp,vars,"u_fire",_controls->fire) ;
+                connect_shader(comp,vars,"u_fire",_controls->fire[_objects[i].tile]) ;
                 connect_shader(comp,vars,"u_shadow_settings",_controls->shadow_settings) ;
                 vars->texture_variable("u_shadow_map")->set(_moon_shadow.shadow_map) ;
                 motor::release(motor::move(vars)) ;
@@ -234,34 +288,43 @@ namespace village
                     for( auto const name : {"u_world","u_view","u_proj","u_light_view","u_light_proj"} )
                         shadow_vars->data_variable<motor::math::mat4f_t>(name)->set(motor::math::mat4f_t::make_identity()) ;
                     auto const shadow_base = _shadow->add_variable_set(motor::share(shadow_vars)) ;
-                    auto shadow_comp = motor::shared(motor::scene::msl_component_t(motor::share(_shadow),shadow_base,i)) ;
+                    auto shadow_comp = motor::shared(motor::scene::msl_component_t(motor::share(_shadow),shadow_base,_objects[i].geometry)) ;
                     _objects[i].shadow_msl = shadow_comp ;
                     connect_shader(shadow_comp,shadow_vars,"u_clock",model == 7 ? _controls->dragon_clock : _controls->clock) ;
                     motor::release(motor::move(shadow_vars)) ;
                     set->add_component(1,motor::move(shadow_comp)) ;
                 }
                 leaf->add_component(motor::move(set)) ;
-                models[model]->add_child(motor::move(leaf)) ;
+                models[_objects[i].tile][model]->add_child(motor::move(leaf)) ;
             }
             {
                 auto lights = motor::shared(motor::scene::logic_group_t()) ;
                 auto lc = motor::shared(motor::scene::light_component_t()) ;
                 vec3 const directions[] = {vec3(0.5f,-0.8f,-0.6f),vec3(-0.7f,-0.5f,0.4f)} ;
-                vec4 const colors[] = {vec4(0.85f,1.03f,1.45f,1),vec4(0.10f,0.18f,0.26f,1)} ;
+                vec3 const colors[] = {vec3(0.85f,1.03f,1.45f),vec3(0.10f,0.18f,0.26f)} ;
                 for( size_t l = 0 ; l < 2 ; ++l )
                 {
                     auto light = motor::shared(motor::gfx::directional_light_t(1.0f,colors[l],directions[l].normalized())) ;
                     _directional[l] = light ; lc->add_light(motor::move(light)) ;
                 }
-                auto fire = motor::shared(motor::gfx::point_light_t(3.0f,vec4(2.8f,0.72f,0.13f,1),vec3(2.8f,1.2f,2.6f),10.0f)) ;
-                _fire_light = fire ; lc->add_light(motor::move(fire)) ;
                 for( size_t l = 0 ; l < 2 ; ++l ) _light_controls[l].reset(_directional[l]) ;
-                _light_controls[2].reset(_fire_light) ;
                 lights->add_component(motor::move(lc)) ; _root->add_child(motor::move(lights)) ;
+                for( size_t tile = 0 ; tile < tile_count ; ++tile )
+                {
+                    auto node = motor::shared(motor::scene::logic_leaf_t()) ;
+                    auto trafo = motor::shared(motor::scene::trafo3d_component_t()) ;
+                    trafo->borrow_trafo_is()->set_value(tile_transform(tile)) ;
+                    node->add_component(motor::move(trafo)) ;
+                    auto fire = motor::shared(motor::gfx::point_light_t(3.0f,vec3(2.8f,0.72f,0.13f),vec3(2.8f,1.2f,2.6f),10.0f)) ;
+                    _fire_light[tile] = fire ;
+                    node->add_component(motor::shared(motor::scene::light_component_t(motor::move(fire)))) ;
+                    _root->add_child(motor::move(node)) ;
+                }
+                _light_controls[2].reset(_fire_light[0]) ;
             }
             // motor uses one GL-style projection for both APIs. Keep the whole scene in
             // positive clip Z as well, so D3D's near clipping does not remove casters.
-            _moon_camera.make_orthographic(64,64,0.1f,160.0f) ;
+            _moon_camera.make_orthographic(128,128,0.1f,320.0f) ;
             auto const direction = _directional[0]->get_direction() ;
             _moon_yaw = std::atan2(-direction.x(),-direction.z())*180.0f/pi ;
             _moon_elevation = std::asin(-direction.y())*180.0f/pi ;
@@ -273,8 +336,13 @@ namespace village
             vec3 const to_moon(std::sin(yaw)*std::cos(elevation),std::sin(elevation),
                 std::cos(yaw)*std::cos(elevation)) ;
             _directional[0]->set_direction(to_moon*-1.0f) ;
+        }
+
+        void_t update_moon_shadow( void_t ) noexcept
+        {
+            auto const to_moon = _directional[0]->get_transformed_direction().normalized()*-1.0f ;
             vec3 const center(0,4,0) ;
-            _moon_camera.look_at(center+to_moon*120.0f,vec3(0,1,0),center) ;
+            _moon_camera.look_at(center+to_moon*240.0f,vec3(0,1,0),center) ;
             _moon_shadow.proj = _moon_camera.get_proj_matrix() ;
             _moon_shadow.view = _moon_camera.get_view_matrix() ;
         }
@@ -282,25 +350,6 @@ namespace village
         void_t update_scene( void_t ) noexcept
         {
             update_moon() ;
-            _light_collector.clear_lights() ; _collected_lights = 0 ;
-            motor::scene::node_t::traverser(_root).apply(&_light_collector) ;
-            _light_collector.for_each_light([&]( size_t const, motor::scene::light_component_mtr_t comp )
-            {
-                comp->for_each_light([&]( motor::gfx::light_mtr_t light )
-                {
-                    ++_collected_lights ;
-                    for( size_t l = 0 ; l < 2 ; ++l ) if( light == _directional[l] )
-                    {
-                        _controls->direction[l]->set_and_exchange(_directional[l]->get_direction()) ;
-                        _controls->energy[l]->set_and_exchange(_light_controls[l].energy()) ;
-                    }
-                    if( light == _fire_light )
-                    {
-                        _controls->fire->set_and_exchange(vec4(_fire_light->get_position(),_fire_light->get_radius())) ;
-                        _controls->energy[2]->set_and_exchange(_light_controls[2].energy()) ;
-                    }
-                }) ;
-            }) ;
             _scene_ready = true ;
             for( size_t w = 0 ; w < window_count() ; ++w ) _scene_ready &= _windows[w].ready ;
             if( _scene_ready ) for( auto & object : _objects )
@@ -318,6 +367,32 @@ namespace village
             {
                 motor::scene::trafo_visitor_t visitor ;
                 motor::scene::node_t::traverser(_root).apply(&visitor) ;
+            }
+            // World-space light values and the shadow camera follow the transform pass.
+            update_moon_shadow() ;
+            _light_collector.clear_lights() ; _collected_lights = 0 ;
+            motor::scene::node_t::traverser(_root).apply(&_light_collector) ;
+            _light_collector.for_each_light([&]( size_t const, motor::scene::light_component_mtr_t comp )
+            {
+                comp->for_each_light([&]( motor::gfx::light_mtr_t light )
+                {
+                    ++_collected_lights ;
+                    for( size_t l = 0 ; l < 2 ; ++l ) if( light == _directional[l] )
+                    {
+                        _controls->direction[l]->set_and_exchange(_directional[l]->get_transformed_direction()) ;
+                        _controls->energy[l]->set_and_exchange(_light_controls[l].energy()) ;
+                    }
+                    for( size_t tile = 0 ; tile < tile_count ; ++tile ) if( light == _fire_light[tile] )
+                    {
+                        _controls->fire[tile]->set_and_exchange(vec4(_fire_light[tile]->get_transformed_position(),_fire_light[tile]->get_radius())) ;
+                        _controls->energy[2]->set_and_exchange(_light_controls[2].energy()) ;
+                    }
+                }) ;
+            }) ;
+            // Only surface shader inputs received new values after the graph-wide sync.
+            for( auto & object : _objects )
+            {
+                motor::scene::icomponent::visitor_sync_accessor::sync_inputs(object.msl) ;
             }
         }
 
@@ -337,7 +412,24 @@ namespace village
 
         bool_t verify_scene( void_t ) noexcept
         {
-            if( _collected_lights != 3 ) return false ;
+            if( _collected_lights != 2+tile_count || _objects.size() != _village_draws+_dragon_draws ) return false ;
+            for( size_t tile = 0 ; tile < tile_count ; ++tile )
+            {
+                auto const expected = tile_point(tile,vec3(2.8f,1.2f,2.6f)) ;
+                if( (_fire_light[tile]->get_transformed_position()-expected).length() > 0.0001f ) return false ;
+                bool_t has_well = false, has_statue = false ;
+                for( auto const & object : _objects ) if( object.tile == tile )
+                {
+                    has_well |= object.model == 8 ; has_statue |= object.model == 9 ;
+                }
+                if( has_well != (tile%2 == 0) || has_statue != (tile%2 == 1) ) return false ;
+            }
+            for( size_t geo = 0 ; geo < _geometry.size() ; ++geo )
+            {
+                size_t uses = 0, model = model_count ;
+                for( auto const & object : _objects ) if( object.geometry == geo ) { ++uses ; model = object.model ; }
+                if( uses != (model >= 8 ? tile_count/2 : tile_count) ) return false ;
+            }
             size_t active = 0 ;
             for( auto const & entry : _surface->borrow_variable_sets() ) if( entry.vs ) ++active ;
             if( active != _objects.size()*(1+window_count()) ) return false ;
@@ -347,19 +439,22 @@ namespace village
             for( size_t i = 0 ; i < _objects.size() ; ++i )
             {
                 auto const & object = _objects[i] ;
+                if( object.geometry >= _geometry.size() || object.tile >= tile_count ) return false ;
+                auto const expected_world = tile_transform(object.tile)*
+                    _model_trafos[object.tile][object.model]->get_trafo() ;
                 if( window_count() == 2 && object.subset[0] == object.subset[1] ) return false ;
                 for( size_t w = 0 ; w < window_count() ; ++w )
                 {
                     if( object.subset[w] == size_t(-1) ) return false ;
                     auto * vars = _surface->borrow_variable_set(object.subset[w]).vs ;
-                    if( !vars || !matches(vars,"u_world",object.trafo->get_computed().get_transformation()) ||
+                    if( !vars || !matches(vars,"u_world",expected_world.get_transformation()) ||
                         !matches(vars,"u_view",_windows[w].camera.get_view_matrix()) ||
                         !matches(vars,"u_proj",_windows[w].camera.get_proj_matrix()) ||
                         !matches(vars,"u_eye",_windows[w].camera.get_position()) ||
                         !matches(vars,"u_clock",(object.model == 7 ? _controls->dragon_clock : _controls->clock)->get_value()) ||
                         !matches(vars,"u_material",materials[size_t(object.material)].response) ||
                         !matches(vars,"u_shadow_settings",_controls->shadow_settings->get_value()) ||
-                        !matches(vars,"u_fire",_controls->fire->get_value()) ) return false ;
+                        !matches(vars,"u_fire",_controls->fire[object.tile]->get_value()) ) return false ;
                     // Hidden leaves are deliberately not visited by the light visitor.
                     if( (_frame_dragon || object.model != 7) &&
                         (!matches(vars,"u_light_view",_moon_shadow.view) || !matches(vars,"u_light_proj",_moon_shadow.proj)) ) return false ;
@@ -371,7 +466,7 @@ namespace village
                     for( size_t l = 0 ; l < 3 ; ++l )
                         if( !matches(vars,("u_energy_"+motor::to_string(l)).c_str(),_light_controls[l].energy()) ) return false ;
                     for( size_t l = 0 ; l < 2 ; ++l )
-                        if( !matches(vars,("u_direction_"+motor::to_string(l)).c_str(),_directional[l]->get_direction()) ) return false ;
+                        if( !matches(vars,("u_direction_"+motor::to_string(l)).c_str(),_directional[l]->get_transformed_direction()) ) return false ;
                 }
             }
             return true ;
@@ -386,8 +481,9 @@ namespace village
             float_t const flight = _time*0.16f ;
             vec4 const dragon_frame(7.0f*std::sin(flight),10.5f+0.7f*std::sin(flight*2),5.5f*std::cos(flight),
                 std::atan2(7.0f*std::cos(flight),-5.5f*std::sin(flight))) ;
-            _model_trafos[7]->borrow_trafo_is()->set_value(motor::math::m3d::trafof_t(
-                vec3(1),vec3(0,dragon_frame.w(),0),vec3(dragon_frame))) ;
+            for( size_t tile = 0 ; tile < tile_count ; ++tile )
+                _model_trafos[tile][7]->borrow_trafo_is()->set_value(motor::math::m3d::trafof_t(
+                    vec3(1),vec3(0,dragon_frame.w(),0),vec3(dragon_frame))) ;
             float_t const angle = (_yaw + (_orbit ? _time*3.0f : 0.0f))*pi/180.0f ;
             vec3 const target(0,2,0), eye = target+vec3(std::sin(angle)*_distance,_height,std::cos(angle)*_distance) ;
             auto const right = (target-eye).normalized().cross(vec3(0,1,0)).normalized() ;
@@ -395,7 +491,7 @@ namespace village
             for( size_t w = 0 ; w < window_count() ; ++w )
             {
                 auto & window = _windows[w] ;
-                window.camera.make_perspective_fov(float_t(window.dimensions.x())/float_t(window.dimensions.y()),1.0f,0.80f,0.1f,150.0f) ;
+                window.camera.make_perspective_fov(float_t(window.dimensions.x())/float_t(window.dimensions.y()),1.0f,0.80f,0.1f,300.0f) ;
                 window.camera.look_at(eye,vec3(0,1,0),target) ;
                 auto const vp = window.camera.get_proj_matrix()*window.camera.get_view_matrix() ;
                 window.matrix->set(vp) ;
@@ -410,7 +506,7 @@ namespace village
             motor::application::window_info_t info ;
             bool_t const d3d = _opts.d3d || w == 1 ;
             info.window_name = motor::string_t("motor | Village 1800 | ")+(d3d ? "D3D11" : "GL4")+
-                " | "+motor::to_string(_triangles)+" triangles | "+motor::to_string(_opts.particles)+" particles" ;
+                " | 4 tiles | "+motor::to_string(_triangles)+" triangles | "+motor::to_string(particle_count())+" particles" ;
             info.x = int_t(40+w*70) ; info.y = int_t(40+w*50) ; info.w = 1280 ; info.h = 800 ;
             info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 : motor::application::graphics_generation::gen4_gl4 ;
             _windows[w].id = create_window(info) ;
@@ -433,7 +529,7 @@ namespace village
             _started = std::chrono::steady_clock::now() ;
             vec3 chimneys[4] ;
             {
-                mesh meshes[8] ;
+                mesh meshes[model_count] ;
                 vec3 const origins[] = {vec3(-5.8f,0,-6),vec3(5.8f,0,-6),vec3(-9,0,4.4f),vec3(9,0,4.4f)} ;
                 float_t const angles[] = {0,0,pi*0.5f,-pi*0.5f} ;
                 for( size_t i = 0 ; i < 4 ; ++i )
@@ -443,7 +539,8 @@ namespace village
                 }
                 surroundings(meshes[4],meshes[5],meshes[6],_opts.detail) ;
                 meshes[7] = make_dragon() ;
-                for( size_t i = 0 ; i < 8 ; ++i )
+                village_well(meshes[8]) ; village_statue(meshes[9]) ;
+                for( size_t i = 0 ; i < model_count ; ++i )
                 {
                     bool_t const valid = valid_mesh(meshes[i]) ;
                     motor::log::global_t::test("[village] mesh "+motor::to_string(i)+" indices, finite positions and normals",valid) ;
@@ -455,7 +552,7 @@ namespace village
                         if( m.indices.empty() ) continue ;
                         if( !valid_mesh(m) ) { fail("[village] material mesh is valid") ; return ; }
                         split_indices += m.indices.size() ;
-                        _triangles += m.indices.size()/3 ; _vertices += m.vertices.size() ;
+                        _vertices += m.vertices.size() ;
                         auto vb = motor::graphics::vertex_buffer_t()
                             .add_layout_element(motor::graphics::vertex_attribute::position,motor::graphics::type::tfloat,motor::graphics::type_struct::vec3)
                             .add_layout_element(motor::graphics::vertex_attribute::normal,motor::graphics::type::tfloat,motor::graphics::type_struct::vec3)
@@ -468,9 +565,9 @@ namespace village
                         _geometry.emplace_back("village_mesh_"+motor::to_string(_geometry.size()),
                             motor::graphics::primitive_type::triangles,std::move(vb),std::move(ib)) ;
                         scene_object object ; object.model = i ; object.material = material_id(material) ;
+                        object.geometry = _geometry.size()-1 ;
+                        object.triangles = m.indices.size()/3 ;
                         _objects.emplace_back(object) ;
-                        ++_material_draws[material] ;
-                        if( i == 7 ) ++_dragon_draws ; else ++_village_draws ;
                     }
                     if( split_indices != meshes[i].indices.size() ) { fail("[village] material split preserves every triangle") ; return ; }
                 }
@@ -480,22 +577,26 @@ namespace village
                     .add_layout_element(motor::graphics::vertex_attribute::position,motor::graphics::type::tfloat,motor::graphics::type_struct::vec4)
                     .add_layout_element(motor::graphics::vertex_attribute::color0,motor::graphics::type::tfloat,motor::graphics::type_struct::vec4) ;
                 _stream = motor::graphics::streamout_object_t("village_stream",std::move(layout)) ;
-                _stream.resize(_opts.particles) ;
+                _stream.resize(particle_count()) ;
                 auto vb = motor::graphics::vertex_buffer_t()
                     .add_layout_element(motor::graphics::vertex_attribute::position,motor::graphics::type::tfloat,motor::graphics::type_struct::vec4)
-                    .add_layout_element(motor::graphics::vertex_attribute::color0,motor::graphics::type::tfloat,motor::graphics::type_struct::vec4) ;
+                    .add_layout_element(motor::graphics::vertex_attribute::color0,motor::graphics::type::tfloat,motor::graphics::type_struct::vec4)
+                    .add_layout_element(motor::graphics::vertex_attribute::texcoord0,motor::graphics::type::tfloat,motor::graphics::type_struct::vec4) ;
                 mesh random ;
-                vb.resize(_opts.particles).update<particle>([&]( particle * p, size_t const n )
+                vb.resize(particle_count()).update<particle_seed>([&]( particle_seed * p, size_t const n )
                 {
-                    size_t const smoke = std::min(size_t(512),n/4), sparks = std::min(size_t(1024),n/4) ;
+                    size_t const per_tile = n/tile_count ;
+                    size_t const smoke = std::min(size_t(512),per_tile/4), sparks = std::min(size_t(1024),per_tile/4) ;
                     for( size_t i = 0 ; i < n ; ++i )
                     {
+                        size_t const local = i%per_tile, tile = i/per_tile ;
                         vec3 origin ; float_t kind = 0 ;
-                        if( i < smoke ) origin = chimneys[i%4]+vec3(random.random()*0.16f-0.08f,0,random.random()*0.16f-0.08f) ;
-                        else if( i < smoke+sparks ) { origin = vec3(2.8f,0.6f,2.6f) ; kind = 1 ; }
-                        else if( i < smoke+sparks+n/8 ) { origin = vec3(0) ; kind = 3 ; }
+                        if( local < smoke ) origin = chimneys[local%4]+vec3(random.random()*0.16f-0.08f,0,random.random()*0.16f-0.08f) ;
+                        else if( local < smoke+sparks ) { origin = vec3(2.8f,0.6f,2.6f) ; kind = 1 ; }
+                        else if( local < smoke+sparks+per_tile/8 ) { origin = vec3(0) ; kind = 3 ; }
                         else { origin = vec3(random.random()*28-14,random.random()*7+0.3f,random.random()*24-12) ; kind = 2 ; }
-                        p[i] = {vec4(origin,random.random()),vec4(random.random(),random.random(),random.random(),kind)} ;
+                        p[i] = {vec4(origin,random.random()),vec4(random.random(),random.random(),random.random(),kind),
+                            vec4(tile_offset(tile),tile_angle(tile))} ;
                     }
                 }) ;
                 _seeds = motor::graphics::geometry_object_t("village_seeds",motor::graphics::primitive_type::points,std::move(vb)) ;
@@ -592,9 +693,9 @@ namespace village
             update_variables() ;
             update_scene() ;
             _smoke_moon_view = _moon_shadow.view ;
-            motor::log::global_t::status("[village] "+motor::to_string(_vertices)+" vertices, "+motor::to_string(_triangles)+
-                " triangles, "+motor::to_string(_village_draws)+" village + "+motor::to_string(_dragon_draws)+
-                " dragon material batches, "+motor::to_string(_opts.particles)+" GPU particle seeds") ;
+            motor::log::global_t::status("[village] 4 tiles, "+motor::to_string(_vertices)+" shared vertices, "+motor::to_string(_triangles)+
+                " triangles per scene pass, "+motor::to_string(_village_draws)+" village + "+motor::to_string(_dragon_draws)+
+                " dragon material batches, "+motor::to_string(particle_count())+" GPU particle seeds") ;
             for( size_t w = 0 ; w < window_count() ; ++w ) open_window(w) ;
         }
 #ifdef _MSC_VER
@@ -691,7 +792,7 @@ namespace village
             fe->pop(backend::pop_type::render_state) ; fe->unuse(backend::unuse_type::framebuffer) ;
             if( _frame_particles )
             {
-                motor::graphics::gen4::backend::render_detail_t d ; d.varset = w ; d.num_elems = _opts.particles ;
+                motor::graphics::gen4::backend::render_detail_t d ; d.varset = w ; d.num_elems = particle_count() ;
                 fe->use(&_stream) ; fe->render(_capture,d) ; fe->unuse(backend::unuse_type::streamout) ;
                 ++window.draws.capture ;
             }
@@ -744,8 +845,10 @@ namespace village
             if( ImGui::Begin("Village 1800",nullptr,ImGuiWindowFlags_NoSavedSettings) )
             {
                 ImGui::Text("Triangles: %llu",static_cast<unsigned long long>(_triangles)) ;
-                ImGui::Text("Particles: %llu",static_cast<unsigned long long>(_opts.particles)) ;
-                ImGui::Text("Scene: 8 groups | %llu material batches",static_cast<unsigned long long>(_objects.size())) ;
+                ImGui::Text("Particles: %llu",static_cast<unsigned long long>(particle_count())) ;
+                ImGui::Text("Scene: 4 tiles | 16 houses | 4 dragons") ;
+                ImGui::Text("2 wells | 2 statues | quarter-turn tiles") ;
+                ImGui::Text("%llu shared meshes | %llu material draws",static_cast<unsigned long long>(_geometry.size()),static_cast<unsigned long long>(_objects.size())) ;
                 ImGui::Text("Materials: %llu | Lights: %llu",static_cast<unsigned long long>(size_t(material_id::count)),static_cast<unsigned long long>(_collected_lights)) ;
                 if( ImGui::TreeNode("Material draws (dragon enabled)") )
                 {
@@ -763,8 +866,8 @@ namespace village
                     ImGui::Text("Post pipeline: %u",d.post) ;
                 }
                 ImGui::Separator() ;
-                ImGui::SliderFloat("Yaw",&_yaw,-180,180) ; ImGui::SliderFloat("Distance",&_distance,15,55) ;
-                ImGui::SliderFloat("Height",&_height,5,35) ; ImGui::Checkbox("Orbit",&_orbit) ;
+                ImGui::SliderFloat("Yaw",&_yaw,-180,180) ; ImGui::SliderFloat("Distance",&_distance,15,140) ;
+                ImGui::SliderFloat("Height",&_height,5,90) ; ImGui::Checkbox("Orbit",&_orbit) ;
                 ImGui::Checkbox("Pause",&_paused) ; ImGui::Checkbox("Particles",&_particles_enabled) ;
                 ImGui::Checkbox("Dragon",&_dragon_enabled) ; ImGui::Checkbox("Fire breath",&_breath) ;
                 ImGui::Separator() ;
@@ -786,7 +889,7 @@ namespace village
                         if( ImGui::Button("Reset") )
                         {
                             motor::gfx::light_mtr_t light = l < 2 ?
-                                static_cast<motor::gfx::light_mtr_t>(_directional[l]) : _fire_light ;
+                                static_cast<motor::gfx::light_mtr_t>(_directional[l]) : _fire_light[0] ;
                             controls.reset(light) ;
                         }
                         ImGui::PopID() ;
@@ -828,7 +931,7 @@ namespace village
             if( _smoke_phase == 2 )
             {
                 for( size_t l = 0 ; l < 2 ; ++l ) _light_controls[l].reset(_directional[l]) ;
-                _light_controls[2].reset(_fire_light) ;
+                _light_controls[2].reset(_fire_light[0]) ;
                 _dragon_enabled = true ; _breath = true ; ++_smoke_phase ; return ;
             }
             for( size_t w = 0 ; w < window_count() ; ++w )
@@ -841,7 +944,8 @@ namespace village
                     window.draws.capture != 1 || window.draws.particles != 1 || window.draws.post != 13 )
                 { fail("[village] draw-call accounting") ; return ; }
             }
-            motor::log::global_t::test("[village] scene hierarchy, material parameters, 3 collected lights, wire bridges and per-view subsets",true) ;
+            motor::log::global_t::test("[village] 4 tiles, shared geometry, material parameters, 6 collected lights, wire bridges and per-view subsets",true) ;
+            motor::log::global_t::test("[village] quarter-turn tile transforms, rotated fire lights, two wells and two statues",true) ;
             motor::log::global_t::test("[village] 160 HDR + transform-feedback frames, moon shadow matrices and shadow/dragon/fire toggles on every backend",true) ;
             motor::log::global_t::test("[village] moon orbit, stop/resume, manual angles and matching light/shadow subsets",true) ;
             motor::log::global_t::test("[village] light colors, HDR values, zero intensity and reset propagated to every view subset",true) ;
@@ -870,7 +974,7 @@ namespace village
             motor::release(motor::move(_root)) ;
             _village = nullptr ; _dragon_node = nullptr ; _controls = nullptr ;
             for( auto & object : _objects ) object = scene_object() ;
-            for( auto & trafo : _model_trafos ) trafo = nullptr ;
+            for( auto & tile : _model_trafos ) for( auto & trafo : tile ) trafo = nullptr ;
             motor::release(motor::move(_surface)) ; motor::release(motor::move(_capture)) ; motor::release(motor::move(_particles)) ;
             motor::release(motor::move(_shadow)) ;
             motor::release(motor::move(_post)) ;

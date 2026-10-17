@@ -1,10 +1,26 @@
 # Village 1800
 
-A scene-graph, procedural geometry and GPU-particle integration sample. Four stylized German
-half-timber houses surround a cobbled square. This is an architectural sketch
+A scene-graph, procedural geometry and GPU-particle integration sample. Four adjoining
+tiles in a 2 x 2 layout contain 16 stylized German half-timber houses, four cobbled
+squares and four dragons. This is an architectural sketch
 inspired by buildings around 1800, not a historically reconstructed location.
 
+The tiles face 0, 90, 180 and 270 degrees. Two squares retain their roofed well;
+the other two have a bronze town-guardian statue with cloak, shield and staff on
+a stepped stone pedestal. Both centerpieces are procedural geometry, not assets.
+
 ## Build and Run
+
+Light colors use RGB `vec3`. The frame synchronizes component inputs and runs
+`trafo_visitor` before publishing transformed light directions/positions through
+wire. Surface shader inputs are synchronized again after that publication. The
+moon shadow camera uses the same transformed direction as the lighting shader.
+The local getters remain useful for authoring the moon's orbit angles.
+
+API migration verification (2026-10-18): Release build and
+`--dual --smoke --detail low --particles 256` passed on GL4 and D3D11,
+including all 160 frames per backend, moon orbit/shadow subsets and wire checks.
+Exit 0, empty memory dump. No visual comparison; known GL4 diagnostics remain.
 
 ```sh
 cmake --build build --config Release --target 15_village --parallel 2
@@ -24,7 +40,8 @@ downloads, or additional dependencies are required.
 ```
 
 `--detail low|high|ultra` controls roof tiles, cobbles and vegetation; `high` is
-the default. `--particles` accepts 256 through 65536 seeds; the default is 8192.
+the default. `--particles` accepts 256 through 65536 seeds **per tile**; the default
+is 8192 per tile, or 32768 total. Capture and display still use one draw each.
 `--still` freezes simulation time initially. D3D11 and `--dual` require Windows.
 
 The ImGui panel controls camera yaw, distance and height, orbit, pause, particles,
@@ -35,7 +52,7 @@ Closing either window closes the application.
 
 The `Light colors / intensity` section provides an HDR-capable linear RGB color
 editor, an intensity slider (0 to 10) and an individual reset for Moon, Sky fill
-and Fire. Initial values preserve the existing appearance; zero intensity turns
+and Fire (shared settings for all four fires). Initial values preserve the existing appearance; zero intensity turns
 off that light's contribution. The panel scrolls when it exceeds the window height.
 These controls change illumination, not the separate emissive window/particle
 colors or the shader's constant ambient term. The existing Emission control
@@ -43,7 +60,7 @@ continues to adjust emissive surfaces.
 
 ## Scene and Rendering
 
-- Four houses with timber framing, individual roof tiles, chimneys, shutters,
+- Four houses per tile with timber framing, individual roof tiles, chimneys, shutters,
   luminous windows, doors, foundations and steps. All four facades have windows;
   added detail includes shutter hinges/rivets, flower boxes, exposed eave brackets,
   tiled dormers on both roof slopes, supported porch roofs, door straps, wall
@@ -58,9 +75,14 @@ continues to adjust emissive surfaces.
 - A shared msl surface shader evaluates cool directional moonlight, sky fill,
   a flickering local fire light, modest specular highlights and distance fog.
 - motor's HDR postprocess pipeline provides bloom, tone mapping and FXAA.
-- Geometry belongs to eight logical groups: four houses, ground, props,
-  vegetation and dragon. It is split into **41 material batches** (37 village,
-  four dragon). Each material batch is a scene leaf; there is no instancing.
+- Each tile has four houses, ground, props, vegetation, dragon and a selected
+  centerpiece. **45 shared geometry objects** are referenced by **166 material
+  leaves** across the four tiles. These are
+  separate scene-graph instances and draws, not GPU-instanced draws. Geometry
+  and shader objects are created once; components and variable sets are per leaf.
+- Tile dimensions are 33 x 33 world units; the complete ground covers 66 x 66.
+  Square bases meet without gaps or overlap at each quarter-turn orientation.
+  Camera defaults and shadow coverage are expanded for the complete layout.
 
 ### Materials
 
@@ -71,7 +93,8 @@ water, dragon scales, wing membrane, and horn/claws.
 
 Startup splits each logical mesh by material, remapping indices and preserving
 every triangle, normal, color and procedural joint tag. Every resulting mesh
-has its own geometry link, msl component and base variable set. `u_material`
+has its own geometry link. Each tile's instance gets its own msl component and
+base variable set, referencing that shared link. `u_material`
 contains specular weight, Blinn-Phong exponent and an emission multiplier.
 All material batches share one shader; they do not compile a shader per material.
 
@@ -83,18 +106,23 @@ the material list and draw count per material with the dragon enabled.
 
 ### Scene Graph and Wire
 
-The root owns a village group containing seven object groups, a dragon group,
-a light group and a small controls component. Each object group owns material
+The root owns village and dragon groups with four rotated/translated tile groups
+each, light nodes and a small controls component. Each village tile has the
+seven original object groups and two centerpiece groups; only the selected
+well or statue group has material leaves. Each dragon tile has one object group.
+Each object group owns material
 leaves. Every object group and mesh leaf has a `trafo3d_component`; each leaf also
 has an `msl_set_component` containing a surface component (pass 0) and a shadow
 component (pass 1). Surface components share the managed surface shader;
 shadow components share the managed depth shader. Each has its own base sets.
 
-The light group owns two directional lights (moon/fill) and one point light
-(fire) through `light_component`. `light_collector_visitor` collects them every
+The light nodes own two global directional lights (moon/fill) and four point
+lights (one fire per tile) through `light_component`. Fire nodes have the same
+rotation and translation as their village tile. `light_collector_visitor` collects them every
 frame. Color times intensity, direction, position and radius flow through Wire
-outputs into the components' shader input slots. The shader evaluates all three
-lights in one color draw per mesh, not three additive light passes. motor's
+outputs into the components' shader input slots. Each tile's shader evaluates
+moon, fill and its own fire in one color draw per mesh, not additive light passes.
+It does not evaluate the other tiles' fire lights. motor's
 `light_pass_render_visitor` supplies the moon's shadow bindings for that draw;
 the other two lights continue to arrive through Wire.
 
@@ -108,24 +136,28 @@ or modifying the engine. Direction, position and radius still come from the ligh
 runs `variable_update_visitor` followed by `trafo_visitor`. Per-window rendering
 uses `light_pass_render_visitor(0, view_id, frontend, camera, moon, shadow_data)`, which selects the camera's
 render-data subset and binds world/view/projection and camera position.
-The dragon's flight transform belongs to its parent group and is inherited by
+Each dragon's flight transform belongs to its parent group and is inherited by
 all four material leaves. Its shader only performs local wing/tail deformation.
-Hiding it skips traversal of its group,
+The four synchronized flight paths are offset by their tile parents. Hiding
+dragons skips traversal of their shared group,
 without destroying the node or its resources.
 
 Transform feedback and particle display remain explicit GPU passes surrounding
-the scene rendering. The particle capture uses the same flight pose as the
-dragon's component. Postprocessing remains motor's existing HDR pipeline.
+the scene rendering. The particle capture uses the same local flight pose as the
+dragon's component. Particle seeds carry a separate tile offset/yaw attribute;
+the capture shader rotates/translates the complete local particle motion after
+evaluating smoke, sparks, motes and fire breath. Chimneys and dragon flames thus
+follow their rotated tile, still using one capture draw and one display draw.
+Postprocessing remains motor's existing HDR pipeline.
 
-The default scene contains **725,333 vertices and 323,145 triangles**, plus the
+At default detail, shared geometry contains **729,215 vertices**.
+Rendering all four tiles submits **1,285,296 triangles per scene pass**, plus
 particle points and generated billboards. All architectural detail is geometry;
 no normal maps or hidden imported assets are involved.
 
-| Detail | Vertices | Triangles |
-| --- | ---: | ---: |
-| low | 347,416 | 157,462 |
-| high (default) | 725,333 | 323,145 |
-| ultra | 1,515,487 | 675,559 |
+The UI and startup log report the generated counts for the selected detail
+level. Centerpiece geometry is shared by the two tiles using that variant;
+all other meshes are shared by all four tiles.
 
 ## Moon Shadows
 
@@ -151,7 +183,9 @@ the light projection/view and `village_moon.depth` texture name to the color
 visitor, which uses the `light_projection`, `light_view` and `light_shadow_map`
 bindings. Both backends configure their own resources from the shared objects.
 
-The orthographic camera covers 64 x 64 world units. Casters are placed inside
+The orthographic camera covers 128 x 128 world units, still using a single
+2048 x 2048 map. This reduces texel density compared with the original single
+tile. Casters are placed inside
 both APIs' clip volumes despite the shared GL-style projection. The depth shader
 explicitly writes `clip.z / clip.w * 0.5 + 0.5`, matching the receiver calculation.
 `rt_texture` supplies motor's render-target UV convention. A 3 x 3 PCF kernel and
@@ -166,7 +200,7 @@ valid. This is one fixed shadow map, not cascades, contact shadows or VSM.
 
 ## Dragon
 
-The dragon contributes 13,296 vertices / 6,232 triangles: a faceted body, head,
+Each dragon references the same 13,296 vertices / 6,232 triangles: a faceted body, head,
 horns, glowing eyes, teeth, four clawed legs, a tapered tail and scalloped wing
 membranes with raised fingers. It follows an elliptical flight path above the
 square, oriented along its tangent. Wing rotation and tail deformation run in
@@ -189,14 +223,14 @@ to bloom, but do not add shadow maps or illuminate surrounding objects.
 
 The panel reports draw submissions per window, split into scene, moon shadow, capture,
 particles and postprocessing. Capture and particle calls increment their counts.
-The scene count derives from the 37 ready village material leaves plus the four
+The scene count derives from the 150 ready village material leaves plus the 16
 optional dragon material leaves, each submitting one draw through the render visitor. The
 postprocess count is **13**, derived from the current pipeline:
 brightpass, four downsample passes, four upsample passes, merge, tone mapping,
 FXAA and presentation. Update this constant if the pipeline changes.
 
-With everything enabled the total is **97** (41 shadow + 41 color + 1 capture +
-1 particle + 13 postprocess). Hiding the dragon removes eight draws while shadows
+With everything enabled the total is **347** (166 shadow + 166 color + 1 capture +
+1 particle + 13 postprocess). Hiding the dragons removes 32 draws while shadows
 are enabled; disabling shadows removes the shadow draws. Disabling particles removes two; disabling postprocessing
 removes thirteen. Disabling only fire breath changes particle output, not the
 number of draws. ImGui draws are excluded. This is not a backend/GPU instrument:
@@ -243,9 +277,13 @@ color-calibrated LDR rendering mode.
 `--smoke` checks generated indices and finite positions/unit normals, waits for
 shader and postprocess readiness, submits 160 frames with both particle passes
 and HDR on every selected backend, and exercises shadows/fire off, dragon off, then all
-on again in four 40-frame phases. At each phase boundary it checks three collected
+on again in four 40-frame phases. At each phase boundary it checks six collected
 lights, the expected number of variable sets, distinct view-subset IDs and their
 world/view/projection, camera, clock, material, light-energy and fire parameters.
+World matrices are checked against the tile rotation/offset and local model
+transform. The test checks two uses per centerpiece geometry and four uses per
+other geometry, the selected centerpiece per tile, and independently calculated
+world positions of the four fire lights.
 It also checks shadow-pass subsets, the light matrices on visible leaves, shadow
 settings and matching animation clocks between color and depth. It
 also checks directional-light values in every color subset, orbit motion,
@@ -256,13 +294,41 @@ changes all three lights' color/intensity settings, including HDR RGB values and
 zero intensity, then resets them. Expected energy is checked directly against the
 editable settings in every view subset, not just against the intermediate slots. It
 checks submission counters including the
-final 97 draws per window, then closes normally. It has a 75-second
+final 347 draws per window, then closes normally. It has a 75-second
 application timeout. Exit status is nonzero for a failed smoke or a nonempty
 motor memory dump. Graphics tests are not added to headless CTest.
 
 A passing smoke test verifies initialization, submission and teardown, **not**
 pixel accuracy or the exact GPU-generated particle count. It is not a performance
 benchmark: vsync is enabled and the ImGui FPS counter is not a GPU timer.
+
+Rotated-tile/statue verification on 2026-10-18 (MSVC Release):
+
+- `--dual --smoke` passed 160 frames per backend, including rotated transforms,
+  fire positions, two wells/two statues, geometry sharing, light/wire subsets,
+  shadow toggles and draw counts. Exit 0, empty memory dump.
+- Normal detail: 729,215 shared vertices, 1,285,296 triangles per scene pass,
+  32,768 seeds. Geometry indices and finite positions/unit normals also passed
+  for both new centerpiece meshes.
+- `--dual --smoke --still --detail low --particles 256` also passed 160 frames
+  per backend with frozen automatic motion, exit 0 and an empty memory dump.
+  The final Release build reported no compiler warnings.
+- No pixel inspection or GPU timing was performed. The known WGL shutdown
+  message and GL4 initialization/unused-attribute diagnostics remain.
+
+Four-tile verification before rotations/statues on 2026-10-18 (MSVC Release):
+
+- `--dual --smoke --detail low --particles 256`: 629,848 submitted triangles
+  per scene pass, 1,024 total particle seeds, 160 frames per backend.
+- `--dual --smoke`: 1,292,580 submitted triangles per scene pass, 32,768 total
+  particle seeds, 160 frames per backend.
+- Both passed transform, shared-geometry, light/wire, subset, shadow-toggle and
+  draw-count checks, exited with code 0 and empty motor memory dumps. The build
+  reported no compiler warnings. Existing GL4 initialization/unused-attribute
+  diagnostics and the WGL shutdown message remain. No pixel/UI inspection was
+  performed. Neither runtime nor GPU speed was benchmarked.
+
+The following historical runs used the original single-tile layout.
 
 Local verification on 2026-10-14 (MSVC Release, NVIDIA RTX 2060):
 

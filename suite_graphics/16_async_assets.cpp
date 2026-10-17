@@ -9,7 +9,7 @@
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/graphics/msl_set_component.hpp>
 #include <motor/scene/visitor/default_visitor.h>
-#include <motor/scene/visitor/variable_update_visitor.h>
+#include <motor/scene/visitor/variable_update_visitor.hpp>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/graphics/render_visitor.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>

@@ -4,11 +4,12 @@
 #include <motor/graphics/object/state_object.h>
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/node/logic_leaf.h>
+#include <motor/math/utility/3d/transformation.hpp>
 #include <motor/scene/component/light_component.hpp>
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/graphics/msl_set_component.hpp>
 #include <motor/scene/visitor/light_collector_visitor.hpp>
-#include <motor/scene/visitor/variable_update_visitor.h>
+#include <motor/scene/visitor/variable_update_visitor.hpp>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/graphics/render_visitor.h>
 #include <motor/scene/visitor/graphics/light_pass_render_visitor.h>
@@ -87,6 +88,8 @@ namespace sample
         motor::vector<object> _objects ;
         motor::gfx::directional_light_mtr_t _sun = nullptr ; // borrowed from light_component
         motor::gfx::point_light_mtr_t _points[2] = {} ;
+        trafo_t const _light_parent {vec3_t(1),vec3_t(0,1.570796327f,0),vec3_t(.5f,.25f,.5f)} ;
+        trafo_t const _light_child {vec3_t(1),vec3_t(0,0,.2f),vec3_t(-1,0,1)} ;
         size_t _markers[2] = {} ;
         window_data _windows[2] ;
         bool_t _enabled[light_count] = {true,true,true} ;
@@ -247,16 +250,22 @@ namespace sample
         {
             // Group + leaf placement, including two lights in one component.
             auto group = motor::shared(motor::scene::logic_group_t()) ;
+            auto parent_trafo = motor::shared(motor::scene::trafo3d_component_t()) ;
+            parent_trafo->borrow_trafo_is()->set_value(_light_parent) ;
+            group->add_component(motor::move(parent_trafo)) ;
             auto lc = motor::shared(motor::scene::light_component_t()) ;
             auto sun = motor::shared(motor::gfx::directional_light_t(
-                .32f,vec4_t(1.0f,.92f,.8f,1),vec3_t(-.4f,-1,-.3f).normalized())) ;
+                .32f,vec3_t(1.0f,.92f,.8f),vec3_t(-.4f,-1,-.3f).normalized())) ;
             _sun = sun ; lc->add_light(motor::move(sun)) ;
-            auto first = motor::shared(motor::gfx::point_light_t(1.4f,vec4_t(1,.3f,.12f,1),vec3_t(-3,2,0),6)) ;
+            auto first = motor::shared(motor::gfx::point_light_t(1.4f,vec3_t(1,.3f,.12f),vec3_t(-3,2,0),6)) ;
             _points[0] = first ; lc->add_light(motor::move(first)) ;
             group->add_component(motor::move(lc)) ;
             {
                 auto leaf = motor::shared(motor::scene::logic_leaf_t()) ;
-                auto second = motor::shared(motor::gfx::point_light_t(1.8f,vec4_t(.18f,.5f,1,1),vec3_t(3,2,0),6)) ;
+                auto child_trafo = motor::shared(motor::scene::trafo3d_component_t()) ;
+                child_trafo->borrow_trafo_is()->set_value(_light_child) ;
+                leaf->add_component(motor::move(child_trafo)) ;
+                auto second = motor::shared(motor::gfx::point_light_t(1.8f,vec3_t(.18f,.5f,1),vec3_t(3,2,0),6)) ;
                 _points[1] = second ;
                 leaf->add_component(motor::shared(motor::scene::light_component_t(motor::move(second)))) ;
                 group->add_child(motor::move(leaf)) ;
@@ -349,12 +358,20 @@ namespace sample
         {
             if( _quitting ) return ;
             if( !_paused && !_opts.still ) _time += data.sec_dt ;
-            _points[0]->set_position(vec3_t(-2.4f+2*std::sin(_time*.7f),2.5f,2.6f*std::cos(_time*.7f))) ;
-            _points[1]->set_position(vec3_t(2.4f+1.7f*std::cos(_time*.55f),1.6f,-2.5f*std::sin(_time*.55f))) ;
-            _sun->set_direction(vec3_t(-.4f-.2f*std::sin(_time*.2f),-1,-.3f).normalized()) ;
+            vec3_t const local_positions[] = {
+                vec3_t(-2.4f+2*std::sin(_time*.7f),2.5f,2.6f*std::cos(_time*.7f)),
+                vec3_t(2.4f+1.7f*std::cos(_time*.55f),1.6f,-2.5f*std::sin(_time*.55f)) } ;
+            vec3_t const local_direction = vec3_t(-.4f-.2f*std::sin(_time*.2f),-1,-.3f).normalized() ;
+            _sun->set_direction(local_direction) ;
+            // Independent expected frames also place the root-level light markers.
+            trafo_t const frames[] = {_light_parent,_light_parent*_light_child} ;
+            vec3_t expected_positions[2] ;
             for( size_t i = 0 ; i < 2 ; ++i )
-                _objects[_markers[i]].trafo->borrow_trafo_is()->set_value(trafo_t(vec3_t(.18f),vec3_t(0),_points[i]->get_position())) ;
-            collect_lights() ;
+            {
+                _points[i]->set_position(local_positions[i]) ;
+                expected_positions[i] = (frames[i]*vec4_t(local_positions[i],1)).xyz() ;
+                _objects[_markers[i]].trafo->borrow_trafo_is()->set_value(trafo_t(vec3_t(.18f),vec3_t(0),expected_positions[i])) ;
+            }
             for( size_t w = 0 ; w < count() ; ++w )
             {
                 auto & window = _windows[w] ;
@@ -374,6 +391,19 @@ namespace sample
             motor::scene::node_t::traverser(_root).apply(&update) ;
             motor::scene::trafo_visitor_t transform ;
             motor::scene::node_t::traverser(_root).apply(&transform) ;
+            collect_lights() ;
+            auto const near = []( vec3_t const & a, vec3_t const & b )
+            {
+                for( size_t k = 0 ; k < 3 ; ++k )
+                    if( !std::isfinite(a[k]) || std::abs(a[k]-b[k]) > .0001f ) return false ;
+                return true ;
+            } ;
+            bool_t valid = near(_sun->get_direction(),local_direction) &&
+                near(_sun->get_transformed_direction(),(_light_parent*vec4_t(local_direction,0)).xyz()) ;
+            for( size_t i = 0 ; i < 2 ; ++i )
+                valid &= near(_points[i]->get_position(),local_positions[i]) &&
+                    near(_points[i]->get_transformed_position(),expected_positions[i]) ;
+            if( !valid ) fail("[light components] local values preserved and nested world transforms applied") ;
         }
 
         void_t on_first_frame( window_id_t const, frontend_t fe, motor::application::app::render_data_in_t ) noexcept override
@@ -420,8 +450,8 @@ namespace sample
                 window.light_color[active] = light->color() ;
                 window.light_intensity[active] = light->intensity() ;
                 window.light_value[active] = window.point[active] ?
-                    static_cast<motor::gfx::point_light_ptr_t>(light)->get_position() :
-                    static_cast<motor::gfx::directional_light_ptr_t>(light)->get_direction() ;
+                    static_cast<motor::gfx::point_light_ptr_t>(light)->get_transformed_position() :
+                    static_cast<motor::gfx::directional_light_ptr_t>(light)->get_transformed_direction() ;
                 ++active ;
             }
             window.active = active ;
