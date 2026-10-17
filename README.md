@@ -19,6 +19,7 @@ processing. Each application is a separate CMake target.
 
 ## Start Here
 
+- [Debug Primitives](suite_graphics/17_debug_primitives.md): light markers, direction arrows and camera volumes using motor's primitive renderers.
 - [Logger Regression Tests](suite_log/README.md): bounded storage, ring order, range copies, concurrent writers and logger routing.
 - [Async Asset Loading](suite_graphics/16_async_assets.md): stream Sponza, then Suzanne into the running scene through motor's database and glTF importer.
 - [Native Rendering References](suite_reference/README.md): optional bgfx, Cinder and direct OpenGL cube benchmarks beside raylib, with normal Visual Studio targets.
@@ -222,6 +223,18 @@ configuration. A texture-free normal-color shader makes the imported geometry
 readable without lights. Includes camera controls and a pending-import shutdown test.
 
 [Source](suite_graphics/16_async_assets.cpp) | [Guide and import limitations](suite_graphics/16_async_assets.md) | [Model credits](suite_graphics/assets/async_loading/ATTRIBUTION.md)
+
+### 17 Debug Primitives
+
+Orbit around point-light circles, directional arrows, perspective camera frusta
+and orthographic camera boxes. Opaque triangles provide a depth-test reference.
+Controls cover radius, segment count, near/far visualization, overlay mode and
+empty frames. Uses motor's wire-circle, wire-sphere, arrow and frustum primitives
+without custom shaders; includes camera-projection regression checks.
+
+![Debug primitives](docs/screenshots/17_debug_primitives.png)
+
+[Source](suite_graphics/17_debug_primitives.cpp) | [Guide and known limitations](suite_graphics/17_debug_primitives.md)
 
 ## Console Tests
 

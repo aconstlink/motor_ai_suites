@@ -104,8 +104,18 @@ namespace this_file
     {
         using perspective_t = motor::math::m3d::perspective<float_t> ;
         {
-            // This API fills selected coefficients, so pass a zero-initialized matrix.
             m4_t p ; perspective_t::create_by_fovv_aspect(pi*0.5f,2.0f,1.0f,11.0f,p) ;
+            {
+                m4_t overwritten = m4_t::make_identity() ;
+                perspective_t::create_by_fovv_aspect(pi*0.5f,2.0f,1.0f,11.0f,overwritten) ;
+                t.elements<16>(overwritten,p,"perspective replaces identity matrix") ;
+                overwritten = m4_t(7.0f) ;
+                perspective_t::create_by_fovv_aspect(pi*0.5f,2.0f,1.0f,11.0f,overwritten) ;
+                t.elements<16>(overwritten,p,"perspective replaces all previous coefficients") ;
+                overwritten = motor::math::m3d::orthographic<float_t>::create(8,4,1,11) ;
+                perspective_t::create_by_fovv_aspect(pi*0.5f,2.0f,1.0f,11.0f,overwritten) ;
+                t.elements<16>(overwritten,p,"perspective replaces orthographic projection") ;
+            }
             auto const near = p*v4_t(0,0,-1,1), far = p*v4_t(0,0,-11,1) ;
             t.near(near.w(),1,"perspective clip W is -view Z") ;
             t.near(near.z()/near.w(),-1,"perspective near NDC -1") ;

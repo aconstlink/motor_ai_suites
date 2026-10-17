@@ -16,6 +16,7 @@ set( sources
     "14_light_components.cpp"
     "15_village.cpp"
     "16_async_assets.cpp"
+    "17_debug_primitives.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -46,3 +47,5 @@ target_sources( 15_village PRIVATE village/geometry.hpp village/dragon.hpp villa
 
 target_link_libraries( 16_async_assets PRIVATE motor::format motor::io motor::scene motor::gfx motor::wire )
 target_compile_definitions( 16_async_assets PRIVATE MOTOR_ASYNC_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/assets/async_loading" )
+
+target_link_libraries( 17_debug_primitives PRIVATE motor::gfx )
