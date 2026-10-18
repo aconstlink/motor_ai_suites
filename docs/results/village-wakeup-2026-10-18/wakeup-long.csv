@@ -1,0 +1,2 @@
+"run","mode","backend","tiles","detail","vsync","frames","warmup","width","height","triangles","particles","draws","mean_ms","median_ms","p95_ms","fps","graphics_ms","prepare_ms","wall_ms","cpu_ms","logical_processors","core_equivalents","machine_percent","p99_ms","max_ms","over_8_33ms","over_16_67ms","over_33_33ms"
+"wakeup-long-4-r1","wakeup-long","d3d11","4","high","0","9000","120","1280","800","1285296","32768","347","3.4308","3.1332","5.2449","291.48","1.0147","1.0564","30877.3212","64000.0000","8","2.0727","25.9090","6.5385","38.6023","31","6","1"

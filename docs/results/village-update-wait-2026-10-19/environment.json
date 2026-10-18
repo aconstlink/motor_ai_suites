@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-19T00:44:18.6478266+02:00",
+  "engine_commit": "0bb59eff08d41c6301df884885a60c8c745dd119",
+  "engine_modified_paths": [
+    "application/app.cpp",
+    "application/app.h",
+    "application/carrier.h",
+    "concurrent/global.cpp",
+    "concurrent/global.h",
+    "concurrent/task/loose_thread_scheduler.hpp",
+    "graphics/render_engine.cpp",
+    "graphics/render_engine.h",
+    "platform/application/win32/win32_carrier.cpp",
+    "platform/application/win32/win32_carrier.h"
+  ],
+  "engine_diff_unchanged": true,
+  "suites_commit": "a7c8efe00d36800cadfb29e2507a4bbd6eed1e50",
+  "compiler": "MSVC 14.51.36231, Release",
+  "processor": "Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz",
+  "logical_processors": 8,
+  "graphics": [
+    {
+      "Name": "NVIDIA GeForce RTX 2060",
+      "DriverVersion": "32.0.16.1088"
+    }
+  ],
+  "workload": "4 tiles, high detail, HDR/post, shadows, 32768 particles per window, VSync off, CPU sleep 0. Three 900-frame repetitions per mode and two 6000-frame long runs."
+}

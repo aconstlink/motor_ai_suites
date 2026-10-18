@@ -29,6 +29,11 @@
 #include <chrono>
 #include <cstdlib>
 #include <type_traits>
+#include <fstream>
+#include <iomanip>
+#include <locale>
+#include "diagnostics/process_cpu_meter.hpp"
+#include "diagnostics/sleep_probe.hpp"
 
 namespace village
 {
@@ -76,8 +81,12 @@ namespace village
     struct options
     {
         bool_t dual = false, d3d = false, smoke = false, still = false ;
+        bool_t benchmark = false, vsync = true ;
+        bool_t sleep_probe = false ;
+        size_t cpu_sleep_us = 0 ;
         int detail = 1 ;
-        size_t particles = 8192 ;
+        size_t particles = 8192, tiles = 4, total_particles = 0 ;
+        size_t warmup = 180, frames = 600 ;
     } ;
 
     class village_app : public motor::application::app
@@ -115,6 +124,8 @@ namespace village
             size_t dragon_frames = 0, hidden_dragon_frames = 0, fire_frames = 0 ;
             size_t shadow_frames = 0, unshadowed_frames = 0 ;
             draw_counts draws ;
+            std::chrono::steady_clock::time_point benchmark_stamp, previous_stamp ;
+            motor::vector<double> benchmark_intervals ;
             motor::graphics::data_variable<motor::math::mat4f_t> * matrix = nullptr ;
             motor::graphics::data_variable<vec3> * right = nullptr, * up = nullptr ;
             motor::graphics::data_variable<vec4> * clock = nullptr, * dragon = nullptr ;
@@ -174,9 +185,125 @@ namespace village
         motor::math::mat4f_t _smoke_moon_view = motor::math::mat4f_t::make_identity() ;
         bool_t _frame_post = true, _frame_particles = true, _quitting = false ;
         std::chrono::steady_clock::time_point _started ;
+        struct timing_sample { double frame, graphics, prepare ; } ;
+        motor::vector<timing_sample> _timings ;
+        std::chrono::steady_clock::time_point _previous_frame ;
+        std::chrono::steady_clock::time_point _measurement_begin ;
+        village_diagnostics::process_cpu_meter _cpu_meter ;
+        size_t _warm_frames = 0 ;
+        size_t _benchmark_rendered = 0 ;
+        double _graphics_ms = 0, _prepare_ms = 0 ;
+
+        static double elapsed_ms( std::chrono::steady_clock::time_point const start ) noexcept
+        {
+            return std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count() ;
+        }
+
+        void_t benchmark_frame( void_t ) noexcept
+        {
+            if( _benchmark_rendered != window_count() )
+            {
+                _warm_frames = 0 ; _timings.clear() ;
+                for( auto & window : _windows ) window.benchmark_intervals.clear() ;
+                return ;
+            }
+            auto const now = std::chrono::steady_clock::now() ;
+            double const frame = std::chrono::duration<double,std::milli>(now-_previous_frame).count() ;
+            for( size_t w = 0 ; w < window_count() ; ++w )
+            {
+                auto & window = _windows[w] ;
+                if( _warm_frames >= _opts.warmup ) window.benchmark_intervals.emplace_back(
+                    std::chrono::duration<double,std::milli>(window.benchmark_stamp-window.previous_stamp).count()) ;
+                window.previous_stamp = window.benchmark_stamp ;
+            }
+            if( _warm_frames == _opts.warmup ) _measurement_begin = _previous_frame ;
+            _previous_frame = now ;
+            if( _warm_frames++ < _opts.warmup )
+            {
+                if( _warm_frames == _opts.warmup ) _cpu_meter.start() ;
+                return ;
+            }
+            _timings.push_back({frame,_graphics_ms,_prepare_ms}) ;
+            if( _timings.size() != _opts.frames ) return ;
+            _cpu_meter.finish() ;
+            motor::string_t frame_csv ;
+#if defined(_MSC_VER)
+            char * path = nullptr ;
+            size_t path_size = 0 ;
+            if( _dupenv_s(&path, &path_size, "MOTOR_VILLAGE_FRAME_CSV") == 0 && path )
+                frame_csv = path ;
+            std::free(path) ;
+#else
+            if( auto const path = std::getenv("MOTOR_VILLAGE_FRAME_CSV") ) frame_csv = path ;
+#endif
+            if( !frame_csv.empty() )
+            {
+                std::ofstream out(frame_csv.c_str()) ;
+                out.imbue(std::locale::classic()) ;
+                out << "frame,frame_ms,graphics_ms,prepare_ms,window0_ms" ;
+                if( _opts.dual ) out << ",window1_ms" ;
+                out << '\n' << std::fixed << std::setprecision(6) ;
+                for( size_t i = 0 ; i < _timings.size() ; ++i )
+                {
+                    auto const & t = _timings[i] ;
+                    out << i << ',' << t.frame << ',' << t.graphics << ',' << t.prepare ;
+                    for( size_t w = 0 ; w < window_count() ; ++w ) out << ',' << _windows[w].benchmark_intervals[i] ;
+                    out << '\n' ;
+                }
+                out.flush() ;
+                if( !out.good() ) { fail("[village benchmark] frame CSV write") ; return ; }
+            }
+            if( !verify_scene() ) { fail("[village benchmark] transforms, subsets and lights") ; return ; }
+            uint_t total_draws = 0 ;
+            for( size_t w = 0 ; w < window_count() ; ++w )
+            {
+                auto const & draws = _windows[w].draws ;
+                if( draws.scene != _village_draws+_dragon_draws || draws.shadow != draws.scene ||
+                    draws.capture != 1 || draws.particles != 1 || draws.post != 13 ||
+                    _windows[w].benchmark_intervals.size() != _opts.frames )
+                { fail("[village benchmark] expected per-window draws and frame counts") ; return ; }
+                total_draws += draws.total() ;
+            }
+            double mean = 0, graphics = 0, prepare = 0 ;
+            motor::vector<double> times ; times.reserve(_timings.size()) ;
+            for( auto const & sample : _timings )
+            {
+                mean += sample.frame ; graphics += sample.graphics ; prepare += sample.prepare ;
+                times.push_back(sample.frame) ;
+            }
+            double const count = double(_timings.size()) ;
+            mean /= count ; graphics /= count ; prepare /= count ;
+            std::sort(times.begin(),times.end()) ;
+            double const median = times.size()%2 ? times[times.size()/2] :
+                (times[times.size()/2-1]+times[times.size()/2])*0.5 ;
+            double const p95 = times[size_t(std::ceil(0.95*count))-1] ;
+            motor::log::global_t::status<1024>(
+                "VILLAGE_BENCH backend=%s tiles=%zu detail=%s vsync=0 frames=%zu warmup=%zu width=%u height=%u triangles=%zu particles=%zu draws=%u mean_ms=%.4f median_ms=%.4f p95_ms=%.4f fps=%.2f graphics_ms=%.4f prepare_ms=%.4f",
+                _opts.dual ? "dual" : _opts.d3d ? "d3d11" : "gl4",_opts.tiles,_opts.detail == 0 ? "low" : _opts.detail == 1 ? "high" : "ultra",
+                _opts.frames,_opts.warmup,_windows[0].dimensions.x(),_windows[0].dimensions.y(),
+                _triangles,particle_count(),total_draws,mean,median,p95,1000.0/mean,graphics,prepare) ;
+            for( size_t w = 0 ; w < window_count() ; ++w )
+            {
+                auto intervals = _windows[w].benchmark_intervals ;
+                double sum = 0 ; for( auto const value : intervals ) sum += value ;
+                std::sort(intervals.begin(),intervals.end()) ;
+                motor::log::global_t::status<512>(
+                    "VILLAGE_VIEW window=%zu backend=%s frames=%zu draws=%u mean_ms=%.4f p95_ms=%.4f p99_ms=%.4f max_ms=%.4f",
+                    w,_opts.d3d || w == 1 ? "d3d11" : "gl4",intervals.size(),_windows[w].draws.total(),
+                    sum/double(intervals.size()),intervals[size_t(std::ceil(.95*double(intervals.size())))-1],
+                    intervals[size_t(std::ceil(.99*double(intervals.size())))-1],intervals.back()) ;
+            }
+            motor::log::global_t::status<256>("VILLAGE_BENCH_WINDOW start_ns=%lld end_ns=%lld",
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::nanoseconds>(_measurement_begin.time_since_epoch()).count()),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count())) ;
+            if( _opts.sleep_probe && !village_diagnostics::sleep_probe(frame_csv) )
+            { fail("[village benchmark] sleep probe CSV write") ; return ; }
+            *_passed = true ; _quitting = true ; close() ;
+        }
 
         size_t window_count( void_t ) const noexcept { return _opts.dual ? 2 : 1 ; }
-        size_t particle_count( void_t ) const noexcept { return tile_count*_opts.particles ; }
+        size_t particle_count( void_t ) const noexcept
+        { return _opts.total_particles ? _opts.total_particles : _opts.tiles*_opts.particles ; }
 
         static bool_t valid_mesh( mesh const & m ) noexcept
         {
@@ -215,7 +342,7 @@ namespace village
             auto const prototypes = std::move(_objects) ;
             _objects.clear() ; _triangles = 0 ; _village_draws = 0 ; _dragon_draws = 0 ;
             for( auto & draws : _material_draws ) draws = 0 ;
-            for( size_t tile = 0 ; tile < tile_count ; ++tile )
+            for( size_t tile = 0 ; tile < _opts.tiles ; ++tile )
             {
                 for( auto const & prototype : prototypes )
                 {
@@ -235,7 +362,7 @@ namespace village
             auto dragons = motor::shared(motor::scene::logic_group_t()) ;
             _dragon_node = dragons ; _root->add_child(motor::move(dragons)) ;
             motor::scene::logic_group_mtr_t models[tile_count][model_count] = {} ; // borrowed
-            for( size_t tile = 0 ; tile < tile_count ; ++tile )
+            for( size_t tile = 0 ; tile < _opts.tiles ; ++tile )
             {
                 auto village_tile = motor::shared(motor::scene::logic_group_t()) ;
                 auto dragon_tile = motor::shared(motor::scene::logic_group_t()) ;
@@ -309,7 +436,7 @@ namespace village
                 }
                 for( size_t l = 0 ; l < 2 ; ++l ) _light_controls[l].reset(_directional[l]) ;
                 lights->add_component(motor::move(lc)) ; _root->add_child(motor::move(lights)) ;
-                for( size_t tile = 0 ; tile < tile_count ; ++tile )
+                for( size_t tile = 0 ; tile < _opts.tiles ; ++tile )
                 {
                     auto node = motor::shared(motor::scene::logic_leaf_t()) ;
                     auto trafo = motor::shared(motor::scene::trafo3d_component_t()) ;
@@ -382,7 +509,7 @@ namespace village
                         _controls->direction[l]->set_and_exchange(_directional[l]->get_transformed_direction()) ;
                         _controls->energy[l]->set_and_exchange(_light_controls[l].energy()) ;
                     }
-                    for( size_t tile = 0 ; tile < tile_count ; ++tile ) if( light == _fire_light[tile] )
+                    for( size_t tile = 0 ; tile < _opts.tiles ; ++tile ) if( light == _fire_light[tile] )
                     {
                         _controls->fire[tile]->set_and_exchange(vec4(_fire_light[tile]->get_transformed_position(),_fire_light[tile]->get_radius())) ;
                         _controls->energy[2]->set_and_exchange(_light_controls[2].energy()) ;
@@ -412,8 +539,8 @@ namespace village
 
         bool_t verify_scene( void_t ) noexcept
         {
-            if( _collected_lights != 2+tile_count || _objects.size() != _village_draws+_dragon_draws ) return false ;
-            for( size_t tile = 0 ; tile < tile_count ; ++tile )
+            if( _collected_lights != 2+_opts.tiles || _objects.size() != _village_draws+_dragon_draws ) return false ;
+            for( size_t tile = 0 ; tile < _opts.tiles ; ++tile )
             {
                 auto const expected = tile_point(tile,vec3(2.8f,1.2f,2.6f)) ;
                 if( (_fire_light[tile]->get_transformed_position()-expected).length() > 0.0001f ) return false ;
@@ -428,7 +555,8 @@ namespace village
             {
                 size_t uses = 0, model = model_count ;
                 for( auto const & object : _objects ) if( object.geometry == geo ) { ++uses ; model = object.model ; }
-                if( uses != (model >= 8 ? tile_count/2 : tile_count) ) return false ;
+                size_t const expected_uses = model == 8 ? (_opts.tiles+1)/2 : model >= 9 ? _opts.tiles/2 : _opts.tiles ;
+                if( uses != expected_uses ) return false ;
             }
             size_t active = 0 ;
             for( auto const & entry : _surface->borrow_variable_sets() ) if( entry.vs ) ++active ;
@@ -439,7 +567,7 @@ namespace village
             for( size_t i = 0 ; i < _objects.size() ; ++i )
             {
                 auto const & object = _objects[i] ;
-                if( object.geometry >= _geometry.size() || object.tile >= tile_count ) return false ;
+                if( object.geometry >= _geometry.size() || object.tile >= _opts.tiles ) return false ;
                 auto const expected_world = tile_transform(object.tile)*
                     _model_trafos[object.tile][object.model]->get_trafo() ;
                 if( window_count() == 2 && object.subset[0] == object.subset[1] ) return false ;
@@ -481,7 +609,7 @@ namespace village
             float_t const flight = _time*0.16f ;
             vec4 const dragon_frame(7.0f*std::sin(flight),10.5f+0.7f*std::sin(flight*2),5.5f*std::cos(flight),
                 std::atan2(7.0f*std::cos(flight),-5.5f*std::sin(flight))) ;
-            for( size_t tile = 0 ; tile < tile_count ; ++tile )
+            for( size_t tile = 0 ; tile < _opts.tiles ; ++tile )
                 _model_trafos[tile][7]->borrow_trafo_is()->set_value(motor::math::m3d::trafof_t(
                     vec3(1),vec3(0,dragon_frame.w(),0),vec3(dragon_frame))) ;
             float_t const angle = (_yaw + (_orbit ? _time*3.0f : 0.0f))*pi/180.0f ;
@@ -506,19 +634,20 @@ namespace village
             motor::application::window_info_t info ;
             bool_t const d3d = _opts.d3d || w == 1 ;
             info.window_name = motor::string_t("motor | Village 1800 | ")+(d3d ? "D3D11" : "GL4")+
-                " | 4 tiles | "+motor::to_string(_triangles)+" triangles | "+motor::to_string(particle_count())+" particles" ;
+                " | "+motor::to_string(_opts.tiles)+" tiles | "+(_opts.detail == 0 ? "low" : _opts.detail == 1 ? "high" : "ultra")+
+                (_opts.benchmark ? " | benchmark" : "")+" | "+motor::to_string(_triangles)+" triangles | "+motor::to_string(particle_count())+" particles" ;
             info.x = int_t(40+w*70) ; info.y = int_t(40+w*50) ; info.w = 1280 ; info.h = 800 ;
             info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 : motor::application::graphics_generation::gen4_gl4 ;
             _windows[w].id = create_window(info) ;
-            send_window_message(_windows[w].id,[]( auto & window )
+            send_window_message(_windows[w].id,[vsync = _opts.vsync]( auto & window )
             {
                 window.send_message(motor::application::show_message({true})) ;
-                window.send_message(motor::application::vsync_message_t({true})) ;
+                window.send_message(motor::application::vsync_message_t({vsync})) ;
             }) ;
         }
 
     public:
-        village_app( options const opts, bool_t * passed ) noexcept : _opts(opts), _passed(passed), _paused(opts.still) {}
+        village_app( options const opts, bool_t * passed ) noexcept : _opts(opts), _passed(passed), _paused(opts.still || opts.benchmark) {}
 
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -527,6 +656,11 @@ namespace village
         void_t on_init( void_t ) noexcept override
         {
             _started = std::chrono::steady_clock::now() ;
+            if( _opts.benchmark )
+            {
+                _timings.reserve(_opts.frames) ;
+                for( auto & window : _windows ) window.benchmark_intervals.reserve(_opts.frames) ;
+            }
             vec3 chimneys[4] ;
             {
                 mesh meshes[model_count] ;
@@ -585,7 +719,7 @@ namespace village
                 mesh random ;
                 vb.resize(particle_count()).update<particle_seed>([&]( particle_seed * p, size_t const n )
                 {
-                    size_t const per_tile = n/tile_count ;
+                    size_t const per_tile = n/_opts.tiles ;
                     size_t const smoke = std::min(size_t(512),per_tile/4), sparks = std::min(size_t(1024),per_tile/4) ;
                     for( size_t i = 0 ; i < n ; ++i )
                     {
@@ -693,7 +827,7 @@ namespace village
             update_variables() ;
             update_scene() ;
             _smoke_moon_view = _moon_shadow.view ;
-            motor::log::global_t::status("[village] 4 tiles, "+motor::to_string(_vertices)+" shared vertices, "+motor::to_string(_triangles)+
+            motor::log::global_t::status("[village] "+motor::to_string(_opts.tiles)+" tiles, "+motor::to_string(_vertices)+" shared vertices, "+motor::to_string(_triangles)+
                 " triangles per scene pass, "+motor::to_string(_village_draws)+" village + "+motor::to_string(_dragon_draws)+
                 " dragon material batches, "+motor::to_string(particle_count())+" GPU particle seeds") ;
             for( size_t w = 0 ; w < window_count() ; ++w ) open_window(w) ;
@@ -705,6 +839,8 @@ namespace village
         void_t on_graphics( motor::application::app::graphics_data_in_t data ) noexcept override
         {
             if( _quitting ) return ;
+            auto const started = std::chrono::steady_clock::now() ;
+            _benchmark_rendered = 0 ; _prepare_ms = 0 ;
             if( !_paused )
             {
                 _time += data.sec_dt ;
@@ -721,6 +857,7 @@ namespace village
             auto properties = _post->property_sheets() ;
             if( auto * p = properties.at("merge")->borrow_property<motor::wire::input_slot<float_t>>("strength_b") ) p->set(0.25f) ;
             if( auto * p = properties.at("tone_map")->borrow_property<motor::wire::input_slot<vec3>>("reinhard_offset") ) p->set(vec3(1.0f)) ;
+            _graphics_ms = elapsed_ms(started) ;
         }
 
         void_t on_first_frame( window_id_t const, motor::graphics::gen4::frontend_ptr_t fe,
@@ -749,6 +886,7 @@ namespace village
         void_t on_render( window_id_t const id, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t ) noexcept override
         {
+            auto const started = std::chrono::steady_clock::now() ;
             size_t const w = id == _windows[0].id ? 0 : 1 ; auto & window = _windows[w] ;
             window.draws = draw_counts() ;
             if( window.viewport_dirty )
@@ -772,7 +910,9 @@ namespace village
             if( pipeline.state == motor::gfx::postprocess_status_t::state_type::failed ) { fail("[village] HDR pipeline"); return ; }
             if( !ready || !_scene_ready || _quitting || (_frame_post && pipeline.state != motor::gfx::postprocess_status_t::state_type::ready) ) return ;
             using backend = motor::graphics::gen4::backend ;
-            if( _opts.smoke ) for( auto & object : _objects )
+            // Cache subset IDs once during warmup; do not add smoke work to measured frames.
+            bool_t const inspect_subsets = _opts.smoke || (_opts.benchmark && window.frames == _opts.warmup-1) ;
+            if( inspect_subsets ) for( auto & object : _objects )
                 object.shadow_subset[w] = object.shadow_msl->render_update(w,&_moon_camera) ;
             // Also clear when disabled: color shaders always have a valid depth texture.
             fe->use(&_shadow_fb) ; fe->push(&_shadow_state) ;
@@ -798,7 +938,7 @@ namespace village
             }
             if( _frame_post ) fe->use(_post->borrow_hdr_fb(0)) ;
             fe->push(_frame_post ? &_hdr_state : &_opaque_state) ;
-            if( _opts.smoke )
+            if( inspect_subsets )
             {
                 for( auto & object : _objects ) object.subset[w] = object.msl->render_update(w,&window.camera) ;
             }
@@ -833,11 +973,13 @@ namespace village
                 window.draws.post = 13 ;
             }
             ++window.frames ;
+            window.benchmark_stamp = std::chrono::steady_clock::now() ;
+            _prepare_ms += elapsed_ms(started) ; ++_benchmark_rendered ;
         }
 
         bool_t on_tool( window_id_t const id, motor::application::app::tool_data_ref_t ) noexcept override
         {
-            if( id != _windows[0].id || _quitting || _opts.smoke ) return false ;
+            if( id != _windows[0].id || _quitting || _opts.smoke || _opts.benchmark ) return false ;
             ImGui::SetNextWindowPos(ImVec2(12,12),ImGuiCond_FirstUseEver) ;
             ImGui::SetNextWindowSize(ImVec2(350,0),ImGuiCond_FirstUseEver) ;
             float_t const panel_height = ImGui::GetIO().DisplaySize.y-24.0f ;
@@ -846,8 +988,8 @@ namespace village
             {
                 ImGui::Text("Triangles: %llu",static_cast<unsigned long long>(_triangles)) ;
                 ImGui::Text("Particles: %llu",static_cast<unsigned long long>(particle_count())) ;
-                ImGui::Text("Scene: 4 tiles | 16 houses | 4 dragons") ;
-                ImGui::Text("2 wells | 2 statues | quarter-turn tiles") ;
+                ImGui::Text("Scene: %u tiles | %u houses | %u dragons",uint_t(_opts.tiles),uint_t(4*_opts.tiles),uint_t(_opts.tiles)) ;
+                ImGui::Text("%u wells | %u statues | quarter-turn tiles",uint_t((_opts.tiles+1)/2),uint_t(_opts.tiles/2)) ;
                 ImGui::Text("%llu shared meshes | %llu material draws",static_cast<unsigned long long>(_geometry.size()),static_cast<unsigned long long>(_objects.size())) ;
                 ImGui::Text("Materials: %llu | Lights: %llu",static_cast<unsigned long long>(size_t(material_id::count)),static_cast<unsigned long long>(_collected_lights)) ;
                 if( ImGui::TreeNode("Material draws (dragon enabled)") )
@@ -903,6 +1045,7 @@ namespace village
 
         void_t on_frame_done( void_t ) noexcept override
         {
+            if( _opts.benchmark && !_quitting ) { benchmark_frame() ; return ; }
             if( !_opts.smoke || _quitting ) return ;
             for( size_t w = 0 ; w < window_count() ; ++w )
                 if( _windows[w].frames < (_smoke_phase+1)*40 ) return ;
@@ -944,8 +1087,8 @@ namespace village
                     window.draws.capture != 1 || window.draws.particles != 1 || window.draws.post != 13 )
                 { fail("[village] draw-call accounting") ; return ; }
             }
-            motor::log::global_t::test("[village] 4 tiles, shared geometry, material parameters, 6 collected lights, wire bridges and per-view subsets",true) ;
-            motor::log::global_t::test("[village] quarter-turn tile transforms, rotated fire lights, two wells and two statues",true) ;
+            motor::log::global_t::test("[village] tile count, shared geometry, material parameters, collected lights, wire bridges and per-view subsets",true) ;
+            motor::log::global_t::test("[village] quarter-turn tile transforms, rotated fire lights and selected centerpieces",true) ;
             motor::log::global_t::test("[village] 160 HDR + transform-feedback frames, moon shadow matrices and shadow/dragon/fire toggles on every backend",true) ;
             motor::log::global_t::test("[village] moon orbit, stop/resume, manual angles and matching light/shadow subsets",true) ;
             motor::log::global_t::test("[village] light colors, HDR values, zero intensity and reset propagated to every view subset",true) ;
@@ -954,8 +1097,8 @@ namespace village
 
         void_t on_update( motor::application::app::update_data_in_t ) noexcept override
         {
-            if( _opts.smoke && !_quitting && std::chrono::steady_clock::now()-_started > std::chrono::seconds(75) )
-                fail("[village] smoke completed before timeout") ;
+            if( (_opts.smoke || _opts.benchmark) && !_quitting && std::chrono::steady_clock::now()-_started > std::chrono::seconds(180) )
+                fail("[village] automated run completed before timeout") ;
         }
 
         void_t on_event( window_id_t const id, motor::application::window_message_listener::state_vector_cref_t s ) noexcept override
@@ -992,6 +1135,15 @@ int main( int argc, char ** argv )
         else if( arg == "--d3d-only" ) { opts.dual = false ; opts.d3d = true ; }
         else if( arg == "--dual" ) { opts.dual = true ; opts.d3d = false ; }
         else if( arg == "--smoke" ) opts.smoke = true ;
+        else if( arg == "--benchmark" ) opts.benchmark = true ;
+        else if( arg == "--sleep-probe" ) opts.sleep_probe = true ;
+        else if( arg == "--cpu-sleep-us" && i+1 < argc )
+        {
+            char * end = nullptr ; auto const value = std::strtoul(argv[++i],&end,10) ;
+            if( !end || end == argv[i] || *end != '\0' || value > 30 ) return 2 ;
+            opts.cpu_sleep_us = size_t(value) ;
+        }
+        else if( arg == "--no-vsync" ) opts.vsync = false ;
         else if( arg == "--still" ) opts.still = true ;
         else if( arg == "--detail" && i+1 < argc )
         {
@@ -1003,15 +1155,38 @@ int main( int argc, char ** argv )
             char * end = nullptr ; auto const value = std::strtoul(argv[++i],&end,10) ;
             if( !end || *end != '\0' || value < 256 || value > 65536 ) return 2 ; opts.particles = size_t(value) ;
         }
+        else if( (arg == "--tiles" || arg == "--total-particles" || arg == "--warmup" || arg == "--frames") && i+1 < argc )
+        {
+            char * end = nullptr ; auto const value = std::strtoul(argv[++i],&end,10) ;
+            if( !end || end == argv[i] || *end != '\0' ) return 2 ;
+            if( arg == "--tiles" ) { if( value != 1 && value != 4 ) return 2 ; opts.tiles = size_t(value) ; }
+            else if( arg == "--total-particles" )
+            { if( value < 1024 || value > 262144 || value%4 != 0 ) return 2 ; opts.total_particles = size_t(value) ; }
+            else
+            {
+                if( value < 10 || value > 10000 ) return 2 ;
+                if( arg == "--warmup" ) opts.warmup = size_t(value) ; else opts.frames = size_t(value) ;
+            }
+        }
         else
         {
-            motor::log::global_t::status("Usage: 15_village [--gl-only|--d3d-only|--dual] [--detail low|high|ultra] [--particles 256..65536] [--still] [--smoke]") ;
+            motor::log::global_t::status("Usage: 15_village [--gl-only|--d3d-only|--dual] [--detail low|high|ultra] [--tiles 1|4] [--particles 256..65536] [--total-particles 1024..262144 (multiple of 4)] [--still] [--smoke] [--no-vsync] [--benchmark] [--warmup 10..10000] [--frames 10..10000] [--cpu-sleep-us 0..30] [--sleep-probe (benchmark only)]") ;
             motor::log::global_t::deinit() ; return arg == "--help" ? 0 : 2 ;
         }
+    }
+    if( opts.benchmark )
+    {
+        if( opts.smoke ) return 2 ;
+        opts.vsync = false ;
+        if( opts.total_particles == 0 ) opts.total_particles = 32768 ;
     }
 #ifndef _WIN32
     if( opts.dual || opts.d3d ) return 2 ;
 #endif
+    if( opts.sleep_probe && !opts.benchmark ) return 2 ;
+    motor::application::carrier::set_cpu_sleep(std::chrono::microseconds(opts.cpu_sleep_us)) ;
+    motor::log::global_t::status<128>("VILLAGE_SLEEP cpu_sleep_us=%lld",
+        static_cast<long long>(motor::application::carrier::get_cpu_sleep().count())) ;
     bool passed = false ; int result = 0 ;
     {
         auto carrier = motor::platform::global_t::create_carrier(motor::shared(village::village_app(opts,&passed))) ;
@@ -1020,5 +1195,5 @@ int main( int argc, char ** argv )
     motor::concurrent::global_t::deinit() ; motor::profiling::global_t::deinit() ;
     motor::io::global_t::deinit() ; motor::log::global_t::deinit() ;
     auto const remaining = motor::memory::global_t::dump_to_std() ;
-    return result != 0 ? result : (remaining != 0 || (opts.smoke && !passed) ? 1 : 0) ;
+    return result != 0 ? result : (remaining != 0 || ((opts.smoke || opts.benchmark) && !passed) ? 1 : 0) ;
 }

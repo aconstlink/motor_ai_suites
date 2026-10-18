@@ -1,0 +1,19 @@
+Test project E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026
+    Start 1: concurrent_work_notify
+    Test #1: concurrent_work_notify ...........   Passed    0.35 sec
+    Start 1: concurrent_work_notify
+    Test #1: concurrent_work_notify ...........   Passed    0.37 sec
+    Start 1: concurrent_work_notify
+    Test #1: concurrent_work_notify ...........   Passed    0.27 sec
+    Start 1: concurrent_work_notify
+    Test #1: concurrent_work_notify ...........   Passed    0.26 sec
+    Start 1: concurrent_work_notify
+1/1 Test #1: concurrent_work_notify ...........   Passed    0.38 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+concurrent    =   0.38 sec*proc (1 test)
+wakeup        =   0.38 sec*proc (1 test)
+
+Total Test time (real) =   1.90 sec

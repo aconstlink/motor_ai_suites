@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-10-18T13:17:51.7605044+02:00",
+  "executable": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\bin\\Release\\15_village.exe",
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz",
+    "NumberOfCores": 4,
+    "NumberOfLogicalProcessors": 8
+  },
+  "gpu": {
+    "Name": "NVIDIA GeForce RTX 2060",
+    "DriverVersion": "32.0.16.1088"
+  },
+  "warmup": 120,
+  "frames": 360,
+  "repeats": 3,
+  "note": "Requires temporary village_backend_trace.patch. Single D3D11 window, no optimizations, original sleeps unchanged, no GPU timestamp queries."
+}

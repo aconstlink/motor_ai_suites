@@ -1,0 +1,141 @@
+UpdateCTestConfiguration  from :E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/DartConfiguration.tcl
+Parse Config file:E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/DartConfiguration.tcl
+Test project E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: graphics_carrier_wakeup
+
+1: Test command: E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\18_carrier_wakeup.exe
+1: Working Directory: E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/suite_graphics
+1: Test timeout computed to be: 15
+1: [1;37;40m[s][1;37;40mLogger online
+1: [1;37;40m[s][1;37;40m[online] : motor log
+1: [1;37;40m[s][1;37;40m[audio::system] : started audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;37;40m[win32::cpuv] : : GenuineIntel
+1: [1;37;40m[s][1;37;40m[win32::cpub]: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+1: [1;37;40m[s][1;37;40m[win32::is]: SSE3, SSSE3, SSE2, SSE2, FMA, SSE 4.1, SSE 4.2, AVX_1, AVX_2,
+1: [1;37;40m[s][1;37;40m[online] : motor concurrent
+1: [1;37;40m[s][1;37;40m[platform::oal_backend] : OpenAL initialized
+1: [1;37;40m[s][1;37;40m[audio::system] : shutdown audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;32;40m[OK][1;37;40m [carrier wakeup] delayed task wakes idle carrier, close returns
+1: [1;37;40m[s][1;37;40mCARRIER_WAKEUP task_ms=0.0694 close_ms=0.0312
+1: ***************************************************
+1: [manager::dump_to_std] : Dump to std [0] sib
+1: * Memory manager has no entries.
+    Test #1: graphics_carrier_wakeup ..........   Passed    0.85 sec
+    Start 1: graphics_carrier_wakeup
+
+1: Test command: E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\18_carrier_wakeup.exe
+1: Working Directory: E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/suite_graphics
+1: Test timeout computed to be: 15
+1: [1;37;40m[s][1;37;40mLogger online
+1: [1;37;40m[s][1;37;40m[online] : motor log
+1: [1;37;40m[s][1;37;40m[audio::system] : started audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;37;40m[win32::cpuv] : : GenuineIntel
+1: [1;37;40m[s][1;37;40m[win32::cpub]: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+1: [1;37;40m[s][1;37;40m[win32::is]: SSE3, SSSE3, SSE2, SSE2, FMA, SSE 4.1, SSE 4.2, AVX_1, AVX_2,
+1: [1;37;40m[s][1;37;40m[online] : motor concurrent
+1: [1;37;40m[s][1;37;40m[platform::oal_backend] : OpenAL initialized
+1: [1;37;40m[s][1;37;40m[audio::system] : shutdown audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;32;40m[OK][1;37;40m [carrier wakeup] delayed task wakes idle carrier, close returns
+1: [1;37;40m[s][1;37;40mCARRIER_WAKEUP task_ms=0.5678 close_ms=0.0251
+1: ***************************************************
+1: [manager::dump_to_std] : Dump to std [0] sib
+1: * Memory manager has no entries.
+    Test #1: graphics_carrier_wakeup ..........   Passed    0.79 sec
+    Start 1: graphics_carrier_wakeup
+
+1: Test command: E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\18_carrier_wakeup.exe
+1: Working Directory: E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/suite_graphics
+1: Test timeout computed to be: 15
+1: [1;37;40m[s][1;37;40mLogger online
+1: [1;37;40m[s][1;37;40m[online] : motor log
+1: [1;37;40m[s][1;37;40m[audio::system] : started audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;37;40m[win32::cpuv] : : GenuineIntel
+1: [1;37;40m[s][1;37;40m[win32::cpub]: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+1: [1;37;40m[s][1;37;40m[win32::is]: SSE3, SSSE3, SSE2, SSE2, FMA, SSE 4.1, SSE 4.2, AVX_1, AVX_2,
+1: [1;37;40m[s][1;37;40m[online] : motor concurrent
+1: [1;37;40m[s][1;37;40m[platform::oal_backend] : OpenAL initialized
+1: [1;37;40m[s][1;37;40m[audio::system] : shutdown audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;32;40m[OK][1;37;40m [carrier wakeup] delayed task wakes idle carrier, close returns
+1: [1;37;40m[s][1;37;40mCARRIER_WAKEUP task_ms=0.1970 close_ms=0.1419
+1: ***************************************************
+1: [manager::dump_to_std] : Dump to std [0] sib
+1: * Memory manager has no entries.
+    Test #1: graphics_carrier_wakeup ..........   Passed    0.81 sec
+    Start 1: graphics_carrier_wakeup
+
+1: Test command: E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\18_carrier_wakeup.exe
+1: Working Directory: E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/suite_graphics
+1: Test timeout computed to be: 15
+1: [1;37;40m[s][1;37;40mLogger online
+1: [1;37;40m[s][1;37;40m[online] : motor log
+1: [1;37;40m[s][1;37;40m[audio::system] : started audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;37;40m[win32::cpuv] : : GenuineIntel
+1: [1;37;40m[s][1;37;40m[win32::cpub]: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+1: [1;37;40m[s][1;37;40m[win32::is]: SSE3, SSSE3, SSE2, SSE2, FMA, SSE 4.1, SSE 4.2, AVX_1, AVX_2,
+1: [1;37;40m[s][1;37;40m[online] : motor concurrent
+1: [1;37;40m[s][1;37;40m[platform::oal_backend] : OpenAL initialized
+1: [1;37;40m[s][1;37;40m[audio::system] : shutdown audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;32;40m[OK][1;37;40m [carrier wakeup] delayed task wakes idle carrier, close returns
+1: [1;37;40m[s][1;37;40mCARRIER_WAKEUP task_ms=0.1675 close_ms=0.1678
+1: ***************************************************
+1: [manager::dump_to_std] : Dump to std [0] sib
+1: * Memory manager has no entries.
+    Test #1: graphics_carrier_wakeup ..........   Passed    0.80 sec
+    Start 1: graphics_carrier_wakeup
+
+1: Test command: E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\18_carrier_wakeup.exe
+1: Working Directory: E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/suite_graphics
+1: Test timeout computed to be: 15
+1: [1;37;40m[s][1;37;40mLogger online
+1: [1;37;40m[s][1;37;40m[online] : motor log
+1: [1;37;40m[s][1;37;40m[audio::system] : started audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;37;40m[win32::cpuv] : : GenuineIntel
+1: [1;37;40m[s][1;37;40m[win32::cpub]: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+1: [1;37;40m[s][1;37;40m[win32::is]: SSE3, SSSE3, SSE2, SSE2, FMA, SSE 4.1, SSE 4.2, AVX_1, AVX_2,
+1: [1;37;40m[s][1;37;40m[online] : motor concurrent
+1: [1;37;40m[s][1;37;40m[platform::oal_backend] : OpenAL initialized
+1: [1;37;40m[s][1;37;40m[audio::system] : shutdown audio thread
+1: [1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+1: [1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+1: [1;37;40m[s][1;32;40m[OK][1;37;40m [carrier wakeup] delayed task wakes idle carrier, close returns
+1: [1;37;40m[s][1;37;40mCARRIER_WAKEUP task_ms=0.0700 close_ms=0.1782
+1: ***************************************************
+1: [manager::dump_to_std] : Dump to std [0] sib
+1: * Memory manager has no entries.
+1/1 Test #1: graphics_carrier_wakeup ..........   Passed    0.79 sec
+
+The following tests passed:
+	graphics_carrier_wakeup
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+graphics    =   0.79 sec*proc (1 test)
+wakeup      =   0.79 sec*proc (1 test)
+
+Total Test time (real) =   4.19 sec

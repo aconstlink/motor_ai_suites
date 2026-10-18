@@ -1,0 +1,68 @@
+MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+
+  imgui.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\imgui.dll
+  memory.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_memory.dll
+  implot.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\implot.dll
+  imnodes.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\imnodes.dll
+  alcommon.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\motor\externals\kcat\openal-soft\Release\alcommon.lib
+  log.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_log.dll
+  concurrent.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_concurrent.dll
+  font.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_font.dll
+  controls.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_controls.dll
+  core.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_core.dll
+  audio.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_audio.dll
+  ogl.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_ogl.dll
+  msl.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_msl.dll
+  profiling.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_profiling.dll
+  network.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_network.dll
+  wire.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_wire.dll
+  io.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_io.dll
+  geometry.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_geometry.dll
+  property.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_property.dll
+  graphics.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_graphics.dll
+  OpenAL.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\OpenAL32.dll
+  gfx.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_gfx.dll
+  scene.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_scene.dll
+  format.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_format.dll
+  tool.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_tool.dll
+  app.cpp
+  carrier.cpp
+     Creating library E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/motor/application/Release/motor_application.lib and object E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/motor/application/Release/motor_application.exp
+  application.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_application.dll
+  win32_carrier.cpp
+  global.cpp
+     Creating library E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/motor/platform/Release/motor_platform.lib and object E:/repos_aconstlink/_build/motor_ai_suites.x64.vs2026/motor/platform/Release/motor_platform.exp
+  platform.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_platform.dll
+  15_village.cpp
+  15_village.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\15_village.exe
+MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+
+  memory.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_memory.dll
+  log.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_log.dll
+  audio.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_audio.dll
+  concurrent.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_concurrent.dll
+  imgui.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\imgui.dll
+  controls.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_controls.dll
+  font.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_font.dll
+  imnodes.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\imnodes.dll
+  core.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_core.dll
+  io.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_io.dll
+  implot.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\implot.dll
+  geometry.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_geometry.dll
+  wire.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_wire.dll
+  network.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_network.dll
+  msl.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_msl.dll
+  profiling.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_profiling.dll
+  property.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_property.dll
+  ogl.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_ogl.dll
+  alcommon.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\motor\externals\kcat\openal-soft\Release\alcommon.lib
+  graphics.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_graphics.dll
+  OpenAL.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\OpenAL32.dll
+  gfx.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_gfx.dll
+  scene.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_scene.dll
+  format.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_format.dll
+  tool.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_tool.dll
+  application.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_application.dll
+  platform.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\motor_platform.dll
+  01_window_lifecycle.cpp
+  01_window_lifecycle.vcxproj -> E:\repos_aconstlink\_build\motor_ai_suites.x64.vs2026\bin\Release\01_window_lifecycle.exe

@@ -1,0 +1,87 @@
+diff --git a/platform/application/win32/win32_carrier.cpp b/platform/application/win32/win32_carrier.cpp
+index feb1b10..6734cc9 100644
+--- a/platform/application/win32/win32_carrier.cpp
++++ b/platform/application/win32/win32_carrier.cpp
+@@ -26,6 +26,7 @@
+ //#include <windowsx.h>
+ 
+ #include <cstdio>
++#include "../../../../suite_graphics/diagnostics/village_backend_trace.hpp"
+ 
+ using namespace motor::platform ;
+ using namespace motor::platform::win32 ;
+@@ -96,6 +97,7 @@ win32_carrier::~win32_carrier( void_t ) noexcept
+ //***********************************************************************
+ motor::application::result win32_carrier::on_exec( void_t ) noexcept
+ {
++    village_diagnostics::carrier_trace trace ;
+     _clock_t::time_point tp_begin = _clock_t::now() ;
+ 
+     while( !_done )
+@@ -114,7 +116,9 @@ motor::application::result win32_carrier::on_exec( void_t ) noexcept
+             if( micro == 0 )
+             {
+                 auto const sleep_micro = motor::application::carrier::get_cpu_sleep() ;
++                auto const sleep_start = trace.stamp() ;
+                 std::this_thread::sleep_for( std::max( sleep_micro, std::chrono::microseconds(1) ) ) ;
++                trace.sleep(sleep_start,false) ;
+             }
+         }
+ 
+@@ -269,6 +273,7 @@ motor::application::result win32_carrier::on_exec( void_t ) noexcept
+                     {
+                         if( d.ptr->re.can_execute() )
+                         {
++                            auto const trace_start = trace.stamp() ;
+                             d.ptr->ctx.activate() ;
+ 
+                             {
+@@ -279,17 +284,24 @@ motor::application::result win32_carrier::on_exec( void_t ) noexcept
+                                     size_t(rect.right-rect.left), size_t(rect.bottom-rect.top) } ) ;
+                             }
+ 
++                            auto const trace_setup = trace.stamp() ;
+                             d.ptr->ctx.borrow_backend()->render_begin() ;
++                            auto const trace_begin = trace.stamp() ;
+                             d.ptr->re.execute_frame() ;
++                            auto const trace_execute = trace.stamp() ;
+                             d.ptr->ctx.borrow_backend()->render_end() ;
++                            auto const trace_end = trace.stamp() ;
+ 
+                             d.ptr->ctx.swap() ;
++                            auto const trace_present = trace.stamp() ;
+ 
+                             d.micro_rnd = std::chrono::duration_cast< std::chrono::microseconds >( 
+                                 _clock_t::now() - d.rnd_beg ).count() ;
+                             d.rnd_beg = _clock_t::now() ;
+ 
+                             d.ptr->ctx.deactivate() ;
++                            trace.frame(trace_start,trace_setup,trace_begin,trace_execute,trace_end,
++                                trace_present,trace.stamp()) ;
+ 
+                             d.frame_miss = 0 ;
+                         }
+@@ -298,10 +310,15 @@ motor::application::result win32_carrier::on_exec( void_t ) noexcept
+                         // needs to go to sleep for a while.
+                         else if( ++d.frame_miss > 5 )
+                         {
++                            trace.miss() ;
++                            auto const sleep_start = trace.stamp() ;
+                             std::this_thread::sleep_for( std::chrono::microseconds(10) ) ;
++                            trace.sleep(sleep_start,true) ;
+                         }
++                        else trace.miss() ;
+                     }
+ 
++                    auto const trace_maintenance = trace.stamp() ;
+                     this_t::find_window_info( d.hwnd, [&]( this_t::win32_window_data_ref_t wd )
+                     {
+                         // set frame time
+@@ -325,6 +342,7 @@ motor::application::result win32_carrier::on_exec( void_t ) noexcept
+                             }
+                         }
+                     } ) ;
++                    trace.maintenance(trace_maintenance) ;
+                 }
+             }
+ 

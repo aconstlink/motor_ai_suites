@@ -1,0 +1,70 @@
+[1;37;40m[s][1;37;40mLogger online
+[1;37;40m[s][1;37;40m[online] : motor log
+[1;37;40m[s][1;37;40mVILLAGE_SLEEP cpu_sleep_us=0
+[1;37;40m[s][1;37;40m[audio::system] : started audio thread
+[1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+[1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+[1;37;40m[s][1;37;40m[win32::cpuv] : : GenuineIntel
+[1;37;40m[s][1;37;40m[win32::cpub]: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+[1;37;40m[s][1;37;40m[win32::is]: SSE3, SSSE3, SSE2, SSE2, FMA, SSE 4.1, SSE 4.2, AVX_1, AVX_2,
+[1;37;40m[s][1;37;40m[online] : motor concurrent
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 0 indices, finite positions and normals
+[1;37;40m[s][1;37;40m[platform::oal_backend] : OpenAL initialized
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 1 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 2 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 3 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 4 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 5 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 6 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 7 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 8 indices, finite positions and normals
+[1;37;40m[s][1;32;40m[OK][1;37;40m [village] mesh 9 indices, finite positions and normals
+[1;37;40m[s][1;37;40m[village] 4 tiles, 729215 shared vertices, 1285296 triangles per scene pass, 150 village + 16 dragon material batches, 32768 GPU particle seeds
+[1;37;40m[s][1;37;40m[motor::platform::directx::dx11_context::create_the_context] : created [344 ms]
+[1;37;40m[s][1;37;40m[d3d11] : support thread started
+[1;37;40m[s][1;37;40m[d3d11] : msl village_surface shader took [15|15] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [village_surface]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 168 ms [village_surface]
+[1;37;40m[s][1;37;40m[d3d11] : msl village_moon_shadow shader took [4|1] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [village_moon_shadow]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 59 ms [village_moon_shadow]
+[1;37;40m[s][1;37;40m[d3d11] : msl village_capture shader took [6|3] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [village_capture]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 31 ms [village_capture]
+[1;37;40m[s][1;37;40m[d3d11] : msl village_particles shader took [4|3] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [village_particles]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 19 ms [village_particles]
+[1;37;40m[s][1;37;40m[d3d11] : msl gfx.postprocess.color_to_screen shader took [0|0] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [gfx.postprocess.color_to_screen]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 5 ms [gfx.postprocess.color_to_screen]
+[1;37;40m[s][1;37;40m[d3d11] : msl gfx.postprocess.stage.tone_map.reinhardt shader took [2|0] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [gfx.postprocess.stage.tone_map.reinhardt]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 5 ms [gfx.postprocess.stage.tone_map.reinhardt]
+[1;37;40m[s][1;37;40m[d3d11] : msl gfx.postprocess.stage.bright_pass shader took [2|1] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [gfx.postprocess.stage.bright_pass]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 7 ms [gfx.postprocess.stage.bright_pass]
+[1;37;40m[s][1;37;40m[d3d11] : msl gfx.postprocess.stage.bloom.downsample shader took [2|1] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [gfx.postprocess.stage.bloom.downsample]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 12 ms [gfx.postprocess.stage.bloom.downsample]
+[1;37;40m[s][1;37;40m[d3d11] : msl gfx.postprocess.stage.bloom.upsample shader took [4|1] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [gfx.postprocess.stage.bloom.upsample]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 26 ms [gfx.postprocess.stage.bloom.upsample]
+[1;37;40m[s][1;37;40m[d3d11] : msl gfx.postprocess.stage.hdr.merge shader took [2|1] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [gfx.postprocess.stage.hdr.merge]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 6 ms [gfx.postprocess.stage.hdr.merge]
+[1;37;40m[s][1;37;40m[d3d11] : msl gfx.postprocess.stage.fxaa shader took [14|7] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [gfx.postprocess.stage.fxaa]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 85 ms [gfx.postprocess.stage.fxaa]
+[1;37;40m[s][1;37;40mVILLAGE_CPU wall_ms=3136.0767 cpu_ms=4265.6250 logical_processors=8 core_equivalents=1.3602 machine_percent=17.0022
+[1;37;40m[s][1;37;40mVILLAGE_BENCH backend=d3d11 tiles=4 detail=high vsync=0 frames=900 warmup=120 width=1280 height=800 triangles=1285296 particles=32768 draws=347 mean_ms=3.4845 median_ms=3.2938 p95_ms=4.8954 fps=286.98 graphics_ms=1.0717 prepare_ms=1.0647
+[1;37;40m[s][1;37;40mVILLAGE_VIEW window=0 backend=d3d11 frames=900 draws=347 mean_ms=3.4845 p95_ms=4.8934 p99_ms=6.1388 max_ms=8.3981
+[1;37;40m[s][1;37;40mVILLAGE_BENCH_WINDOW start_ns=108176086209000 end_ns=108179222298100
+[1;37;40m[s][1;37;40m[d3d11] : support thread shut down
+[1;37;40m[s][1;37;40mLogger online
+[1;37;40m[s][1;37;40m[online] : motor log
+[1;37;40m[s][1;37;40m[audio::system] : shutdown audio thread
+[1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+[1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+***************************************************
+[manager::dump_to_std] : Dump to std [0] sib
+* Memory manager has no entries.

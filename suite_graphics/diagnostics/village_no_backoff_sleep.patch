@@ -1,0 +1,13 @@
+diff --git a/platform/application/win32/win32_carrier.cpp b/platform/application/win32/win32_carrier.cpp
+index feb1b10..81adacf 100644
+--- a/platform/application/win32/win32_carrier.cpp
++++ b/platform/application/win32/win32_carrier.cpp
+@@ -298,7 +298,7 @@ motor::application::result win32_carrier::on_exec( void_t ) noexcept
+                         // needs to go to sleep for a while.
+                         else if( ++d.frame_miss > 5 )
+                         {
+-                            std::this_thread::sleep_for( std::chrono::microseconds(10) ) ;
++                            // Temporary village A/B diagnostic: no backoff sleep.
+                         }
+                     }
+ 

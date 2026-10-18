@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-10-18T20:55:58.3194368+02:00",
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz",
+    "NumberOfCores": 4,
+    "NumberOfLogicalProcessors": 8
+  },
+  "gpu": {
+    "Name": "NVIDIA GeForce RTX 2060",
+    "DriverVersion": "32.0.16.1088"
+  },
+  "hardware_source": "Same-machine environment captured earlier on 2026-10-18",
+  "warmup": 120,
+  "frames": 900,
+  "repeats": 3,
+  "cpu_method": "GetProcessTimes kernel+user for entire process within measurement window; normalized by 8 logical processors",
+  "original_carrier_sha256": "17B754B9C211EDA8F5536920FD19D7960DD4D52DCE53AC74B0B93E90D7E432AC",
+  "note": "Compared no-sleep and restored-source binaries with win32_carrier.cpp compilation confirmed in both build logs. Earlier baseline and stale restored-control runs excluded."
+}

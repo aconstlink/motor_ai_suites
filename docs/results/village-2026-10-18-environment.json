@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-10-18T01:50:16.4920406+02:00",
+  "executable": "E:\\repos_aconstlink\\_build\\motor_ai_suites.x64.vs2026\\bin\\Release\\15_village.exe",
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz",
+    "NumberOfCores": 4,
+    "NumberOfLogicalProcessors": 8
+  },
+  "gpu": {
+    "Name": "NVIDIA GeForce RTX 2060",
+    "DriverVersion": "32.0.16.1088"
+  },
+  "warmup": 120,
+  "frames": 360,
+  "repeats": 3,
+  "total_particles": 32768,
+  "notes": "Single-window runs, requested vsync off, fixed camera and animation, HDR/shadows/particles on. Frame cadence and CPU callback wall times; no GPU timestamps."
+}

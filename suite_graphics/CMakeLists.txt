@@ -49,3 +49,14 @@ target_link_libraries( 16_async_assets PRIVATE motor::format motor::io motor::sc
 target_compile_definitions( 16_async_assets PRIVATE MOTOR_ASYNC_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/assets/async_loading" )
 
 target_link_libraries( 17_debug_primitives PRIVATE motor::gfx )
+
+if( WIN32 )
+    add_executable( 18_carrier_wakeup "18_carrier_wakeup.cpp" )
+    target_link_libraries( 18_carrier_wakeup PRIVATE
+        motor::platform motor::application motor::concurrent motor::memory motor::log )
+    set_target_properties( 18_carrier_wakeup PROPERTIES FOLDER "suites/suite_graphics" )
+    if( BUILD_TESTING )
+        add_test( NAME graphics_carrier_wakeup COMMAND 18_carrier_wakeup )
+        set_tests_properties( graphics_carrier_wakeup PROPERTIES TIMEOUT 15 LABELS "graphics;wakeup" RUN_SERIAL TRUE )
+    endif()
+endif()

@@ -43,6 +43,72 @@ downloads, or additional dependencies are required.
 the default. `--particles` accepts 256 through 65536 seeds **per tile**; the default
 is 8192 per tile, or 32768 total. Capture and display still use one draw each.
 `--still` freezes simulation time initially. D3D11 and `--dual` require Windows.
+`--tiles 1|4` selects one or four tiles (default four); one tile retains its
+original location in the four-tile layout, without changing the camera.
+`--no-vsync` requests disabled vsync. `--total-particles N` overrides the
+per-tile seed option with a fixed total (1024..262144, divisible by four).
+
+## One vs. Four Tiles Benchmark
+
+The benchmark stays entirely in this sample; no engine changes are needed.
+`--benchmark` requests vsync off, freezes animation/moon motion at the initial
+pose, hides the ImGui panel, and exits after a bounded measurement. It rejects
+`--dual` and `--smoke`: run each backend separately. By default it uses 180 warmup
+frames, 600 measured frames, and 32768 **total** particle seeds for either tile
+count. Override these with `--warmup`, `--frames`, and `--total-particles`.
+
+```sh
+15_village --gl-only --benchmark --tiles 1 --detail high
+15_village --gl-only --benchmark --tiles 4 --detail high
+15_village --gl-only --benchmark --tiles 1 --detail low
+15_village --gl-only --benchmark --tiles 4 --detail low
+```
+
+Use `--d3d-only` for the other backend. All cases keep the same 1280x800 window,
+camera, 2048x2048 moon shadow map, HDR/bloom/FXAA pipeline and active effects.
+The post pipeline retains its 1920x1080 internal targets. Low detail changes
+geometry density but preserves the material-batch/draw-call count for a given
+tile count. The one-tile layout uses its well; the four-tile layout retains two
+wells and two statues. Shared mesh resources are still built/configured once;
+initialization and shader compilation are excluded from the steady-state samples.
+
+The `VILLAGE_BENCH` log line reports:
+
+- Frame mean, median, p95 and `1000 / mean` FPS, measured between successful
+  `on_frame_done` submissions after warmup. This is application frame cadence,
+  not a GPU timestamp or a claim that the GPU has completed each frame.
+- `graphics_ms`: average wall time inside `on_graphics`, including graph input
+  synchronization, transforms, lights, bridges and postprocess property setup.
+- `prepare_ms`: average wall time inside `on_render`, including readiness checks,
+  visitors, render-data updates and command recording for all passes. Backend
+  command execution is not directly timed by this value.
+- Geometry triangles per color pass (shadow pass submits them again), total
+  particle seeds and draw submissions excluding UI.
+
+Callback timings can include waits/locks; they are not CPU utilization samples.
+The unaccounted frame time must not simply be labeled GPU time or backend time.
+The sample does not insert `glFinish`, GPU queries, or a new synchronization fence.
+Smoke-only redundant subset updates and expensive validation run outside the
+measured frames. Subset IDs are captured once during warmup; the final run checks
+their values and draw counts. Failure, timeout, or a memory leak yields nonzero exit.
+
+Run the full matrix on Windows with the supplied script:
+
+```powershell
+.\suite_graphics\run_village_benchmark.ps1 -Executable <build>\bin\Release\15_village.exe
+```
+
+It defaults to both backends, three repeats and reversed case order on alternating
+repeats. Each process runs alone. Timestamped output includes stdout/stderr logs,
+`environment.json` and `results.csv`. Keep other graphics/build workloads stopped
+and do not minimize/resize the test windows. Driver overrides or the compositor
+can still affect presentation despite requesting vsync off.
+
+This comparison changes scene-node, variable-set and draw counts together. It
+can identify object-count sensitivity, but cannot by itself prove that the draw
+API, a particular lock or a particular container is the cause. Total particle
+count is fixed, but spatial coverage, particle categories/overdraw and scene
+pixel coverage still differ. See [recorded comparison](15_village_benchmark.md).
 
 The ImGui panel controls camera yaw, distance and height, orbit, pause, particles,
 dragon visibility, fire breath, moon orbit/yaw/elevation/speed, moon shadows/bias,
@@ -294,7 +360,7 @@ changes all three lights' color/intensity settings, including HDR RGB values and
 zero intensity, then resets them. Expected energy is checked directly against the
 editable settings in every view subset, not just against the intermediate slots. It
 checks submission counters including the
-final 347 draws per window, then closes normally. It has a 75-second
+final 347 draws per window for the default four tiles, then closes normally. Automated runs have a 180-second
 application timeout. Exit status is nonzero for a failed smoke or a nonempty
 motor memory dump. Graphics tests are not added to headless CTest.
 
@@ -376,3 +442,39 @@ Source split:
 - [Dragon](village/dragon.hpp): body, wings, tail and procedural joint tags.
 - [Shaders](village/shaders.hpp): shared surface/depth vertex stage, moon shadow,
   surface lighting, capture and particle display msl.
+
+### Notification wakeup validation
+
+The [2026-10-18 wakeup report](../docs/VILLAGE_D3D11_WAKEUP.md) compares the
+current notification-based carrier against the earlier sleep/no-sleep results.
+It includes process CPU, individual frame times, p99/outliers, multi-window
+smokes and a separate idle-carrier test. No engine changes were made for it.
+`MOTOR_VILLAGE_FRAME_CSV` optionally selects an individual-frame CSV output path;
+the file is written only after benchmark timing has finished.
+
+### App-thread sleep comparison
+
+`--cpu-sleep-us 0..30` sets the existing `carrier::set_cpu_sleep` API before
+threads start. In benchmark mode, `--sleep-probe` additionally calibrates the
+same conditional `std::this_thread::sleep_for(get_cpu_sleep())` call 128 times
+on the app thread **after** the frame/CPU measurement. This is a separate probe,
+not instrumentation of the engine's internal sleep calls. With a frame CSV
+path set, probe samples are saved to that path plus `.sleep.csv`.
+
+The [CPU sleep comparison](../docs/VILLAGE_CPU_SLEEP.md) records the results for
+0, 1, 10 and 30 microseconds, including frame-time percentiles and process CPU.
+The test does not change timer resolution, thread priority or engine code.
+
+### Update-wait and multiple windows
+
+`--benchmark --dual` now measures the existing GL4+D3D11 two-window mode. Warmup
+and sampling require successful scene submission to **both** windows. Each
+window is checked for its expected draw count, and `VILLAGE_VIEW` reports its
+own submission cadence. The frame CSV adds `window0_ms` and, in dual mode,
+`window1_ms`; `prepare_ms` is the sum of both per-window recording durations.
+
+In dual mode `VILLAGE_BENCH` reports the shared app-frame cadence and total
+draws across the two windows, not twice the FPS. These remain CPU-side timings,
+not GPU completion or presentation measurements. See the
+[update-wait comparison](../docs/VILLAGE_UPDATE_WAIT.md) for measurements and
+`diagnostics/run_village_update_wait.ps1` for reproduction.
