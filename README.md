@@ -224,6 +224,8 @@ readable without lights. Includes camera controls and a pending-import shutdown 
 
 [Source](suite_graphics/16_async_assets.cpp) | [Guide and import limitations](suite_graphics/16_async_assets.md) | [Model credits](suite_graphics/assets/async_loading/ATTRIBUTION.md)
 
+![Async Loading](docs/screenshots/16_async_asset_loading.png)
+
 ### 17 Debug Primitives
 
 Orbit around point-light circles, directional arrows, perspective camera frusta
