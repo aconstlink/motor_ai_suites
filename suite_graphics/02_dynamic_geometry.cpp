@@ -43,6 +43,9 @@ namespace sample
             bool ready = false;
             bool square_configured = false;
             size_t revision = 0;
+            bool geometry_pending = false;
+            unsigned reconfigured = 0;
+            unsigned released = 0;
         };
 
         motor::graphics::geometry_object_t _triangle;
@@ -61,6 +64,8 @@ namespace sample
         unsigned _removed = 0;
         bool _want_square = false;
         bool _smoke;
+        bool _geometry_lifecycle;
+        bool _failed = false;
         bool* _passed;
         unsigned _step = 0;
         unsigned _frames = 0;
@@ -68,7 +73,39 @@ namespace sample
 
         bool all_ready() const noexcept
         {
-            for( size_t i = 0; i < _window_count; ++i ) if( !_windows[i].ready ) return false;
+            for( size_t i = 0; i < _window_count; ++i )
+                if( !_windows[i].ready || _windows[i].geometry_pending ) return false;
+            return true;
+        }
+
+        bool check_geometry( window_state& window,
+            motor::graphics::gen4::frontend_ptr_t fe ) noexcept
+        {
+            if( !window.geometry_pending ) return true;
+            using state = motor::graphics::object_state;
+            using result = motor::graphics::result;
+            auto const triangle = fe->decode( &_triangle );
+            auto const square = fe->decode( &_square );
+            if( triangle.first == state::in_transit || square.first == state::in_transit )
+                return false;
+
+            bool const released = !window.square_configured;
+            bool const ok = triangle.first == state::ready && triangle.second == result::ok &&
+                square.first == ( released ? state::raw : state::ready ) &&
+                square.second == result::ok;
+            motor::log::global_t::test( motor::string_t( "[dynamic][" ) +
+                ( window.id == _windows[0].id ? "GL4" : "D3D11" ) +
+                ( released ? "] geometry reconfigure + unlink/release" :
+                    "] geometry reconfigure + square configure/relink" ), ok );
+            window.geometry_pending = false;
+            if( !ok )
+            {
+                _failed = true;
+                close();
+                return false;
+            }
+            ++window.reconfigured;
+            if( released ) ++window.released;
             return true;
         }
 
@@ -105,8 +142,9 @@ namespace sample
         }
 
     public:
-        dynamic_geometry_app( bool dual, bool smoke, bool* passed ) noexcept
-            : _window_count( dual ? 2 : 1 ), _smoke( smoke ), _passed( passed ) {}
+        dynamic_geometry_app( bool dual, bool smoke, bool geometry_lifecycle, bool* passed ) noexcept
+            : _window_count( dual ? 2 : 1 ), _smoke( smoke ),
+              _geometry_lifecycle( geometry_lifecycle ), _passed( passed ) {}
 
         void on_init() noexcept override
         {
@@ -233,6 +271,7 @@ namespace sample
             motor::application::app::render_data_in_t ) noexcept override
         {
             auto& window = _windows[id == _windows[0].id ? 0 : 1];
+            if( _failed || !check_geometry( window, fe ) ) return;
             auto const status = fe->decode( _shader );
             window.ready = status.first == motor::graphics::object_state::ready &&
                 status.second == motor::graphics::result::ok;
@@ -248,7 +287,29 @@ namespace sample
                     }
                     // Notify every backend, including removal when there is no square draw.
                     fe->update_geometry_link( _shader, _changed_link );
+                    if( _geometry_lifecycle )
+                    {
+                        // Keep the shader and its existing VAO cache alive across reconfigure.
+                        bool queued = fe->configure<motor::graphics::geometry_object_t>( &_triangle );
+                        if( _square_link == invalid && window.square_configured )
+                        {
+                            queued = fe->release<motor::graphics::geometry_object_t>( &_square ) && queued;
+                            window.square_configured = false;
+                        }
+                        if( !queued )
+                        {
+                            motor::log::global_t::test( "[dynamic] geometry commands queued", false );
+                            _failed = true;
+                            close();
+                        }
+                        window.geometry_pending = true;
+                    }
                     window.revision = _revision;
+                }
+                if( window.geometry_pending )
+                {
+                    fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
+                    return;
                 }
                 // triangle
                 {
@@ -301,9 +362,9 @@ namespace sample
             }
         }
 
-        void on_frame_done() noexcept override
+        void on_frame_done( void_t ) noexcept override
         {
-            if( !_smoke || !all_ready() || ++_frames < 100 ) return;
+            if( !_smoke || _failed || !all_ready() || ++_frames < 100 ) return;
             _frames = 0;
             switch( _step++ )
             {
@@ -318,6 +379,12 @@ namespace sample
             case 4: _want_square = false; break;
             case 5:
                 *_passed = _added == 2 && _removed == 2 && _square_link == invalid;
+                if( _geometry_lifecycle )
+                {
+                    for( size_t i = 0; i < _window_count; ++i )
+                        *_passed = *_passed && _windows[i].reconfigured == 4 &&
+                            _windows[i].released == 2;
+                }
                 motor::log::global_t::test( "[dynamic] lifecycle smoke (visual check required)", *_passed );
                 close();
                 break;
@@ -339,14 +406,15 @@ namespace sample
 
 int main( int argc, char** argv )
 {
-    bool dual = false, smoke = false, passed = false;
+    bool dual = false, smoke = false, geometry_lifecycle = false, passed = false;
     for( int i = 1; i < argc; ++i )
     {
         if( std::strcmp( argv[i], "--dual" ) == 0 ) dual = true;
         else if( std::strcmp( argv[i], "--smoke" ) == 0 ) smoke = true;
+        else if( std::strcmp( argv[i], "--geometry-lifecycle" ) == 0 ) geometry_lifecycle = true;
         else
         {
-            motor::log::global_t::status( "Usage: 02_dynamic_geometry [--dual] [--smoke]" );
+            motor::log::global_t::status( "Usage: 02_dynamic_geometry [--dual] [--smoke] [--geometry-lifecycle]" );
             motor::log::global_t::deinit();
             return std::strcmp( argv[i], "--help" ) == 0 ? 0 : 2;
         }
@@ -360,13 +428,13 @@ int main( int argc, char** argv )
     }
 #endif
     motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
-        motor::shared( sample::dynamic_geometry_app( dual, smoke, &passed ) ) );
+        motor::shared( sample::dynamic_geometry_app( dual, smoke, geometry_lifecycle, &passed ) ) );
     auto const result = carrier->exec();
     motor::memory::release_ptr( carrier );
     motor::concurrent::global::deinit();
     motor::log::global::deinit();
     motor::profiling::global::deinit();
     motor::io::global::deinit();
-    motor::memory::global::dump_to_std();
-    return result != 0 ? result : ( smoke && !passed ? 1 : 0 );
+    auto const remaining = motor::memory::global::dump_to_std();
+    return result != 0 ? result : ( remaining != 0 || ( smoke && !passed ) ? 1 : 0 );
 }

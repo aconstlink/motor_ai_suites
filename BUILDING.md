@@ -143,6 +143,23 @@ changes square parameters between cycles, with a 30-second timeout. Its exit
 code checks lifecycle progress only, not pixel correctness. Closing either
 window ends the application.
 
+For the geometry-handle regression, run:
+
+```sh
+build/bin/Release/02_dynamic_geometry.exe --smoke --geometry-lifecycle
+build/bin/Release/02_dynamic_geometry.exe --smoke --geometry-lifecycle --dual
+```
+
+This optional mode reconfigures the triangle on each link change without
+reconfiguring the shader. It releases the square geometry after unlinking,
+then configures it again when added. Per backend it checks four completed
+geometry reconfigures and two releases, including the reported ready/raw
+states and results. The memory-manager dump must also be empty.
+Rendering resumes between changes; pixels and driver-side allocations
+are not automatically verified.
+
+[Regression results (2026-10-20)](docs/results/geometry-lifecycle-2026-10-20/summary.md)
+
 Known failure on the pinned engine: after removing the square, change its
 color and add it again. Both backends still display the old color. See
 `ENGINE_NOTES.md`; the sample deliberately retains this regression case.

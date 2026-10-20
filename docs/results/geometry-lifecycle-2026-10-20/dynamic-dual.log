@@ -1,0 +1,56 @@
+[1;37;40m[s][1;37;40mLogger online
+[1;37;40m[s][1;37;40m[online] : motor log
+[1;37;40m[s][1;37;40m[audio::system] : started audio thread
+[1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+[1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+[1;37;40m[s][1;37;40m[win32::cpuv] : : GenuineIntel
+[1;37;40m[s][1;37;40m[win32::cpub]: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+[1;37;40m[s][1;37;40m[win32::is]: SSE3, SSSE3, SSE2, SSE2, FMA, SSE 4.1, SSE 4.2, AVX_1, AVX_2,
+[1;37;40m[s][1;37;40m[online] : motor concurrent
+[1;37;40m[s][1;37;40m[platform::oal_backend] : OpenAL initialized
+[1;37;40m[s][1;37;40m[wgl_context] : shared created  [1 ms]
+[1;37;40m[s][1;37;40m[gl4] : support thread started
+[1;37;40m[s][1;37;40m[motor::platform::directx::dx11_context::create_the_context] : created [286 ms]
+[1;37;40m[s][1;37;40m[d3d11] : support thread started
+[1;37;40m[s][1;37;40m[gl4] : construct geometry fixed_triangle
+[1;37;40m[s][1;37;40m[gl4] : construct geometry motor.system.imgui.0
+[1;37;40m[s][1;37;40m[gl4] : start shader compilation motor.system.imgui.0
+[1;37;40m[s][1;37;40m[gl4] : compilation done in : 0 units
+[1;37;40m[s][1;37;40m[GL4] : Compilation Successful : [motor.system.imgui.0]
+[1;37;40m[s][1;37;40m[gl4] : msl shared_geometry_shader shader took [1|0] ms
+[1;37;40m[s][1;37;40m[gl4] : start shader compilation shared_geometry_shader
+[1;37;40m[s][1;37;40m[gl4] : compilation done in : 0 units
+[1;37;40m[s][1;37;40m[GL4] : Compilation Successful : [shared_geometry_shader]
+[1;37;40m[s][1;37;40m[d3d11] : msl shared_geometry_shader shader took [0|0] ms
+[1;37;40m[s][1;37;40m[D3D11] : Compilation Successful : [shared_geometry_shader]
+[1;37;40m[s][1;37;40m[d3d11] : shader compilation 7 ms [shared_geometry_shader]
+[1;37;40m[s][1;37;40m[dynamic] square linked with new variable set
+[1;37;40m[s][1;37;40m[gl4] : construct geometry dynamic_square
+[1;37;40m[s][1;37;40m[gl4] : construct geometry fixed_triangle
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][GL4] geometry reconfigure + square configure/relink
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][D3D11] geometry reconfigure + square configure/relink
+[1;37;40m[s][1;37;40m[dynamic] square unlinked; variable set dropped
+[1;37;40m[s][1;37;40m[gl4] : construct geometry fixed_triangle
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][GL4] geometry reconfigure + unlink/release
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][D3D11] geometry reconfigure + unlink/release
+[1;37;40m[s][1;37;40m[dynamic] square linked with new variable set
+[1;37;40m[s][1;37;40m[gl4] : construct geometry dynamic_square
+[1;37;40m[s][1;37;40m[gl4] : construct geometry fixed_triangle
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][GL4] geometry reconfigure + square configure/relink
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][D3D11] geometry reconfigure + square configure/relink
+[1;37;40m[s][1;37;40m[dynamic] square unlinked; variable set dropped
+[1;37;40m[s][1;37;40m[gl4] : construct geometry fixed_triangle
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][GL4] geometry reconfigure + unlink/release
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic][D3D11] geometry reconfigure + unlink/release
+[1;37;40m[s][1;32;40m[OK][1;37;40m [dynamic] lifecycle smoke (visual check required)
+[1;37;40m[s][1;37;40m[gl4] : support thread shut down
+[1;35;40m[e][1;37;40m[WGL Context] : wglMakeCurrent(00)
+[1;37;40m[s][1;37;40m[d3d11] : support thread shut down
+[1;37;40m[s][1;37;40mLogger online
+[1;37;40m[s][1;37;40m[online] : motor log
+[1;37;40m[s][1;37;40m[audio::system] : shutdown audio thread
+[1;37;40m[s][1;37;40m[win32_net_module] : Shutting down tcp client
+[1;37;40m[s][1;37;40m[win32_net_module] : All tcp clients shutdown
+***************************************************
+[manager::dump_to_std] : Dump to std [0] sib
+* Memory manager has no entries.
