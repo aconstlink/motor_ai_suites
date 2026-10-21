@@ -120,6 +120,6 @@ no dropped records. No visual validation or GPU timing was performed.
 - [Representative four-tile high trace](results/village-d3d11-2026-10-18/4-high-r2.trace.csv).
 - [Representative four-tile low trace](results/village-d3d11-2026-10-18/4-low-r3.trace.csv).
 
-The results directory also retains the other six raw traces and all stdout /
-stderr logs. `window_start_ns` / `window_end_ns` in the summary select the
+The results directory also retains the other six raw traces.
+`window_start_ns` / `window_end_ns` in the summary select the
 complete cycles from each raw trace. Times use a common steady-clock epoch.

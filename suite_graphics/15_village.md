@@ -478,3 +478,11 @@ draws across the two windows, not twice the FPS. These remain CPU-side timings,
 not GPU completion or presentation measurements. See the
 [update-wait comparison](../docs/VILLAGE_UPDATE_WAIT.md) for measurements and
 `diagnostics/run_village_update_wait.ps1` for reproduction.
+
+### VAO lookup comparison
+
+The [GL4 VAO lookup report](../docs/VILLAGE_VAO_LOOKUP.md) compares the linear
+search against a temporary direct index cache with one and four tiles. At the
+village's 43-45 VAO entries per render object, no consistent speedup was measured.
+The report includes paired backend-frame timings, cache-hit coverage and raw
+results. The application and engine remain unchanged after the experiment.

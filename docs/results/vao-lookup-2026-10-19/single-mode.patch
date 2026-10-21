@@ -1,0 +1,53 @@
+diff --git a/platform/graphics/gl4/gl4.cpp b/platform/graphics/gl4/gl4.cpp
+index e22f030..cec6b8e 100644
+--- a/platform/graphics/gl4/gl4.cpp
++++ b/platform/graphics/gl4/gl4.cpp
+@@ -36,6 +36,7 @@
+ #include "gl4_pimpl_data.h"
+ 
+ #include <tuple>
++#include <cstdlib>
+ 
+ using namespace motor::platform::gen4;
+ using namespace motor::ogl;
+@@ -2557,10 +2558,30 @@ struct gl4_backend::pimpl
+                     GLuint vao_id = GLuint( 0 );
+ 
+                     {
+-                        auto iter =
+-                            std::find_if( config.geo_to_vaos.begin(), config.geo_to_vaos.end(),
++                        // Diagnostic only: guarded direct lookup for stable, ordered links.
++                        static bool_t const direct = []
++                        {
++                #if defined( _MSC_VER )
++                #pragma warning( push )
++                #pragma warning( disable : 4996 )
++                #endif
++                auto const * mode = std::getenv( "MOTOR_VAO_LOOKUP" );
++                #if defined( _MSC_VER )
++                #pragma warning( pop )
++                #endif
++                            bool_t const enabled = mode && motor::string_t(mode) == "direct";
++                            motor::log::global_t::status( enabled ?
++                                "VAO_LOOKUP_PROBE direct" : "VAO_LOOKUP_PROBE linear" );
++                            return enabled;
++                        }();
++                        auto iter = config.geo_to_vaos.end();
++                        if( direct && geo_idx < config.geo_to_vaos.size() &&
++                            config.geo_to_vaos[geo_idx].gid == gid )
++                            iter = config.geo_to_vaos.begin() + geo_idx;
++                        if( iter == config.geo_to_vaos.end() )
++                            iter = std::find_if( config.geo_to_vaos.begin(), config.geo_to_vaos.end(),
+                                 [ & ]( gl4_pimpl_data::render_data::geo_to_vao const & d )
+-                        { return d.gid == gid; } );
++                            { return d.gid == gid; } );
+ 
+                         if( iter == config.geo_to_vaos.end() )
+                         {
+@@ -3492,4 +3513,4 @@ void_t gl4_backend::render_end( void_t ) noexcept
+ void_t gl4_backend::on_context_destruction( void_t ) noexcept
+ {
+     _pimpl->on_context_destruction();
+-}
+\ No newline at end of file
++}

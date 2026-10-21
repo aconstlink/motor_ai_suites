@@ -1,0 +1,5 @@
+geometry-gl4: exit=0, timeout=False
+reconfigure-gl4: exit=0, timeout=False
+framebuffer-gl4: exit=0, timeout=False
+recompile-gl4: exit=0, timeout=False
+close-on-submit-gl4: exit=0, timeout=False

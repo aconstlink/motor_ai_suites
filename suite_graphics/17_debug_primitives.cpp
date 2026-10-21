@@ -269,7 +269,10 @@ namespace sample
                 fe->pop(motor::graphics::gen4::backend::pop_type::render_state) ;
             }
             fe->pop(motor::graphics::gen4::backend::pop_type::render_state) ;
-            fe->fence([&w]( void_t ) { w.completed.fetch_add(1) ; }) ;
+            fe->fence([&w]( motor::graphics::gen4::frontend::fence_phase const phase )
+            {
+                if( phase == motor::graphics::gen4::frontend::fence_phase::execute ) w.completed.fetch_add(1) ;
+            }) ;
         }
 
         void_t on_frame_done( void_t ) noexcept override

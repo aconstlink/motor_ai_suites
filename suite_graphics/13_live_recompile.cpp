@@ -298,7 +298,11 @@ namespace sample
             motor::graphics::gen4::backend_t::render_detail_t detail ;
             detail.geo = _background_geo ; detail.varset = _background_vars ;
             fe->render( _background, detail ) ;
-            fe->fence( [w]( void_t ) { w->heartbeat.fetch_add( 1 ) ; } ) ;
+            fe->fence( [w]( motor::graphics::gen4::frontend::fence_phase const phase )
+            {
+                if( phase == motor::graphics::gen4::frontend::fence_phase::execute )
+                    w->heartbeat.fetch_add( 1 ) ;
+            } ) ;
             if( !pending && _variant != 2 && (!_options.benchmark || w->draws == 0) )
             {
                 detail.geo = _geometry_id ;
@@ -313,7 +317,11 @@ namespace sample
                 detail.geo = _background_geo ; detail.varset = _background_vars ;
                 for( size_t i = 0 ; i < 12 ; ++i ) fe->render( _background, detail ) ;
             }
-            if( !pending ) fe->fence( [w]( void_t ) { w->executed.fetch_add( 1 ) ; } ) ;
+            if( !pending ) fe->fence( [w]( motor::graphics::gen4::frontend::fence_phase const phase )
+            {
+                if( phase == motor::graphics::gen4::frontend::fence_phase::execute )
+                    w->executed.fetch_add( 1 ) ;
+            } ) ;
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
         }
 

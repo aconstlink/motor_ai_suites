@@ -285,8 +285,7 @@ namespace sample
                         fe->configure<motor::graphics::geometry_object_t>( &_square );
                         window.square_configured = true;
                     }
-                    // Notify every backend, including removal when there is no square draw.
-                    fe->update_geometry_link( _shader, _changed_link );
+                    // Geometry links are reconciled by prepare_render before drawing.
                     if( _geometry_lifecycle )
                     {
                         // Keep the shader and its existing VAO cache alive across reconfigure.

@@ -110,8 +110,7 @@ cmake --build <build> --config Release --target 15_village 01_window_lifecycle -
 - [Long-run summaries](results/village-update-wait-2026-10-19/update-wait-long.csv).
 - [Long-run per-window summaries](results/village-update-wait-2026-10-19/update-wait-long.views.csv).
 - [Build and hardware metadata](results/village-update-wait-2026-10-19/environment.json).
-- [Build log](results/village-update-wait-2026-10-19/build.log).
 
-Individual frame CSVs and process stdout/stderr, including the smoke logs, are
-retained alongside these summaries. No engine rollback, patches or commits were
+Individual frame CSVs are retained alongside these summaries.
+No engine rollback, patches or commits were
 made for the comparison.

@@ -119,10 +119,8 @@ variables. `MOTOR_VILLAGE_FRAME_CSV` is optional for normal village runs.
 - [Short-run summary](results/village-wakeup-2026-10-18/wakeup.csv).
 - [Long-run summary](results/village-wakeup-2026-10-18/wakeup-long.csv).
 - [Long-run individual frame times](results/village-wakeup-2026-10-18/wakeup-long-4-r1.frames.csv).
-- [Idle-carrier test log](results/village-wakeup-2026-10-18/carrier-ctest.log).
-- [Notification test log](results/village-wakeup-2026-10-18/notify-ctest.log).
 - [Build/state metadata](results/village-wakeup-2026-10-18/environment.json).
 
-All per-run frame CSVs, stdout/stderr and final build logs are retained in the
-same results folder. Engine diff contents were compared before and after;
+All per-run frame CSVs are retained in the same results folder.
+Engine diff contents were compared before and after;
 the user's existing seven modified engine files remained unchanged.

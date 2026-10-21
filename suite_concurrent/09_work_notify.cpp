@@ -1,5 +1,5 @@
 #include <motor/concurrent/global.h>
-#include <motor/graphics/render_engine.h>
+#include <motor/graphics/render_engine.hpp>
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/std/vector>
@@ -82,17 +82,24 @@ namespace this_file
         motor::log::global_t::test("[notify] delayed successors progress using notifications only",graph_ok) ;
         motor::log::global_t::test("[notify] independent registrations and scheduling after unregister",unregister_ok) ;
 
-        size_t notifications = 0 ; bool_t ready = false ;
+        size_t notifications = 0 ;
         motor::graphics::render_engine_t original ;
         original.set_work_notify([&]( void_t ) { ++notifications ; }) ;
         motor::graphics::render_engine_t final(std::move(original)) ;
         final.leave_frame() ;
+        bool_t const submitted = notifications == 1 ;
         final.execute_frame() ;
-        bool_t const render_ok = notifications == 1 ;
+        bool_t const render_ok = submitted && notifications == 2 ;
         motor::log::global_t::test("[notify] render-engine callback survives move",render_ok) ;
-        final.set_work_notify([&]( void_t ) { ready = final.can_execute() ; }) ;
+        size_t submitted_notifications = 0, committed_notifications = 0 ;
+        final.set_work_notify([&]( void_t )
+        {
+            if( final.can_execute() ) ++submitted_notifications ;
+            else if( final.can_enter_frame() ) ++committed_notifications ;
+        }) ;
         final.leave_frame() ; final.execute_frame() ;
-        motor::log::global_t::test("[notify] ready state is published before callback outside lock",ready) ;
+        bool_t const ready = submitted_notifications == 1 && committed_notifications == 1 ;
+        motor::log::global_t::test("[notify] submission and commit publish state before callback outside lock",ready) ;
         return graph_ok && unregister_ok && render_ok && ready ;
     }
 }

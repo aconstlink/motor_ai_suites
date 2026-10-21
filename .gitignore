@@ -3,3 +3,11 @@
 CMakeUserPresets.json
 *.user
 imgui.ini
+
+# Keep benchmark summaries and measurements, not generated console logs.
+/docs/results/**/*.log
+/docs/results/**/*.err
+/docs/results/**/*.stdout.txt
+/docs/results/**/*.stderr.txt
+/suite_concurrent/results/*.log
+/suite_concurrent/results/*.err

@@ -99,8 +99,7 @@ cmake --build <build> --config Release --target 15_village --parallel 2
 
 - [All run summaries](results/village-cpu-sleep-2026-10-18/summary.csv).
 - [Environment and engine-state check](results/village-cpu-sleep-2026-10-18/environment.json).
-- [Release build log](results/village-cpu-sleep-2026-10-18/build.log).
-- Per-run stdout/stderr, 900 individual frame samples and 128 sleep samples are
+- 900 individual frame samples and 128 sleep samples per run are
   retained in the same directory. Percentiles use nearest rank.
 
 All twelve runs exited with code 0, passed final scene/draw checks and reported

@@ -1,0 +1,78 @@
+diff --git a/platform/graphics/gl4/gl4.cpp b/platform/graphics/gl4/gl4.cpp
+index e22f030..5e3d214 100644
+--- a/platform/graphics/gl4/gl4.cpp
++++ b/platform/graphics/gl4/gl4.cpp
+@@ -36,6 +36,7 @@
+ #include "gl4_pimpl_data.h"
+ 
+ #include <tuple>
++#include "../../../../suite_graphics/diagnostics/village_vao_probe.hpp"
+ 
+ using namespace motor::platform::gen4;
+ using namespace motor::ogl;
+@@ -43,6 +44,7 @@ using namespace motor::ogl;
+ struct gl4_backend::pimpl
+ {
+     motor_this_typedefs( pimpl );
++    village_vao_probe::probe _vao_probe;
+ 
+     using feedbacks_t = motor::platform::datas< gl4_pimpl_data::feedback_data_t >;
+     feedbacks_t _feedbacks;
+@@ -2557,10 +2559,19 @@ struct gl4_backend::pimpl
+                     GLuint vao_id = GLuint( 0 );
+ 
+                     {
+-                        auto iter =
+-                            std::find_if( config.geo_to_vaos.begin(), config.geo_to_vaos.end(),
++                        if( config.vao_probe_indices.size() <= geo_idx )
++                            config.vao_probe_indices.resize(geo_idx+1,size_t(-1));
++                        auto & cached = config.vao_probe_indices[geo_idx];
++                        auto iter = config.geo_to_vaos.end();
++                        bool_t const hit = _vao_probe.direct && cached < config.geo_to_vaos.size() &&
++                            config.geo_to_vaos[cached].gid == gid;
++                        if( hit ) iter = config.geo_to_vaos.begin()+cached;
++                        else iter = std::find_if( config.geo_to_vaos.begin(), config.geo_to_vaos.end(),
+                                 [ & ]( gl4_pimpl_data::render_data::geo_to_vao const & d )
+                         { return d.gid == gid; } );
++                        _vao_probe.visit(config.geo_to_vaos.size(),hit);
++                        if( iter != config.geo_to_vaos.end() )
++                            cached = size_t(iter-config.geo_to_vaos.begin());
+ 
+                         if( iter == config.geo_to_vaos.end() )
+                         {
+@@ -2848,6 +2859,7 @@ struct gl4_backend::pimpl
+     //****************************************************************************************
+     void_t begin_frame( void_t )
+     {
++        _vao_probe.begin();
+         // set default render states
+         {
+             auto const ids_new = std::make_pair( size_t( 0 ), size_t( 0 ) );
+@@ -2908,6 +2920,7 @@ struct gl4_backend::pimpl
+         _state_stack.pop();
+ 
+         _ctsd->notify_thread();
++        _vao_probe.end();
+     }
+ };
+ 
+@@ -3492,4 +3505,4 @@ void_t gl4_backend::render_end( void_t ) noexcept
+ void_t gl4_backend::on_context_destruction( void_t ) noexcept
+ {
+     _pimpl->on_context_destruction();
+-}
+\ No newline at end of file
++}
+diff --git a/platform/graphics/gl4/gl4_pimpl_data.h b/platform/graphics/gl4/gl4_pimpl_data.h
+index 4febb55..6879857 100644
+--- a/platform/graphics/gl4/gl4_pimpl_data.h
++++ b/platform/graphics/gl4/gl4_pimpl_data.h
+@@ -496,6 +496,8 @@ struct render_data
+         GLuint vao;
+     };
+     motor::vector< geo_to_vao > geo_to_vaos;
++    // Diagnostic only: geometry-link index to observed VAO entry.
++    motor::vector< size_t > vao_probe_indices;
+ 
+     struct variable_set
+     {

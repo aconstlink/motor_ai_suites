@@ -156,5 +156,5 @@ different backend integration work. There is no synchronous motor A/B in this te
   run during concurrent compilation. The previous GL4 `datas` experiment remains
   an experimental prerequisite of these recorded results, not a production recommendation.
 
-[Raw logs](results/render-access-compile-20261014/) include per-revision latency,
-per-run statistics and the full CPU benchmark output.
+The tables above retain the results. Generated console logs are not kept in the
+repository.

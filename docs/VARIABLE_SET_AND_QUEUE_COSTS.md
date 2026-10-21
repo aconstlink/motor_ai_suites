@@ -101,9 +101,8 @@ Local Windows/MSVC Release run, 2026-10-13, Intel Core i7-6700 @ 3.40 GHz.
 Values below are medians of three trials, in milliseconds, not frame times.
 Both CTest smoke cases and both benchmark executables passed, with empty motor
 memory dumps. No Linux run or backend changes were made for these experiments.
-Raw logs include min/max and queue occupancy:
-[variable sets](../suite_concurrent/results/variable_set_cost_2026-10-13.log),
-[owner queue](../suite_concurrent/results/owner_queue_cost_2026-10-13.log).
+The tables below retain the measured results. Generated console logs are not
+kept in the repository; rerun the benchmarks for min/max and queue occupancy.
 
 ### Variable Sets
 

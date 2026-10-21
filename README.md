@@ -19,6 +19,7 @@ processing. Each application is a separate CMake target.
 
 ## Start Here
 
+- [VAO Lookup Benchmark](suite_graphics/19_vao_lookup.md): fixed draw count, increasing geometry links per render object, and an optional diagnostic linear/direct lookup comparison.
 - [Debug Primitives](suite_graphics/17_debug_primitives.md): light markers, direction arrows and camera volumes using motor's primitive renderers.
 - [Logger Regression Tests](suite_log/README.md): bounded storage, ring order, range copies, concurrent writers and logger routing.
 - [Async Asset Loading](suite_graphics/16_async_assets.md): stream Sponza, then Suzanne into the running scene through motor's database and glTF importer.

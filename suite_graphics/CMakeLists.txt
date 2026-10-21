@@ -17,6 +17,7 @@ set( sources
     "15_village.cpp"
     "16_async_assets.cpp"
     "17_debug_primitives.cpp"
+    "19_vao_lookup.cpp"
 )
 
 foreach( source IN LISTS sources )

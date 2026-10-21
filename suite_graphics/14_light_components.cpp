@@ -457,7 +457,10 @@ namespace sample
             window.active = active ;
             fe->pop(motor::graphics::gen4::backend::pop_type::render_state) ;
             fe->pop(motor::graphics::gen4::backend::pop_type::render_state) ;
-            fe->fence([&window]( void_t ) { window.executed.fetch_add(1) ; }) ;
+            fe->fence([&window]( motor::graphics::gen4::frontend::fence_phase const phase )
+            {
+                if( phase == motor::graphics::gen4::frontend::fence_phase::execute ) window.executed.fetch_add(1) ;
+            }) ;
         }
 
         bool_t verify( void_t ) noexcept

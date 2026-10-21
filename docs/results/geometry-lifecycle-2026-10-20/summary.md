@@ -45,4 +45,4 @@ release followed by configure, along with texture-variable changes.
 - VAO cache size/reuse is not instrumented. The test exercises the relevant
   reconfigure path but does not assert internal cache capacity.
 
-Raw stdout/stderr logs are stored beside this report.
+The results above are retained; generated stdout/stderr logs are not kept in the repository.
