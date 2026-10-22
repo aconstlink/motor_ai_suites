@@ -1,5 +1,10 @@
 # Village: One vs. Four Tiles
 
+For the later frame preparation/execution split, see the
+[2026-10-22 D3D11 async rendering report](../docs/D3D11_ASYNC_RENDERING.md):
+updated cube/village timings and the reproduced shutdown hang, followed by
+eight successful runs with the corrected shutdown condition.
+
 Measured on 2026-10-18. This is a scene workload comparison, not a pure draw-call
 microbenchmark. The engine was not modified.
 

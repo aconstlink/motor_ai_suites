@@ -184,6 +184,13 @@ correctness; visually verify at least one small scene on each backend.
 The benchmark is intentionally not registered as a normal CTest: it requires a
 real graphics session and results depend on hardware, driver and window system.
 
+## Async rendering follow-up (2026-10-22)
+
+The [D3D11 async rendering report](../docs/D3D11_ASYNC_RENDERING.md) records the
+latest 5000-cube direct/scene results, retained historical references, frame-time
+outliers, and the separate village shutdown investigation. It includes per-run
+CSV data and distinguishes the performance build from shutdown-fix validation.
+
 ## Initial verification (2026-10-05)
 
 Windows Release, motor `cbed5cc`, i7-6700 (4 cores / 8 threads), RTX 2060,

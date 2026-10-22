@@ -33,6 +33,7 @@ processing. Each application is a separate CMake target.
 - [Scene Graph + Wire Lighting](suite_graphics/12_scene_wire_lighting.md): the combined integration sample.
 - [Lighting Gallery](suite_graphics/11_lighting_scene.md): the corresponding low-level rendering sample.
 - [Scene Benchmark](suite_graphics/05_scene_benchmark.md): workloads, measurements and their limitations.
+- [D3D11 Async Rendering](docs/D3D11_ASYNC_RENDERING.md): updated cube/village timings and the reproduced village shutdown hang with fix validation (2026-10-22).
 - [Archived Engine Comparisons](comparison/README.md): measured results, methodology and a profiling checklist for motor. No external engine build integration.
 - [Raylib Benchmark](suite_raylib/README.md): one optional native sample target with raylib as a directly linked external (`MOTOR_AI_BUILD_RAYLIB`).
 - [Document Tokenization](suite_core/README.md): core tests, motor IO and tokenizer comparisons.
