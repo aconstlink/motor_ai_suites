@@ -17,6 +17,42 @@ motor is included as a Git submodule. The samples cover graphics, multiple
 windows and backends, scene graphs, Wire connections, concurrency and document
 processing. Each application is a separate CMake target.
 
+## Rendering Performance
+
+**5000 unlit cubes, one indexed draw per cube, no instancing or scene graph.**
+CPU frame-start intervals in milliseconds; lower is better. Windows optimized
+builds on an Intel Core i7-6700 / NVIDIA RTX 2060, VSync requested off.
+
+| Framework / adapter | Backend | Historical, 2026-10-12 (ms) | motor follow-up, 2026-10-22 (ms) |
+| --- | --- | ---: | ---: |
+| motor | OpenGL 4 | 37.815 | 19.36 |
+| motor | D3D11 | 30.630 | 11.95 |
+| raylib | OpenGL | 17.492 | Not rerun |
+| bgfx | OpenGL | 2.369 | Not rerun |
+| bgfx | D3D11 | 1.858 | Not rerun |
+| Cinder | OpenGL | 2.518 | Not rerun |
+| ezEngine | D3D11 | 1.919 | Not rerun |
+
+**This is a workload reference, not a current engine ranking.** The historical
+column is one retained multi-framework series (median of three run medians).
+The motor follow-up averages three run medians from a later session; revisions,
+drivers and background load changed. It shows roughly 49% / 61% lower motor
+frame times, but does not establish a new head-to-head result against the other
+frameworks. High d3d11 cube p95 values also remain; medians alone are not a
+frame-pacing guarantee. These are not GPU timings or measured display FPS.
+
+Adapters differ in matrix/uniform handling and internal services. Cinder's
+`Batch::draw()` and bgfx submissions still issue one draw per cube in this test.
+The separately integrated native raylib and direct OpenGL references have their
+own validation and measurement conditions; their results are not spliced into
+the historical column.
+
+[Historical comparison and methodology](comparison/RESULTS.md) |
+[Latest motor timings, p95 and progress](docs/D3D11_ASYNC_RENDERING.md#latest-alternating-backend-comparison) |
+[Scene-graph preparation breakdown](suite_graphics/05_scene_benchmark.md#scene-preparation-breakdown-2026-10-22) |
+[Native raylib results](suite_raylib/RESULTS.md) |
+[Native rendering references](suite_reference/README.md)
+
 ## Start Here
 
 - [VAO Lookup Benchmark](suite_graphics/19_vao_lookup.md): fixed draw count, increasing geometry links per render object, and an optional diagnostic linear/direct lookup comparison.
@@ -33,7 +69,7 @@ processing. Each application is a separate CMake target.
 - [Scene Graph + Wire Lighting](suite_graphics/12_scene_wire_lighting.md): the combined integration sample.
 - [Lighting Gallery](suite_graphics/11_lighting_scene.md): the corresponding low-level rendering sample.
 - [Scene Benchmark](suite_graphics/05_scene_benchmark.md): workloads, measurements and their limitations.
-- [D3D11 Async Rendering](docs/D3D11_ASYNC_RENDERING.md): updated cube/village timings and the reproduced village shutdown hang with fix validation (2026-10-22).
+- [gl4/d3d11 Async Rendering](docs/D3D11_ASYNC_RENDERING.md): updated cube/village timings, historical progress and the reproduced village shutdown hang with fix validation (2026-10-22).
 - [Archived Engine Comparisons](comparison/README.md): measured results, methodology and a profiling checklist for motor. No external engine build integration.
 - [Raylib Benchmark](suite_raylib/README.md): one optional native sample target with raylib as a directly linked external (`MOTOR_AI_BUILD_RAYLIB`).
 - [Document Tokenization](suite_core/README.md): core tests, motor IO and tokenizer comparisons.
