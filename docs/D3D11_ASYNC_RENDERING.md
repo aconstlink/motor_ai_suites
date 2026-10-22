@@ -1,8 +1,10 @@
-# D3D11 async rendering: performance and village shutdown
+# Async rendering: gl4/d3d11 performance and village shutdown
 
 2026-10-22. Follow-up to the frame preparation/execution split and the explicit
 application wakeup between `execute_prepare()` and `execute()`. No engine source
-files were edited for these measurements or the shutdown investigation.
+files were edited for the frame-time comparisons or the shutdown investigation.
+The separate [scene preparation profile](../suite_graphics/05_scene_benchmark.md#scene-preparation-breakdown-2026-10-22)
+used temporary probes, which were fully removed afterwards.
 
 ## Versions and method
 
@@ -23,7 +25,63 @@ high-detail tiles, 32768 particles, 347 draws, and 1,285,296 triangles per geome
 pass. Window size is 1280x800; existing HDR/bloom/FXAA and shadow settings are
 retained. Benchmark mode freezes the village pose and disables its GUI.
 
-## Performance results
+## Latest alternating-backend comparison
+
+Follow-up on motor `100ba183a31121cedb2b4c88e013d9c2d230eb53`, AI suites
+`115bb97`, on the same i7-6700 / RTX 2060 machine with NVIDIA driver 610.88.
+Each workload/backend combination ran three times, alternating gl4 and d3d11
+and reversing the order in the second repetition. Release, one window, VSync
+requested off, 120 warmup and 400 measured frames; no engine modifications.
+Cubes use 1280x720; village uses 1280x800 and the workload described above.
+
+Values are arithmetic means of three per-run medians/p95s, not pooled percentiles.
+
+| Workload | Backend | Frame median, ms | Frame p95, ms | on_render preparation, ms |
+| --- | --- | ---: | ---: | ---: |
+| 5000 cubes, direct | gl4 | 19.36 | 26.10 | 0.78 |
+| 5000 cubes, direct | d3d11 | 11.95 | 68.87 | 1.00 |
+| 5000 cubes, scene graph | gl4 | 25.69 | 30.49 | 10.48 |
+| 5000 cubes, scene graph | d3d11 | 28.44 | 54.38 | 9.54 |
+| Village, four tiles with postprocessing | gl4 | 4.91 | 7.42 | 1.18 |
+| Village, four tiles with postprocessing | d3d11 | 3.80 | 6.31 | 1.31 |
+
+All 18 runs exited successfully with empty tracked-memory dumps. gl4 frame
+medians ranged from 19.19-19.60 ms (direct), 25.37-26.04 ms (scene) and
+4.79-5.04 ms (village). The previously observed large gl4 variation was not
+reproduced in this series. Desktop load and GPU clocks were not held constant;
+these results neither identify a unique cause nor rule out future variation.
+The high d3d11 cube p95 values remain important: lower medians do not establish
+consistently smooth frame pacing. No GPU timestamps or new pixel validation.
+
+Raw records for this series remain in the local measurement workspace:
+`C:/Users/acons/Documents/motor help/backend-ab-20261022/summary.csv`, with
+per-run logs and CPU/GPU telemetry alongside it. No extra results page is needed.
+
+### Progress relative to earlier measurements
+
+For 5000 direct, unlit cubes with one draw per object, the
+[12 October comparison](../comparison/RESULTS.md) reported 37.815 ms for gl4
+and 30.630 ms for d3d11. The latest series reports 19.36 and 11.95 ms,
+approximately **49% and 61% lower frame times**, respectively.
+The earlier d3d11 async scene result of 43.95 ms is now 28.44 ms, about 35% lower.
+
+These are historical trends, not isolated optimization speedups or controlled
+same-session A/B results. Revisions, drivers and system load changed; the
+12 October report uses the median of run medians, while this report averages
+run medians. The much older 5 October single-run results are retained in the
+[scene benchmark history](../suite_graphics/05_scene_benchmark.md#direct-path-comparison-2026-10-05),
+but are not a suitable basis for a precise overall speedup claim.
+
+The remaining scene preparation costs are measured separately in the
+[visitor/bridge/command breakdown](../suite_graphics/05_scene_benchmark.md#scene-preparation-breakdown-2026-10-22).
+The roughly 10-12 ms there is application-side preparation, not total frame
+time and not backend execution. It must not be compared directly to the total
+frame times in this table as though it were the same metric.
+
+## Earlier d3d11 performance results
+
+Retained measurements from the `4990522` build, before the latest comparison.
+In this section, "current" refers to that earlier measurement session.
 
 Entries are **arithmetic means of the individual runs' frame medians and p95s**,
 not percentiles of pooled frame samples. The historical column uses only the

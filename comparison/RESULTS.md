@@ -5,6 +5,14 @@ code and external-framework build integration have been removed; the results and
 analysis are retained as a reference for profiling motor.
 See [methodology and implementation differences](README.md#what-the-numbers-mean).
 
+The motor numbers below are retained **12 October baselines**, not current
+performance. The [22 October follow-up](../docs/D3D11_ASYNC_RENDERING.md#latest-alternating-backend-comparison)
+measured about 19.36 ms (gl4) and 11.95 ms (d3d11) for 5000 direct unlit cubes,
+versus 37.815/30.630 ms here. That is approximately 49%/61% lower frame time.
+This is a historical comparison across revisions, drivers and measurement
+sessions, not a controlled attribution to any single optimization. The external
+framework rows have not been rerun as part of that follow-up.
+
 ## Setup
 
 - Intel Core i7-6700, 4 cores / 8 logical processors; NVIDIA GeForce RTX 2060.
@@ -77,7 +85,8 @@ environment details are under
 
 ## Interpretation
 
-motor's current direct path is measurably slower here, especially at high draw counts.
+motor's direct path at this historical revision was measurably slower here,
+especially at high draw counts.
 This is useful evidence for profiling its frame synchronization, backend processing
 and variable handling; it does not identify which of them is the bottleneck.
 The relatively small measured transform and frontend-recording times alone do not

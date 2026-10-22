@@ -3,8 +3,11 @@
 This is a scaling benchmark, not a pass/fail performance threshold. It uses the
 motor revision pinned by this repository. No engine changes are required.
 
-Latest measurements: [GL4/D3D11 datas locks on/off, 2026-10-15](../docs/DATAS_LOCK_COMPARISON.md),
-including functional coverage and historical framework references.
+Latest frame-time comparison: [gl4/d3d11 async rendering, 2026-10-22](../docs/D3D11_ASYNC_RENDERING.md#latest-alternating-backend-comparison).
+The [scene preparation breakdown](#scene-preparation-breakdown-2026-10-22) below
+separates visitor lookups, bridges, status checks and command recording.
+The [datas locks on/off measurements, 2026-10-15](../docs/DATAS_LOCK_COMPARISON.md)
+remain a historical controlled comparison, not the latest overall timings.
 
 ## Run
 
@@ -186,10 +189,69 @@ real graphics session and results depend on hardware, driver and window system.
 
 ## Async rendering follow-up (2026-10-22)
 
-The [D3D11 async rendering report](../docs/D3D11_ASYNC_RENDERING.md) records the
+The [gl4/d3d11 async rendering report](../docs/D3D11_ASYNC_RENDERING.md) records the
 latest 5000-cube direct/scene results, retained historical references, frame-time
 outliers, and the separate village shutdown investigation. It includes per-run
 CSV data and distinguishes the performance build from shutdown-fix validation.
+
+## Scene preparation breakdown (2026-10-22)
+
+Profiled the existing gl4 scene path on motor `100ba18`: 5000 cubes, no lights,
+one window, Release, VSync off, 120 warmup and 400 measured frames. The earlier
+alternating-backend series measured 10.48 ms median preparation. Uninstrumented
+control runs before/after this profile measured **11.42-12.18 ms**; the historical
+10.48 ms is not an exact budget that the following values must reconstruct.
+
+| Preparation work | Approximate mean per frame, ms |
+| --- | ---: |
+| Base input bridge: slots to base variables | 1.07 |
+| Output bridge: base variables to output slots | 0.99 |
+| Subset input bridge: exchange and variable writes | 1.49 |
+| Component queries in the render visitor | 2.00 |
+| Frontend command construction and recording | 2.01 |
+| Shader status/decode checks | 0.80 |
+| Compilation listener and base-binding check | 0.97 |
+| Subset existence/creation check | 0.17 |
+| Writing cached camera variables | 0.24 |
+
+These are rounded averages of two sparse runs' projected, approximately
+timer-corrected **means**, not independent savings available by deleting code.
+Every eighth node was sampled, rotating selection between frames; each cube
+category contains 250000 timed operations per run. An empty scope estimates
+timer-pair cost. Spans are disjoint; bridge rows include their variable copies,
+so those copies must not be counted again as separate variable-set costs.
+
+Sparse-probe preparation medians were 11.84/12.12 ms. A full-probe check reached
+15.22 ms, versus 11.33 ms with inner timers disabled. Instrumentation is therefore
+not free. Calibration cannot remove cache, scheduling or branch effects. Other
+tree traversal, msl hash lookups and bookkeeping are not individually isolated;
+the residual also includes measurement effects. Do not sum these estimates to
+claim an exact reconstruction of an uninstrumented frame median.
+
+The hot path performs approximately 20000 component queries (linear scans using
+`dynamic_cast`), 5000 shader-status checks and 5000 compilation-listener checks
+per frame. All cubes share one msl shader. Each frontend draw records two
+commands, totaling 10000 plus outer state push/pop. No subset creations or base
+rebindings occurred during the measured interval.
+
+The bridge chain totals about **3.55 ms**. Its hot path uses cached pointers;
+`data_variable::set/get` directly access values. These costs are not evidence
+of variable-set allocation or mutex overhead. Status and listener checks do
+acquire locks, but this profile does not isolate lock waiting from other work.
+
+Useful next candidates are component lookup and repeated shared-shader status
+queries within a safe frame phase, followed by redundant bridge transfers.
+Camera values passed through the bridges are subsequently overwritten by the
+camera update. Command construction deserves its own follow-up before changing
+the command API. No optimization was implemented for this measurement.
+
+Temporary probes were removed, source files restored byte-for-byte, the motor
+working tree checked clean, and original binaries rebuilt and tested. Detailed
+[measurements](../docs/results/scene-prepare-2026-10-22/breakdown-summary.csv),
+[controls](../docs/results/scene-prepare-2026-10-22/controls.csv) and
+[methodology](../docs/results/scene-prepare-2026-10-22/methodology.txt) were already
+recorded with the profiling run. Raw frame samples and probe source remain in
+`C:/Users/acons/Documents/motor help/scene-profile-20261022`.
 
 ## Initial verification (2026-10-05)
 
@@ -248,5 +310,8 @@ The direct path also completed 5000 objects on both backends (30 warmup / 300
 samples, folder `20261005-225838-081`). Median frame intervals were 296.286 ms
 (GL4) and 194.972 ms (D3D11), versus 0.476 / 0.639 ms for draw recording.
 Both outputs were visually checked and both shutdown memory dumps were empty.
-Scaling is therefore still poor without scene traversal; no specific lower-level
-bottleneck has been established by these callback timers.
+At that revision, scaling was poor even without scene traversal; those callback
+timers did not identify a specific lower-level bottleneck. These are historical
+single-run measurements, not the current performance of the direct path. See
+the [latest comparison](../docs/D3D11_ASYNC_RENDERING.md#latest-alternating-backend-comparison)
+for the subsequent improvements.

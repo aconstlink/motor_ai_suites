@@ -1,0 +1,80 @@
+Scene-cubes CPU render-preparation profile, 2026-10-22
+
+Engine: 100ba183a31121cedb2b4c88e013d9c2d230eb53
+AI suites: 115bb97 (before adding these results)
+Windows Release / gl4 / 5000 cubes / zero lights / one window / VSync off
+05_scene_benchmark --backend gl --path scene --objects 5000 --lights 0 --warmup 120 --frames 400
+
+Scope
+-----
+Application-side on_render preparation, NOT backend prepare_render, GPU work,
+present, on_graphics variable synchronization or transform propagation.
+The previous 10.5 ms was a historical median. Current uninstrumented medians
+before/after measurement are 11.42-12.18 ms; see controls.csv.
+
+Temporary probes affected render_visitor.cpp and msl_component.cpp plus a private
+header. No work or locks were skipped. The engine files were restored byte-for-
+byte, git status checked clean, and the original executable rebuilt and tested.
+
+Method
+------
+final-sparse-r1/r2: measure every eighth node, rotate selection each frame.
+Each category samples 250000 cube operations over 400 frames, scaled by eight.
+Component lookup samples 1000200 queries (four per node, including the root).
+final-full-r1: instrument every node to verify the broad cost distribution.
+final-disabled-r1: instrumented binary with inner timers disabled.
+
+Spans are disjoint, not nested. There is no per-object logging. Frame samples
+are buffered and written after measurement. Probe and benchmark warmup gating
+are separate; both collect 400 steady-state frames. One BENCH frame can include
+the final probe report; probe visitor timing stops before report output.
+
+breakdown-summary.csv includes raw projected durations and adjusted estimates.
+Adjustment subtracts an empty timer pair per measured call: four per node for
+component queries, once per cube for the other categories. This is approximate:
+it cannot remove altered caches, branching, scheduling or clock frequency.
+The full probe slows preparation to about 15.2 ms median. Sparse measurements
+(11.84/12.12 ms) are primary evidence; disabled-probe median was 11.33 ms.
+Do not sum independent category medians to reconstruct a total median.
+
+Boundaries
+----------
+status: render_init, including decode/get_status, backend-ID lookup and its
+mrsw reader lock. This does not isolate lock WAIT time.
+base_metadata: listener has_changed and conditional rebind; excludes bridges.
+subset_metadata: ensure_render_data and conditional creation/connection.
+base_bridge: base input pull_data, including graphics-variable writes.
+output_bridge: output pull_data, including variable reads and slot writes.
+subset_bridge: exchange_and_push, including exchange and variable writes.
+camera_values: writing cached subset camera-variable pointers.
+commands: frontend render(msl, detail), constructing/inserting prepare and
+execute commands, NOT executing them.
+component_lookup: borrow_component for configuration, render settings, msl set
+and post-visit render settings; list traversal with dynamic_cast.
+Other tree traversal, msl hash lookups and bookkeeping are residual, not separately
+measured. Residual also contains instrumentation and scheduling effects.
+
+Findings
+--------
+Sparse-run adjusted MEANS per 5000-cube frame, approximately:
+base bridge 1.06-1.07 ms; output bridge 0.99-1.00 ms;
+subset bridge 1.49-1.50 ms; all bridges about 3.55 ms.
+component lookup 1.92-2.07 ms; recording 2.00-2.02 ms;
+status 0.78-0.81 ms; listener/base metadata 0.93-1.01 ms;
+subset metadata 0.15-0.19 ms; camera writes 0.23-0.24 ms.
+
+Per steady-state frame: 5000 status checks, 5000 listener checks, 5000 calls to
+each bridge, 5000 camera updates, 5000 frontend render calls recording 10000
+commands (plus outer state push/pop), and about 20000 component queries.
+All cubes share one msl shader. No subset creations or base rebinds occurred
+during any measured interval.
+
+These bridge costs are NOT proven variable-set mutex or allocation costs:
+data_variable::set/get directly access values; bridge updates use cached pointers.
+Status and compilation-listener queries do acquire locks.
+Possible follow-ups, not implemented: safely cache shared-shader status within
+a frame phase; streamline component queries; skip base-to-subset camera copies
+that are immediately overwritten; investigate command construction separately.
+
+Raw logs, frame CSVs, scripts and the temporary probe patch/source are retained:
+C:/Users/acons/Documents/motor help/scene-profile-20261022
