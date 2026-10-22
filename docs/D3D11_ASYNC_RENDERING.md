@@ -4,6 +4,7 @@
 application wakeup between `execute_prepare()` and `execute()`. No engine source
 files were edited for the frame-time comparisons or the shutdown investigation.
 The separate [scene preparation profile](../suite_graphics/05_scene_benchmark.md#scene-preparation-breakdown-2026-10-22)
+and the [early/late sync timeline](#scene-graph-timeline-early-versus-late-sync)
 used temporary probes, which were fully removed afterwards.
 
 ## Versions and method
@@ -77,6 +78,62 @@ The remaining scene preparation costs are measured separately in the
 The roughly 10-12 ms there is application-side preparation, not total frame
 time and not backend execution. It must not be compared directly to the total
 frame times in this table as though it were the same metric.
+
+## Scene-graph timeline: early versus late sync
+
+Measured on 2026-10-22 with motor `100ba183a31121cedb2b4c88e013d9c2d230eb53`:
+gl4, Release, one window, 5000 scene-graph cubes, no lights, VSync requested off.
+Six runs used 120 warmup and 400 measured frames each, in the order late, early,
+early, late, late, early. Temporary timestamps were recorded at phase boundaries,
+not per object, and flushed after the run. No trace events were dropped.
+
+- **Early:** release and wake the app after commit, before execute.
+- **Late:** release and wake the app after execute, before backend render-end/swap.
+  The late variant can therefore still overlap app work with swap.
+- **App preparation:** `on_graphics` through command submission, including
+  transformation/variable updates and `on_render` command recording.
+
+Each render frame n was matched to app frame n+1. Requiring both frames to be
+inside the measured interval gives 399 pairs per run, or 1197 pairs per mode.
+All 1197 early pairs overlap execute; none of the late pairs do. No next app
+frame was observed starting before the corresponding release.
+
+Values below are **medians of the three per-run medians**, in milliseconds.
+
+| Metric | Late sync | Early sync |
+| --- | ---: | ---: |
+| Frame cadence | 48.21 | 29.28 |
+| App preparation, including command recording | 21.90 | 21.07 |
+| Backend prepare | 2.78 | 2.70 |
+| Commit | 3.67 | 2.97 |
+| Execute | 16.02 | 15.87 |
+| Swap | 1.61 | 1.32 |
+| App n+1 / execute n overlap | 0.00 | 15.78 |
+| Release to next app start | 0.096 | 0.072 |
+| Swap end to next backend prepare | 21.96 | 4.78 |
+
+![Four consecutive frames with late and early sync on the same time scale](results/scene-timeline-2026-10-22/timeline.png)
+
+The early handoff really overlaps app preparation with backend execution in this
+workload. Execute itself barely changes; the gain comes from doing the next
+frame's preparation concurrently. The aggregate frame median is about **39%
+lower**, but absolute times fluctuate: per-run frame medians range from
+40.53-50.74 ms late and 27.99-30.81 ms early. Frame p95 ranges from 56.90-101.04 ms
+late and 51.10-53.76 ms early. This does not establish consistently smooth pacing.
+
+These are CPU wall-clock spans, not GPU timings or scheduler CPU-running traces.
+They can include preemption and driver waits. The swap-to-prepare gap includes
+app completion, handoff and scheduling work; it is not a pure idle-time counter.
+Phase medians are not exactly additive. Do not treat this separate instrumented
+session as a replacement for the uninstrumented framework comparison above.
+
+All six runs exited with code 0 and empty motor memory-manager dumps. Temporary
+engine and test changes were restored byte-for-byte; the original target rebuilt
+and passed a final smoke test. No motor changes or submodule update are retained.
+
+- [Per-run phase statistics](results/scene-timeline-2026-10-22/summary.csv).
+- [Matched frame pairs and timestamps](results/scene-timeline-2026-10-22/frame-pairs.csv).
+- [Methodology and measurement notes](results/scene-timeline-2026-10-22/methodology.txt).
 
 ## Earlier d3d11 performance results
 

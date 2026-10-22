@@ -1,0 +1,76 @@
+Scene graph cubes: app/render timeline, 2026-10-22
+
+Scope
+motor_ai_suites, motor revision 100ba183a31121cedb2b4c88e013d9c2d230eb53.
+Release, gl4, one window, 5000 scene-graph cubes, zero lights.
+The application requests VSync off. No independent driver-level override verification.
+CPU reported by the application: Intel Core i7-6700 @ 3.40 GHz.
+120 warmup frames, 400 measured frames per run.
+Order: late, early, early, late, late, early. Two seconds between processes.
+All runs exited with code 0 and an empty motor memory-manager dump.
+
+Definitions
+Early: release the app and notify it after commit, before execute.
+Late: release the app and notify it after execute, before backend render_end/swap.
+Late is not a fully serial frame: the app can still overlap render_end/swap.
+App preparation spans on_graphics through leave_frame (command submission),
+including transformation/variable updates and on_render command recording.
+Frame cadence is the interval between successive on_graphics starts.
+Each render frame n is matched to preparation/submission of app frame n+1.
+Both frames must be within the measured window: 399 pairs/run, 1197/mode.
+The next frame was never observed starting before release of the current frame.
+Every measured frame had 5000 prepare commands and 5002 execute commands
+(5000 expected draws plus state push/pop). No GPU draw counter was used.
+Timestamps use steady_clock nanoseconds, with per-producer buffers flushed on exit.
+No dropped events. Instrumentation is at phase boundaries, not per object.
+
+Results (median of the three per-run medians, milliseconds)
+Metric                              Late       Early
+Frame cadence                       48.2071    29.2787
+App preparation                     21.8993    21.0650
+Backend prepare                      2.7838     2.7048
+Commit                               3.6747     2.9700
+Execute                             16.0225    15.8659
+Swap                                 1.6147     1.3206
+App n+1 / execute n overlap           0.0000    15.7820
+Release to next app start             0.0958     0.0716
+Swap end to next prepare begin       21.9554     4.7815
+
+Per-run frame-cadence medians and p95 (milliseconds)
+run1 late:  48.2071 / 101.0448
+run2 early: 30.8071 / 53.7573
+run3 early: 29.2787 / 51.1043
+run4 late:  50.7416 / 88.0846
+run5 late:  40.5343 / 56.8965
+run6 early: 27.9867 / 52.0190
+
+All 1197 early pairs overlap execute. None of the 1197 late pairs do.
+The aggregate median frame interval is approximately 39% shorter with early sync.
+Absolute timings fluctuate substantially; do not directly compare this session
+to older benchmark tables or interpret median sub-phases as exactly additive.
+These are CPU wall-clock intervals, not GPU timings or scheduler CPU-running
+measurements. Overlapping intervals may include preemption and driver waits.
+The swap-to-next-prepare gap is not purely idle time; it includes app completion,
+handoff, scheduling and context-management work.
+
+Interpretation
+The early handoff really overlaps app work with backend execution in this test.
+Execute itself does not become substantially shorter; serial prepare/commit and
+the remaining app work still limit frame cadence. On_graphics plus on_render
+cost substantially more than on_render command recording alone.
+The result supports async overlap for this scene-graph workload, not a universal
+speedup prediction for direct-rendering benchmarks or GPU-limited applications.
+
+Artifacts
+summary.csv: mean, median and p95 of every phase, by run.
+frame-pairs.csv: every matched frame pair and absolute timestamps.
+timeline.png: four consecutive frames at the same time scale (runs 1 and 2).
+The following remain only in the local measurement workspace, not this repo:
+C:/Users/acons/Documents/motor help/timeline-scene-20261022/
+- run*.trace.json: Chrome/Perfetto complete events.
+- run*.{benchmark,engine-app,engine-render,carrier}.csv: raw events.
+- originals/: byte-exact backups. instrumented/: temporary measurement sources.
+All engine and test source changes were restored and SHA256-verified.
+The repository was clean after restoration. No permanent engine changes.
+The restored Release target rebuilt successfully and passed a final 20-frame
+smoke run (exit code 0, empty motor memory-manager dump).
