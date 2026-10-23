@@ -88,8 +88,11 @@ namespace this_file
         motor::graphics::render_engine_t final(std::move(original)) ;
         final.leave_frame() ;
         bool_t const submitted = notifications == 1 ;
-        final.execute_frame() ;
-        bool_t const render_ok = submitted && notifications == 2 ;
+        final.execute_prepare() ;
+        bool_t const prepared = notifications == 2 && final.can_enter_frame() &&
+            !final.can_execute() && final.needs_execute() ;
+        final.execute() ;
+        bool_t const render_ok = submitted && prepared && notifications == 2 && !final.needs_execute() ;
         motor::log::global_t::test("[notify] render-engine callback survives move",render_ok) ;
         size_t submitted_notifications = 0, committed_notifications = 0 ;
         final.set_work_notify([&]( void_t )
@@ -97,8 +100,12 @@ namespace this_file
             if( final.can_execute() ) ++submitted_notifications ;
             else if( final.can_enter_frame() ) ++committed_notifications ;
         }) ;
-        final.leave_frame() ; final.execute_frame() ;
-        bool_t const ready = submitted_notifications == 1 && committed_notifications == 1 ;
+        final.leave_frame() ; final.execute_prepare() ;
+        bool_t const committed = submitted_notifications == 1 && committed_notifications == 1 &&
+            final.needs_execute() ;
+        final.execute() ;
+        bool_t const ready = committed && submitted_notifications == 1 &&
+            committed_notifications == 1 && !final.needs_execute() ;
         motor::log::global_t::test("[notify] submission and commit publish state before callback outside lock",ready) ;
         return graph_ok && unregister_ok && render_ok && ready ;
     }
