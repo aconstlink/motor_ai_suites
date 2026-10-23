@@ -1,7 +1,192 @@
 # Core Tests
 
 - [Binding search: while vs. find_if](02_binding_search.md): isolated string lookup benchmark, without a graphics backend.
+- [Component lookup: RTTI, type IDs and single-pass dispatch](#component-lookup): 1-5 components per node, including misses.
+- [Command storage](#command-storage): command creation and clearing versus reusable indexed slots.
 - Document tokenization and OBJ measurements are documented below.
+
+## Command storage
+
+`04_command_storage` uses the actual `motor::graphics::render_engine::command_t`
+to compare three local queue implementations. No engine changes, backend calls,
+windows or GPU work are involved. This is a single-threaded CPU microbenchmark,
+not a measurement of the complete command engine or scene frame.
+
+| Strategy | Recording | Reset |
+| --- | --- | --- |
+| `clear` | Construct commands and emplace into a reserved vector | `clear()`, retaining vector capacity |
+| `index_keep` | Construct commands and move-assign into pre-existing slots | Set the active count to zero, retaining captures |
+| `index_release` | Same pre-existing slots | Assign empty commands to active slots, then reset the count |
+
+All strategies create fresh lambdas each frame. `index_keep` **does not eliminate
+capture destruction**: replacing a slot destroys its previous callable, and that
+cost is included in recording. It changes the timing and locality of that work.
+Unused tail slots retain their captures until overwritten or finally cleared.
+The final cleanup is timed separately and printed by the executable. This is
+therefore not a drop-in replacement when captures must be released every frame.
+No nontrivial object is treated as POD and no destructor is skipped.
+
+### Workload and validation
+
+- 1,000 and 10,000 commands, with small pointer/value captures, render-like
+  captures (two pointers plus the actual `render_detail`), and a large capture
+  containing an array of 32 `uint64_t` values plus a pointer.
+- The cancel callable remains the command type's default empty callback.
+  Production commands with substantial cancel captures may behave differently.
+- Queue allocation/reservation happens before timing. Recording includes callable
+  construction and move construction/assignment. Execution runs a checksum, not
+  a real draw. Reset and execution are measured separately.
+- Three warmup frames, then 15 rounds of eight frames, rotating strategy order.
+  Every timed frame's checksum is checked outside the measured interval. Logging
+  and CSV output are outside each timed batch.
+- CTest verifies changing active counts (8, 2, 0, 5, 1), changed values, no stale
+  execution after reset, and owned-capture destruction/retention for each strategy.
+- `std::function` allocation counts and allocator internals are not instrumented.
+  The motor memory dump does not account for all standard-library allocations.
+
+### Local results, 2026-10-23
+
+Windows x64, Intel Core i7-6700, MSVC 19.51, Release, motor `100ba18`.
+Three independent process runs. Each entry is the median of three run medians;
+each run median contains 15 eight-frame averages. Values are milliseconds per
+synthetic frame, not GPU timings or individual-frame tail percentiles.
+On this build, `sizeof(command_t)` is 128 bytes, `sizeof(std::function)` is 64,
+and `sizeof(render_detail)` is 56.
+
+**10,000 render-like commands:**
+
+| Strategy | Record | Reset | Record + reset | Including checksum execution |
+| --- | ---: | ---: | ---: | ---: |
+| `clear` | 1.209 | 0.490 | 1.702 | 1.843 |
+| `index_keep` | 0.823 | <0.001 | 0.823 | 0.952 |
+| `index_release` | 1.178 | 0.568 | 1.735 | 1.893 |
+
+Columns are aggregated independently; their rounded medians need not add up.
+The combined record/reset cost is about **52% lower** for `index_keep` in this
+case. Resetting every callable immediately (`index_release`) does not provide
+the same benefit. Final retained-capture cleanup for `index_keep` took about
+0.35-0.39 ms for this case, once at the end of each process workload.
+
+**Record + reset across capture sizes:**
+
+| Commands | Capture | `clear` | `index_keep` | `index_release` |
+| ---: | --- | ---: | ---: | ---: |
+| 1,000 | Render-like | 0.08 | 0.07 | 0.08 |
+| 10,000 | Small | 0.383 | 0.295 | 0.423 |
+| 10,000 | Render-like | 1.702 | 0.823 | 1.735 |
+| 10,000 | Large | 2.506 | 1.020 | 2.527 |
+
+The result depends strongly on capture size and queue size. Cache/allocator
+behavior is a possible contributor, but this test does not isolate the cause.
+10,000 commands numerically matches two commands for each of 5,000 draws;
+it does **not** reproduce their exact capture mix, concurrency or full frame.
+This supports testing indexed reuse in the real recording path, not claiming
+a 52% application speedup. Three runs and rotated order reduce but do not
+eliminate background-load and allocator-history effects.
+
+[Raw measurements](results/command-storage-2026-10-23/) contain all timed samples.
+Release build and `core_command_storage` passed locally; Linux was not tested.
+
+```sh
+cmake --build build --config Release --target 04_command_storage --parallel 2
+ctest --test-dir build -C Release -R "^core_command_storage$" --output-on-failure
+./build/bin/Release/04_command_storage.exe --csv command-storage.csv
+```
+
+## Component lookup
+
+`03_component_search` compares five ways to obtain the same five requested
+component types from small nodes. This is an isolated CPU microbenchmark using
+local polymorphic fixtures, not a modified motor scene graph. No engine changes,
+graphics backend, window, shader compilation or scene traversal are involved.
+
+| Strategy | Work per node |
+| --- | --- |
+| `linear_rtti` | Five independent pointer-list scans using `dynamic_cast` |
+| `linear_id` | Five independent linear scans comparing 16-bit type IDs |
+| `binary_id` | Five `lower_bound` searches in the same sorted ID/pointer list |
+| `single_pass_rtti` | One pointer-list traversal, with an `if/else dynamic_cast` chain |
+| `single_pass_id` | One sorted-list traversal, with a type-ID `switch` |
+
+Every variant returns five result pointers in the same order. Identical checksum
+work consumes those results and their payloads, including misses. Dispatch does
+not execute application logic in component order: real visitors with ordering
+dependencies must preserve their required order too.
+
+### Workload and correctness
+
+- Nodes contain 1, 2, 3, 4 or 5 unique components. Five types are queried per node.
+- Ten concrete fixture types directly derive from a polymorphic base. Wanted
+  types have even IDs, unrequested types odd IDs; misses are not all outside the
+  sorted range. These are local fixed IDs, not an engine type-ID registry.
+- `wanted_only`: every stored component is requested. The query hit rate is
+  count/5, so 100% only at five components.
+- `mixed`: approximately half the stored components are requested. Odd counts
+  alternate floor/ceil across nodes. At five components this is 50% query hits.
+- `all_miss`: none of the stored types is requested; all five searches fail.
+- 4096 nodes use deterministically shuffled insertion order, type subsets and
+  visitation order. Nodes are reused for 16 sweeps per timing sample.
+- One warmup round and seven measured rounds rotate the five strategies.
+  Allocation, sorting, fixture construction, validation and logging are outside
+  the timed region. Containers use motor wrappers; fixture ownership uses local
+  `unique_ptr`s. No ownership operation occurs in the search kernels.
+- Search logic can inline into each batch; batch functions are not inlined.
+  Volatile function-pointer calls prevent repeated sweeps being folded away.
+  Every measured checksum is checked against an independently constructed result.
+- CTest checks exact result pointers for all 638 subsets of ten types containing
+  up to five components, including empty nodes, with four insertion orders each.
+  The benchmark also validates every generated node before measurement.
+
+The fixtures deliberately use distinct types without duplicate components or
+derived-type queries. Exact type-ID matching does **not** replace `dynamic_cast`
+semantics for base-class queries. The ID variants store the ID next to the
+pointer and do not access the object on a miss; a virtual type getter or a type
+ID stored inside the object could have different costs. This measures complete
+lookup designs, not an isolated RTTI instruction cost.
+
+### Local results, 2026-10-23
+
+Windows x64, Intel Core i7-6700, MSVC 14.51, Release `/O2`. Three independent
+processes, each with the seven measured rounds above. Values are medians of the
+three per-process medians, **nanoseconds per node for all five queries plus the
+common checksum**, not time per individual lookup.
+
+| Five components per node | All queries hit | 50% query hits | All queries miss |
+| --- | ---: | ---: | ---: |
+| Linear RTTI | 445.7 | 659.5 | 805.3 |
+| Linear type ID | 19.4 | 44.7 | 16.8 |
+| Binary type ID | 22.9 | 58.1 | 17.9 |
+| Single pass, RTTI chain | 440.1 | 636.6 | 730.6 |
+| Single pass, type ID | 17.3 | 42.6 | 11.3 |
+
+Linear type-ID lookup has a lower aggregate median than binary lookup in all
+15 tested count/scenario combinations. With five components and mixed hits,
+changing only the outer traversal to a single RTTI pass helps little; avoiding
+the repeated RTTI checks has the much larger effect. A single pass still makes
+up to five type checks per component when implemented as a cast chain.
+
+This supports trying linear integer-ID comparison before adding a binary search
+for such small collections. It does **not** establish a scene-frame speedup:
+real component sizes, hierarchy, DLL boundaries, cache behavior and visitor work
+are not reproduced. Uniform all-hit/all-miss cases also train branch prediction
+more strongly than mixed workloads. No allocations, memory footprint or GPU work
+were timed. All runs passed with empty motor memory-manager dumps.
+
+- [Per-case summary and run-median ranges](results/component-search-2026-10-23/summary.csv).
+- Individual samples: [run 1](results/component-search-2026-10-23/run1.csv),
+  [run 2](results/component-search-2026-10-23/run2.csv),
+  [run 3](results/component-search-2026-10-23/run3.csv).
+
+```powershell
+cmake -S . -B build
+cmake --build build --config Release --target 03_component_search --parallel 2
+ctest --test-dir build -C Release -R '^core_component_search$' --output-on-failure
+./build/bin/Release/03_component_search.exe
+./build/bin/Release/03_component_search.exe --csv component-search.csv --nodes 4096 --sweeps 16 --rounds 7
+```
+
+CTest uses `--verify-only` and has no timing threshold. The executable can also
+be started directly from Visual Studio; it needs no assets or working directory.
 
 ## Document tokenization
 

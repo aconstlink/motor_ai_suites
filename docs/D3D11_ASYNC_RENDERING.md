@@ -9,6 +9,10 @@ used temporary probes, which were fully removed afterwards.
 
 ## Versions and method
 
+The sections below retain the 22 October measurements. For the newer, separately
+controlled gl4 binding-cache test, see
+[24 October render-cache results](#gl4-render-cache-comparison-2026-10-24).
+
 - AI suites base: `a82b5739c3e04f9f38aca475d6a05b7b2c7d11e2`.
 - Performance build: motor `4990522db6e3d5721449a3b307dd62217acc06e8`.
 - Shutdown-fix validation: motor `100ba183a31121cedb2b4c88e013d9c2d230eb53`.
@@ -25,6 +29,65 @@ path has 5000 variable sets; the scene-graph path has 10000. Village uses four
 high-detail tiles, 32768 particles, 347 draws, and 1,285,296 triangles per geometry
 pass. Window size is 1280x800; existing HDR/bloom/FXAA and shadow settings are
 retained. Benchmark mode freezes the village pose and disables its GUI.
+
+## gl4 render-cache comparison: 2026-10-24
+
+Same i7-6700 / RTX 2060 machine, Windows MSVC Release, gl4, VSync requested off.
+Both variants use motor `06418b4ea7dd205f78fca6a86753bf40b0c2e92f`, including
+the command-slot changes. The cached variant adds the user's captured gl4.cpp
+changes: skip redundant program/VAO bindings, remove the per-draw VAO unbind,
+and unbind/reset the cached state at frame end. All other sources are identical.
+The later addition of caching inside `update_variables()` is **not included**.
+
+Each workload ran three times per variant, in order baseline/cache,
+cache/baseline, baseline/cache: 120 warmup and 400 measured frames per run.
+No builds ran during measurement. Entries are **medians of the three per-run
+medians/p95s**, not pooled percentiles or GPU timings.
+
+| Workload | Baseline median, ms | Cache median, ms | Baseline p95, ms | Cache p95, ms |
+| --- | ---: | ---: | ---: | ---: |
+| 5000 cubes, direct | 16.1857 | 7.2745 | 21.2223 | 9.9720 |
+| Village, four high-detail tiles with full postprocessing | 3.6688 | 3.6960 | 5.2432 | 5.4836 |
+
+The direct-cube median is **55.1% lower**. Run medians ranged from
+16.1456-16.4733 ms without the cache and 7.0247-7.3549 ms with it. This is a
+favorable shared-shader/shared-geometry workload with 5000 individual indexed
+draws, no lights, scene graph or instancing, at a checked 1280x720 client size.
+The test does not isolate the contributions of program caching, VAO caching
+and removing the VAO reset individually.
+
+Village retains the scene graph, moon shadows, transform feedback, 32768
+particles and all 13 HDR/bloom/FXAA postprocessing draws. It reports 347 draws
+per frame and 1,285,296 triangles per scene pass, at native render dimensions
+1264x784 in every accepted run. Benchmark mode freezes animation and disables
+the GUI. Run medians were 4.1306/3.6639/3.6688 ms without the cache and
+3.7470/3.5847/3.6960 ms with it. **No stable frame-time improvement was observed**;
+the small aggregate difference does not establish a regression. The reduced
+draw count and different workload limit extrapolation from the cube result;
+this test does not identify the village's remaining bottleneck.
+
+All 12 accepted runs exited successfully, completed 400 samples and reported
+empty motor memory-manager dumps, without error/invalid-ID log entries.
+Village's existing scene/subset/light and draw-accounting checks passed.
+Draw counts are application-side accounting, not independent GPU validation.
+No new screenshot validation or GPU timestamp measurement was performed.
+Initial village window-resize attempts failed the runner's size check and were
+excluded; the final comparison leaves the native window size unchanged.
+
+Temporary engine changes were removed, the original AI-suite motor checkout
+restored, and normal targets rebuilt. No engine or submodule change is retained.
+
+- [Direct cubes: per-run measurements](results/render-cache-2026-10-24/direct-runs.csv)
+- [Direct cubes: aggregate measurements](results/render-cache-2026-10-24/direct-summary.csv)
+- [Village: per-run measurements](results/render-cache-2026-10-24/village-runs.csv)
+- [Village: aggregate measurements](results/render-cache-2026-10-24/village-summary.csv)
+
+In the CSVs, direct-cube `update_ms`/`submit_ms` are the benchmark's per-run
+median callback timings. Village uses these column names for mean
+`on_graphics`/render-preparation timings instead; they are not comparable
+backend execution measurements. Raw logs remain in the local measurement
+folders `render-cache-20261024` and `village-render-cache-20261024` under
+`C:/Users/acons/Documents/motor help/`.
 
 ## Latest alternating-backend comparison
 

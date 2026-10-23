@@ -23,15 +23,15 @@ processing. Each application is a separate CMake target.
 CPU frame-start intervals in milliseconds; lower is better. Windows optimized
 builds on an Intel Core i7-6700 / NVIDIA RTX 2060, VSync requested off.
 
-| Framework / adapter | Backend | Historical, 2026-10-12 (ms) | motor follow-up, 2026-10-22 (ms) |
-| --- | --- | ---: | ---: |
-| motor | OpenGL 4 | 37.815 | 19.36 |
-| motor | D3D11 | 30.630 | 11.95 |
-| raylib | OpenGL | 17.492 | Not rerun |
-| bgfx | OpenGL | 2.369 | Not rerun |
-| bgfx | D3D11 | 1.858 | Not rerun |
-| Cinder | OpenGL | 2.518 | Not rerun |
-| ezEngine | D3D11 | 1.919 | Not rerun |
+| Framework / adapter | Backend | Historical, 2026-10-12 (ms) | motor follow-up, 2026-10-22 (ms) | Render-cache A/B, 2026-10-24 (ms) |
+| --- | --- | ---: | ---: | ---: |
+| motor | OpenGL 4 | 37.815 | 19.36 | **16.19 -> 7.27** |
+| motor | D3D11 | 30.630 | 11.95 | Not tested |
+| raylib | OpenGL | 17.492 | Not rerun | Not tested |
+| bgfx | OpenGL | 2.369 | Not rerun | Not tested |
+| bgfx | D3D11 | 1.858 | Not rerun | Not tested |
+| Cinder | OpenGL | 2.518 | Not rerun | Not tested |
+| ezEngine | D3D11 | 1.919 | Not rerun | Not tested |
 
 **This is a workload reference, not a current engine ranking.** The historical
 column is one retained multi-framework series (median of three run medians).
@@ -41,6 +41,14 @@ frame times, but does not establish a new head-to-head result against the other
 frameworks. High d3d11 cube p95 values also remain; medians alone are not a
 frame-pacing guarantee. These are not GPU timings or measured display FPS.
 
+The 24 October column is a separate, controlled gl4 A/B test: caching program
+and VAO bindings and removing the per-draw VAO unbind reduced the direct-cube
+median by **55.1%**, with p95 **21.22 -> 9.97 ms**. Values are medians of three
+run medians/p95s. It does not update the external-framework ranking. With the
+full four-tile village, the same change showed **no stable gain**: median
+**3.67 -> 3.70 ms**, p95 **5.24 -> 5.48 ms**. The later update-path cache change
+was not part of these measurements.
+
 Adapters differ in matrix/uniform handling and internal services. Cinder's
 `Batch::draw()` and bgfx submissions still issue one draw per cube in this test.
 The separately integrated native raylib and direct OpenGL references have their
@@ -48,6 +56,7 @@ own validation and measurement conditions; their results are not spliced into
 the historical column.
 
 [Historical comparison and methodology](comparison/RESULTS.md) |
+[Render-cache A/B results and method](docs/D3D11_ASYNC_RENDERING.md#gl4-render-cache-comparison-2026-10-24) |
 [Latest motor timings, p95 and progress](docs/D3D11_ASYNC_RENDERING.md#latest-alternating-backend-comparison) |
 [Scene-graph preparation breakdown](suite_graphics/05_scene_benchmark.md#scene-preparation-breakdown-2026-10-22) |
 [Native raylib results](suite_raylib/RESULTS.md) |
@@ -292,6 +301,8 @@ diagnostics and, where applicable, benchmark measurements.
 | Wire | [01_wire_bridges](suite_wire/01_wire_bridges.cpp) | Input/output bridges, rebinding and variable-set replacement | [Wire tests](BUILDING.md#wire-console-tests) |
 | Core | [00_document](suite_core/00_document.cpp) | Token correctness and comparison with standard-library approaches | [Document tests](suite_core/README.md) |
 | Core / IO | [01_document_obj](suite_core/01_document_obj.cpp) | Load OBJ text through motor's database and compare tokenization | [OBJ benchmark](suite_core/README.md#sponza-obj-via-motor-io) |
+| Core | [03_component_search](suite_core/03_component_search.cpp) | Compare RTTI, type-ID lookup and single-pass dispatch with 1-5 components | [Component lookup](suite_core/README.md#component-lookup) |
+| Core / Graphics | [04_command_storage](suite_core/04_command_storage.cpp) | Command creation and clearing versus reusable indexed slots | [Command storage](suite_core/README.md#command-storage) |
 | Math | [00_vector](suite_math/00_vector.cpp) | Arithmetic, normalization and cross products | [Math tests](suite_math/README.md) |
 | Math | [01_matrix](suite_math/01_matrix.cpp) | Products, transpose, homogeneous coordinates and 2D rotation | [Math tests](suite_math/README.md) |
 | Math | [02_transformation](suite_math/02_transformation.cpp) | TRS, hierarchy, cameras and projection | [Math tests](suite_math/README.md) |

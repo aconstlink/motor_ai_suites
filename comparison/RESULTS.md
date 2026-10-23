@@ -13,6 +13,12 @@ This is a historical comparison across revisions, drivers and measurement
 sessions, not a controlled attribution to any single optimization. The external
 framework rows have not been rerun as part of that follow-up.
 
+A separate [24 October gl4 render-cache A/B test](../docs/D3D11_ASYNC_RENDERING.md#gl4-render-cache-comparison-2026-10-24)
+measured **16.19 -> 7.27 ms** for 5000 direct cubes, with p95 **21.22 -> 9.97 ms**.
+The same change showed no stable gain in the full village workload. These are
+controlled motor-only comparisons, not replacements for the historical
+framework rows below; the later update-path cache change was not measured.
+
 ## Setup
 
 - Intel Core i7-6700, 4 cores / 8 logical processors; NVIDIA GeForce RTX 2060.
