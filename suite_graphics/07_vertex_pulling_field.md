@@ -22,10 +22,11 @@ build/bin/Release/07_vertex_pulling_field.exe --side 48 --subdivisions 16 --smok
 build/bin/Release/07_vertex_pulling_field.exe --side 8 --subdivisions 16 --still
 ```
 
-Default: 48x48 cubes, 8 subdivisions per face edge, and GL4 plus D3D11 on Windows,
-GL4 only elsewhere. This submits 1,769,472 triangles per window, 64 times the old
+Default: 48x48 cubes, 8 subdivisions per face edge, and one GL4 window at 1920x1080
+for recording. This submits 1,769,472 triangles per window, 64 times the old
 12-triangle cube workload.
 `--side 4..96` controls capacity. `--gl-only` and `--d3d-only` select one backend.
+On Windows, `--dual` opens the original two 680x600 GL4/D3D11 windows.
 `--subdivisions 1..16` selects mesh density at startup. `--no-vsync` requests
 disabled VSync for load experiments; the OS/driver may still limit presentation.
 `--still` starts paused. ImGui controls active cube count, wave amplitude,

@@ -285,6 +285,15 @@ without custom shaders; includes camera-projection regression checks.
 
 [Source](suite_graphics/17_debug_primitives.cpp) | [Guide and known limitations](suite_graphics/17_debug_primitives.md)
 
+### 20 Noise Playground
+
+Eight msl noise variants, displayed as a labeled 2D comparison or an animated
+procedural landscape. Includes height/slope coloring, finite-difference normals,
+camera orbit and ImGui controls. One 1920x1080 window, GL4 or D3D11.
+Optional Demo mode cycles views every second with continuously animated parameters.
+
+[Source](suite_graphics/20_noise_playground.cpp) | [Guide, verification and fbm dependency issue](suite_graphics/20_noise_playground.md)
+
 ## Console Tests
 
 These applications do not render a scene. Their output consists of checks,

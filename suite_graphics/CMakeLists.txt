@@ -18,6 +18,7 @@ set( sources
     "16_async_assets.cpp"
     "17_debug_primitives.cpp"
     "19_vao_lookup.cpp"
+    "20_noise_playground.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -50,6 +51,8 @@ target_link_libraries( 16_async_assets PRIVATE motor::format motor::io motor::sc
 target_compile_definitions( 16_async_assets PRIVATE MOTOR_ASYNC_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/assets/async_loading" )
 
 target_link_libraries( 17_debug_primitives PRIVATE motor::gfx )
+
+target_link_libraries( 20_noise_playground PRIVATE motor::gfx )
 
 if( WIN32 )
     add_executable( 18_carrier_wakeup "18_carrier_wakeup.cpp" )

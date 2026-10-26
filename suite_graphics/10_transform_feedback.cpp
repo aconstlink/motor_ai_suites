@@ -23,7 +23,7 @@ namespace sample
 
     struct options
     {
-        bool_t dual = true ;
+        bool_t dual = false ;
         bool_t d3d_only = false ;
         bool_t smoke = false ;
         bool_t still = false ;
@@ -147,8 +147,8 @@ namespace sample
             info.window_name = d3d ? "motor | stream output | D3D11" : "motor | transform feedback | GL4" ;
             info.x = int_t( 30 + w * 680 ) ;
             info.y = 60 ;
-            info.w = 660 ;
-            info.h = 560 ;
+            info.w = _options.dual ? 660 : 1920 ;
+            info.h = _options.dual ? 560 : 1080 ;
             info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 :
                 motor::application::graphics_generation::gen4_gl4 ;
             _windows[w].aspect = float_t( info.w ) / float_t( info.h ) ;
@@ -594,17 +594,18 @@ int main( int argc, char ** argv )
         motor::string_t const arg( argv[i] ) ;
         if( arg == "--gl-only" ) { opts.dual = false ; opts.d3d_only = false ; }
         else if( arg == "--d3d-only" ) { opts.dual = false ; opts.d3d_only = true ; }
+        else if( arg == "--dual" ) { opts.dual = true ; opts.d3d_only = false ; }
         else if( arg == "--smoke" ) opts.smoke = true ;
         else if( arg == "--still" ) opts.still = true ;
         else
         {
-            motor::log::global_t::status( "Usage: 10_transform_feedback [--gl-only|--d3d-only] [--smoke] [--still]" ) ;
+            motor::log::global_t::status( "Usage: 10_transform_feedback [--gl-only|--d3d-only|--dual] [--smoke] [--still]" ) ;
             motor::log::global_t::deinit() ;
             return arg == "--help" ? 0 : 2 ;
         }
     }
 #ifndef _WIN32
-    if( opts.d3d_only )
+    if( opts.d3d_only || opts.dual )
     {
         motor::log::global_t::error( "D3D11 requires Windows." ) ;
         motor::log::global_t::deinit() ;

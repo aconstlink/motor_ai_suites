@@ -1,9 +1,9 @@
 # Transform Feedback / Stream Output
 
 `10_transform_feedback` captures a 50x50x50 lattice of cube centers into a GPU
-buffer, then renders only the captured output as shaded cubes. Windows defaults
-to one GL4 and one D3D11
-window; other platforms default to GL4. No changes to motor are required.
+buffer, then renders only the captured output as shaded cubes. By default it opens
+one GL4 window at 1920x1080 for recording. On Windows, `--dual` opens the original
+two 660x560 GL4/D3D11 windows. No changes to motor are required.
 
 ## Run
 
@@ -14,7 +14,7 @@ build/bin/Release/10_transform_feedback.exe
 build/bin/Release/10_transform_feedback.exe --smoke
 ```
 
-Options: `--gl-only`, `--d3d-only`, `--still`, `--smoke`, `--help`.
+Options: `--gl-only`, `--d3d-only`, `--dual`, `--still`, `--smoke`, `--help`.
 Closing either test window closes the application.
 
 ## Modes
