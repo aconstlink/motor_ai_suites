@@ -55,7 +55,7 @@ The names are the engine's built-in names, not inferred input dimensions:
 readable comparison. Signed Perlin/Simplex outputs are mapped with `0.5 + 0.5*n`;
 display colors clamp to [0,1], while terrain displacement uses the unclamped value.
 
-## Known fbm Dependency Issue
+## fbm Dependency Regression
 
 On 2026-10-26, using `fbm_1d` without another noise built-in failed shader
 compilation on both backends. The generator's `fbm_1d` dependency list emits the
@@ -74,9 +74,13 @@ build/bin/Release/20_noise_playground.exe --smoke --strict-builtins
 build/bin/Release/20_noise_playground.exe --smoke --strict-builtins --d3d-only
 ```
 
-Both commands currently fail with exit 1. After an engine fix, they should pass
-without changing the test. This workaround is not evidence that standalone fbm
-dependency generation is correct.
+On the original engine revision, both commands fail with exit 1. Engine fix
+`f3051c4`, verified on 2026-10-27, adds `rand_1d_1`, `rand_1d_2` and `int_perm_4d_4`
+before the noise overloads in the GLSL4 and HLSL5 `fbm_1d` dependency lists.
+The fbm implementation and public API are unchanged. Both strict commands now
+pass with this fix; no test-source changes were needed. The compatibility
+workaround remains in the default mode, so use `--strict-builtins` to exercise
+this regression without masking missing dependencies.
 
 ## Verification
 
@@ -95,6 +99,16 @@ Release verification on 2026-10-26:
   correctness still require manual verification. No pixel-equivalence, numerical
   noise-reference or GPU-timing checks are claimed by the smoke test.
 - Linux was not built or run for this addition.
+
+Release verification on 2026-10-27, motor `96fd381` plus the generator fix
+subsequently committed as `f3051c4`:
+- GL4 strict mode reproduced the missing-helper failure before the fix.
+- GL4 and D3D11 strict mode passed all nine smoke phases after the fix, exit 0,
+  with empty motor memory dumps.
+- GL4 and D3D11 also passed the default mode with an explicit `noise_1d` call alongside
+  fbm, checking that shared helpers do not cause duplicate-definition errors.
+- This checks generated-shader compilation and smoke submissions, not numerical
+  reference values or visual pixel correctness.
 
 Variables are updated in `on_graphics`; the frame's selected mode is retained for
 `on_render`. Resources are configured/released through the first/last-frame callbacks.
