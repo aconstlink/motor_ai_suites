@@ -19,6 +19,7 @@ set( sources
     "17_debug_primitives.cpp"
     "19_vao_lookup.cpp"
     "20_noise_playground.cpp"
+    "21_font_renderer.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -53,6 +54,10 @@ target_compile_definitions( 16_async_assets PRIVATE MOTOR_ASYNC_ASSETS="${CMAKE_
 target_link_libraries( 17_debug_primitives PRIVATE motor::gfx )
 
 target_link_libraries( 20_noise_playground PRIVATE motor::gfx )
+
+target_link_libraries( 21_font_renderer PRIVATE motor::gfx motor::format motor::io motor::font )
+target_compile_definitions( 21_font_renderer PRIVATE
+    MOTOR_FONT_ASSETS="${PROJECT_SOURCE_DIR}/motor/externals/ocornut/imgui/misc/fonts" )
 
 if( WIN32 )
     add_executable( 18_carrier_wakeup "18_carrier_wakeup.cpp" )

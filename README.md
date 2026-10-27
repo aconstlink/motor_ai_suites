@@ -294,6 +294,15 @@ Optional Demo mode cycles views every second with continuously animated paramete
 
 [Source](suite_graphics/20_noise_playground.cpp) | [Guide, verification and fbm dependency issue](suite_graphics/20_noise_playground.md)
 
+### 21 Font Renderer
+
+Text rendered exclusively through `gfx::text_render_2d`, without ImGui labels.
+Imports two font faces through motor's database and format layer, then cycles
+through sizes, colors, moving text, sparse/empty groups, a 900-glyph group and
+fallback characters. One 1280x720 window, GL4 or D3D11.
+
+[Source](suite_graphics/21_font_renderer.cpp) | [Guide and limitations](suite_graphics/21_font_renderer.md)
+
 ## Console Tests
 
 These applications do not render a scene. Their output consists of checks,
