@@ -59,6 +59,18 @@ target_link_libraries( 21_font_renderer PRIVATE motor::gfx motor::format motor::
 target_compile_definitions( 21_font_renderer PRIVATE
     MOTOR_FONT_ASSETS="${PROJECT_SOURCE_DIR}/motor/externals/ocornut/imgui/misc/fonts" )
 
+add_executable( 22_msl_manager_callbacks
+    "22_msl_manager_callbacks.cpp" "22_msl_manager_windows.cpp" )
+target_link_libraries( 22_msl_manager_callbacks PRIVATE
+    motor::platform motor::application motor::gfx motor::graphics motor::io
+    motor::concurrent motor::profiling motor::memory motor::log )
+set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
+if( BUILD_TESTING )
+    add_test( NAME graphics_msl_manager_callbacks COMMAND 22_msl_manager_callbacks )
+    set_tests_properties( graphics_msl_manager_callbacks PROPERTIES
+        TIMEOUT 30 LABELS "graphics;callbacks" )
+endif()
+
 if( WIN32 )
     add_executable( 18_carrier_wakeup "18_carrier_wakeup.cpp" )
     target_link_libraries( 18_carrier_wakeup PRIVATE

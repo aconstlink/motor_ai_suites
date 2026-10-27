@@ -310,6 +310,7 @@ diagnostics and, where applicable, benchmark measurements.
 
 | Area | Application | Purpose | Documentation |
 | --- | --- | --- | --- |
+| Graphics | [22_msl_manager_callbacks](suite_graphics/22_msl_manager_callbacks.cpp) | Callback regression checks; optional GL4/D3D11 second-window close/reopen test | [Callback and window tests](suite_graphics/22_msl_manager_callbacks.md) |
 | Concurrency | [00_threads_parallel_for](suite_concurrent/00_threads_parallel_for.cpp) | Native threads, motor's pool, ranges and nested parallel work | [Concurrent tests](BUILDING.md#concurrent-console-tests) |
 | Concurrency | [01_sync_primitives](suite_concurrent/01_sync_primitives.cpp) | Semaphore, signals, shared readers and writer exclusion | [Synchronization tests](suite_concurrent/README.md) |
 | Concurrency | [02_task_graph](suite_concurrent/02_task_graph.cpp) | Chain, diamond and fan-out graphs with both schedulers | [Task-graph tests](suite_concurrent/README.md) |
