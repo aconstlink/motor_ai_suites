@@ -17,7 +17,7 @@ build/bin/Release/20_noise_playground.exe --smoke --d3d-only
 ```
 
 Options: `--gl-only`, `--d3d-only`, `--compare`, `--still`, `--smoke`,
-`--demo`, `--strict-builtins`, `--help`. D3D11 requires Windows. VSync is requested.
+`--demo`, `--help`. D3D11 requires Windows. VSync is requested.
 
 ## Animated Demo
 
@@ -64,23 +64,23 @@ noise overloads but omits their random/permutation helpers:
 - GL4: undefined `_msl_bi_rand_1_msl_` and `_msl_internal_perm_4_msl_`.
 - D3D11: undeclared `__bi_rand_1__` (first compiler diagnostic).
 
-The playground locally requests these dependencies with
-`0.0 * noise_1d(p) + fbm_1d(p, u_octaves)`. The fbm value itself is unchanged;
-the explicit call causes msl to emit the missing helpers. No engine code is patched.
-Disable the workaround to reproduce the actual bug:
+The original playground worked around this with
+`0.0 * noise_1d(p) + fbm_1d(p, u_octaves)`. That workaround and its
+`--strict-builtins` switch have been removed. The fbm shader now calls only
+`fbm_1d(p, u_octaves)` in both vertex and pixel stages. The standard smoke runs
+therefore check standalone fbm dependency generation:
 
 ```powershell
-build/bin/Release/20_noise_playground.exe --smoke --strict-builtins
-build/bin/Release/20_noise_playground.exe --smoke --strict-builtins --d3d-only
+build/bin/Release/20_noise_playground.exe --smoke
+build/bin/Release/20_noise_playground.exe --smoke --d3d-only
 ```
 
 On the original engine revision, both commands fail with exit 1. Engine fix
 `f3051c4`, verified on 2026-10-27, adds `rand_1d_1`, `rand_1d_2` and `int_perm_4d_4`
 before the noise overloads in the GLSL4 and HLSL5 `fbm_1d` dependency lists.
-The fbm implementation and public API are unchanged. Both strict commands now
-pass with this fix; no test-source changes were needed. The compatibility
-workaround remains in the default mode, so use `--strict-builtins` to exercise
-this regression without masking missing dependencies.
+The fbm implementation and public API are unchanged. This test requires motor
+`f3051c4` or a later revision containing that fix; older revisions are expected
+to fail rather than silently use a workaround.
 
 ## Verification
 
@@ -109,6 +109,10 @@ subsequently committed as `f3051c4`:
   fbm, checking that shared helpers do not cause duplicate-definition errors.
 - This checks generated-shader compilation and smoke submissions, not numerical
   reference values or visual pixel correctness.
+
+After removing the workaround on 2026-10-27, the standard `--smoke` and
+`--smoke --d3d-only` commands both passed all nine phases with motor `f3051c4`,
+exit 0 and empty memory dumps. No extra flag is needed to test standalone fbm.
 
 Variables are updated in `on_graphics`; the frame's selected mode is retained for
 `on_render`. Resources are configured/released through the first/last-frame callbacks.

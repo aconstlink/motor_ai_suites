@@ -27,7 +27,6 @@ namespace sample
         bool_t still = false ;
         bool_t compare = false ;
         bool_t demo = false ;
-        bool_t strict_builtins = false ;
     } ;
 
     static constexpr size_t noise_count = 8 ;
@@ -36,7 +35,7 @@ namespace sample
         "snoise_2d", "snoise_3d", "iqnoise", "fbm_1d(vec3)" } ;
 
     // Expressions deliberately call the built-ins, rather than reimplementing noise.
-    static motor::string_t noise_expression( size_t const kind, motor::string_t const & p, bool_t const strict )
+    static motor::string_t noise_expression( size_t const kind, motor::string_t const & p )
     {
         switch( kind )
         {
@@ -47,14 +46,11 @@ namespace sample
         case 4: return "( 0.5 + 0.5 * snoise_2d( " + p + ".xy ) )" ;
         case 5: return "( 0.5 + 0.5 * snoise_3d( " + p + " ) )" ;
         case 6: return "iqnoise( " + p + ".xy, u_shape.y, u_shape.z )" ;
-        default:
-            // fbm currently omits rand/perm dependencies. An explicit noise call requests them.
-            return ( strict ? motor::string_t( "( " ) : "( 0.0 * noise_1d( " + p + " ) + " ) +
-                "fbm_1d( " + p + ", u_octaves ) )" ;
+        default: return "fbm_1d( " + p + ", u_octaves )" ;
         }
     }
 
-    static motor::string_t shader_source( size_t const kind, bool_t const strict )
+    static motor::string_t shader_source( size_t const kind )
     {
         motor::string_t source = "config noise_playground_" + motor::to_string( kind ) + R"(
         {
@@ -81,11 +77,11 @@ namespace sample
                     {
                         vec3_t p = vec3_t( in.pos.x * u_params.y + u_params.x * 0.12,
                             in.pos.y * u_params.y + u_params.x * 0.08, u_params.x * 0.22 ) ;
-                        float_t h = )" + noise_expression( kind, "p", strict ) + R"( ;
+                        float_t h = )" + noise_expression( kind, "p" ) + R"( ;
                         vec3_t px = p + vec3_t( 0.015, 0.0, 0.0 ) ;
                         vec3_t pz = p + vec3_t( 0.0, 0.015, 0.0 ) ;
-                        float_t hx = )" + noise_expression( kind, "px", strict ) + R"( ;
-                        float_t hz = )" + noise_expression( kind, "pz", strict ) + R"( ;
+                        float_t hx = )" + noise_expression( kind, "px" ) + R"( ;
+                        float_t hz = )" + noise_expression( kind, "pz" ) + R"( ;
                         float_t derivative_scale = u_params.z * u_params.y / ( 0.015 * 10.0 ) ;
                         out.normal = normalize( vec3_t( -( hx - h ) * derivative_scale,
                             1.0, -( hz - h ) * derivative_scale ) ) ;
@@ -112,7 +108,7 @@ namespace sample
                     {
                         vec3_t p = vec3_t( ( in.uv.x - 0.5 ) * 2.0 * u_params.y * u_shape.x + u_params.x * 0.12,
                             ( in.uv.y - 0.5 ) * 2.0 * u_params.y + u_params.x * 0.08, u_params.x * 0.22 ) ;
-                        value = )" + noise_expression( kind, "p", strict ) + R"( ;
+                        value = )" + noise_expression( kind, "p" ) + R"( ;
                     }
                     float_t h = clamp( value, 0.0, 1.0 ) ;
                     vec3_t color = mix( vec3_t( 0.025, 0.12, 0.16 ), vec3_t( 0.08, 0.52, 0.43 ), smoothstep( 0.08, 0.48, h ) ) ;
@@ -269,7 +265,7 @@ namespace sample
                 for( size_t i = 0 ; i < noise_count ; ++i )
                 {
                     motor::graphics::msl_object_t shader( "noise_playground_" + motor::to_string( i ) ) ;
-                    shader.add( motor::graphics::msl_api_type::msl_4_0, shader_source( i, _options.strict_builtins ) ) ;
+                    shader.add( motor::graphics::msl_api_type::msl_4_0, shader_source( i ) ) ;
                     shader.link_geometry( "noise_terrain" ) ;
                     shader.link_geometry( "noise_quad" ) ;
                     motor::graphics::variable_set_t vars ;
@@ -502,10 +498,9 @@ int main( int argc, char ** argv )
         else if( arg == "--still" ) opts.still = true ;
         else if( arg == "--compare" ) opts.compare = true ;
         else if( arg == "--demo" ) opts.demo = true ;
-        else if( arg == "--strict-builtins" ) opts.strict_builtins = true ;
         else
         {
-            motor::log::global_t::status( "Usage: 20_noise_playground [--gl-only|--d3d-only] [--smoke] [--still] [--compare] [--demo] [--strict-builtins]" ) ;
+            motor::log::global_t::status( "Usage: 20_noise_playground [--gl-only|--d3d-only] [--smoke] [--still] [--compare] [--demo]" ) ;
             motor::log::global_t::deinit() ;
             return arg == "--help" ? 0 : 2 ;
         }
