@@ -64,6 +64,7 @@ the historical column.
 
 ## Start Here
 
+- [Render States](suite_graphics/23_render_states.md): depth, blending, culling, wireframe, scissor, viewport and nested push/pop, with reconfigure and release/configure smoke tests.
 - [VAO Lookup Benchmark](suite_graphics/19_vao_lookup.md): fixed draw count, increasing geometry links per render object, and an optional diagnostic linear/direct lookup comparison.
 - [Debug Primitives](suite_graphics/17_debug_primitives.md): light markers, direction arrows and camera volumes using motor's primitive renderers.
 - [Logger Regression Tests](suite_log/README.md): bounded storage, ring order, range copies, concurrent writers and logger routing.
@@ -302,6 +303,14 @@ through sizes, colors, moving text, sparse/empty groups, a 900-glyph group and
 fallback characters. One 1280x720 window, GL4 or D3D11.
 
 [Source](suite_graphics/21_font_renderer.cpp) | [Guide and limitations](suite_graphics/21_font_renderer.md)
+
+### 23 Render States
+
+A twelve-field comparison of depth testing/writing, alpha and additive blending,
+culling, wireframe, scissor and viewport. Green markers reveal state leakage
+after pop. Includes interactive reconfigure controls and an automated lifecycle.
+
+[Source](suite_graphics/23_render_states.cpp) | [Guide and visual reference](suite_graphics/23_render_states.md)
 
 ## Console Tests
 

@@ -20,6 +20,7 @@ set( sources
     "19_vao_lookup.cpp"
     "20_noise_playground.cpp"
     "21_font_renderer.cpp"
+    "23_render_states.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -66,6 +67,9 @@ target_link_libraries( 22_msl_manager_callbacks PRIVATE
     motor::concurrent motor::profiling motor::memory motor::log )
 set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
 if( BUILD_TESTING )
+    add_test( NAME graphics_render_states_cpu COMMAND 23_render_states --cpu-only )
+    set_tests_properties( graphics_render_states_cpu PROPERTIES
+        TIMEOUT 15 LABELS "graphics;states" )
     add_test( NAME graphics_msl_manager_callbacks COMMAND 22_msl_manager_callbacks )
     set_tests_properties( graphics_msl_manager_callbacks PROPERTIES
         TIMEOUT 30 LABELS "graphics;callbacks" )
