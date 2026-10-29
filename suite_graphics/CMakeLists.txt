@@ -21,6 +21,8 @@ set( sources
     "20_noise_playground.cpp"
     "21_font_renderer.cpp"
     "23_render_states.cpp"
+    "24_buffer_sculpture.cpp"
+    "25_gpu_sculpture.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -39,6 +41,8 @@ target_link_libraries( 05_scene_benchmark PRIVATE motor::scene motor::gfx )
 set_property( TARGET 05_scene_benchmark PROPERTY VS_DPI_AWARE "PerMonitor" )
 target_link_libraries( 03_shared_scene PRIVATE motor::gfx )
 target_link_libraries( 07_vertex_pulling_field PRIVATE motor::gfx )
+target_link_libraries( 24_buffer_sculpture PRIVATE motor::gfx )
+target_link_libraries( 25_gpu_sculpture PRIVATE motor::gfx )
 target_link_libraries( 08_render_to_texture PRIVATE motor::gfx )
 target_link_libraries( 09_geometry_shader PRIVATE motor::gfx )
 target_link_libraries( 10_transform_feedback PRIVATE motor::gfx )
@@ -67,6 +71,12 @@ target_link_libraries( 22_msl_manager_callbacks PRIVATE
     motor::concurrent motor::profiling motor::memory motor::log )
 set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
 if( BUILD_TESTING )
+    add_test( NAME graphics_gpu_sculpture_cpu COMMAND 25_gpu_sculpture --cpu-only )
+    set_tests_properties( graphics_gpu_sculpture_cpu PROPERTIES
+        TIMEOUT 30 LABELS "graphics;streamout" )
+    add_test( NAME graphics_buffer_sculpture_cpu COMMAND 24_buffer_sculpture --cpu-only )
+    set_tests_properties( graphics_buffer_sculpture_cpu PROPERTIES
+        TIMEOUT 30 LABELS "graphics;buffers" )
     add_test( NAME graphics_render_states_cpu COMMAND 23_render_states --cpu-only )
     set_tests_properties( graphics_render_states_cpu PROPERTIES
         TIMEOUT 15 LABELS "graphics;states" )

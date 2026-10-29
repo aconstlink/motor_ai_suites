@@ -64,6 +64,8 @@ the historical column.
 
 ## Start Here
 
+- [GPU Sculpture](suite_graphics/25_gpu_sculpture.md): 100,000 GPU-simulated elements with persistent position/velocity, transform feedback / stream output, pause and reset.
+- [Buffer Sculpture](suite_graphics/24_buffer_sculpture.md): CPU-animated cube formations with continuous array-buffer uploads, gl4/d3d11 and a bounded lifecycle smoke test.
 - [Render States](suite_graphics/23_render_states.md): depth, blending, culling, wireframe, scissor, viewport and nested push/pop, with reconfigure and release/configure smoke tests.
 - [VAO Lookup Benchmark](suite_graphics/19_vao_lookup.md): fixed draw count, increasing geometry links per render object, and an optional diagnostic linear/direct lookup comparison.
 - [Debug Primitives](suite_graphics/17_debug_primitives.md): light markers, direction arrows and camera volumes using motor's primitive renderers.
@@ -311,6 +313,25 @@ culling, wireframe, scissor and viewport. Green markers reveal state leakage
 after pop. Includes interactive reconfigure controls and an automated lifecycle.
 
 [Source](suite_graphics/23_render_states.cpp) | [Guide and visual reference](suite_graphics/23_render_states.md)
+
+### 24 Buffer Sculpture
+
+A moving sculpture of 20,000 cubes morphs between a sphere, a spiral and waves.
+The CPU updates each object's position, rotation, scale and color; one shared
+mesh buffer and one dynamic object buffer feed a single scene draw per window.
+Includes upload counters, formation/palette controls and pause/resume checks.
+
+[Source](suite_graphics/24_buffer_sculpture.cpp) | [Guide and verification](suite_graphics/24_buffer_sculpture.md)
+
+### 25 GPU Sculpture
+
+100,000 elements follow spring-driven sphere, spiral and wave formations.
+Position and velocity stay in a GPU ping-pong buffer; the CPU updates only
+camera/control uniforms after seeding. Transform feedback on gl4 and stream
+output on d3d11 feed a geometry-shader cube display. Includes pause/reset,
+formation and force controls, and a bounded dual-backend smoke test.
+
+[Source](suite_graphics/25_gpu_sculpture.cpp) | [Guide and verification](suite_graphics/25_gpu_sculpture.md)
 
 ## Console Tests
 
