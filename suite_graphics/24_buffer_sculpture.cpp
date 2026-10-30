@@ -1,3 +1,5 @@
+#include "capture_options.hpp"
+
 #include <motor/platform/global.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>
 #include <motor/graphics/object/array_object.h>
@@ -34,6 +36,7 @@ namespace sample
 
     struct options
     {
+        sample_support::capture_options capture ;
         size_t count = 20000 ;
         bool_t dual = false ;
         bool_t d3d_only = false ;
@@ -313,6 +316,7 @@ namespace sample
             info.y = 60 ;
             info.w = _options.dual ? 840 : 1920 ;
             info.h = _options.dual ? 720 : 1080 ;
+            _options.capture.apply( info ) ;
             info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 :
                 motor::application::graphics_generation::gen4_gl4 ;
             auto & window = _windows[index] ;
@@ -675,6 +679,7 @@ int main( int argc, char ** argv )
         else if( arg == "--still" ) opts.still = true ;
         else if( arg == "--no-vsync" ) opts.vsync = false ;
         else if( arg == "--no-ui" ) opts.ui = false ;
+        else if( arg == "--youtube-short" && i + 1 < argc && opts.capture.parse( argv[i+1] ) ) ++i ;
         else if( arg == "--count" && i + 1 < argc )
         {
             char * end = nullptr ;
@@ -689,7 +694,7 @@ int main( int argc, char ** argv )
         }
         else
         {
-            motor::log::global_t::status( "Usage: 24_buffer_sculpture [--gl-only|--d3d-only|--dual] [--count 1..100000] [--smoke|--cpu-only] [--still] [--no-vsync] [--no-ui]" ) ;
+            motor::log::global_t::status( "Usage: 24_buffer_sculpture [--gl-only|--d3d-only|--dual] [--count 1..100000] [--smoke|--cpu-only] [--still] [--no-vsync] [--no-ui] [--youtube-short square|vertical]" ) ;
             motor::log::global_t::deinit() ;
             return arg == "--help" ? 0 : 2 ;
         }

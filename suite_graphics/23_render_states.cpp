@@ -1,3 +1,5 @@
+#include "capture_options.hpp"
+
 #include <motor/platform/global.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>
 #include <motor/graphics/object/geometry_object.h>
@@ -62,7 +64,11 @@ namespace sample
         return passed ;
     }
 
-    struct options { bool_t dual = false, d3d = false, smoke = false, cpu = false ; } ;
+    struct options
+    {
+        sample_support::capture_options capture ;
+        bool_t dual = false, d3d = false, smoke = false, cpu = false ;
+    } ;
 
     class render_states_app : public motor::application::app
     {
@@ -288,6 +294,8 @@ namespace sample
                 w.states = g::state_object_t("states.window." + motor::to_string(i)) ;
                 motor::application::window_info_t info ;
                 info.x = int_t(20 + i*820) ; info.y = 60 ; info.w = w.width ; info.h = w.height ;
+                _opts.capture.apply( info ) ;
+                w.width = uint_t( info.w ) ; w.height = uint_t( info.h ) ;
                 bool_t const d3d = _opts.d3d || i == 1 ;
                 info.window_name = d3d ? "motor | render states | d3d11" : "motor | render states | gl4" ;
                 info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 : motor::application::graphics_generation::gen4_gl4 ;
@@ -477,9 +485,10 @@ int main( int argc, char ** argv )
         else if( arg == "--d3d-only" ) { opts.dual = false ; opts.d3d = true ; }
         else if( arg == "--smoke" ) opts.smoke = true ;
         else if( arg == "--cpu-only" ) opts.cpu = true ;
+        else if( arg == "--youtube-short" && i + 1 < argc && opts.capture.parse( argv[i+1] ) ) ++i ;
         else
         {
-            motor::log::global_t::status("Usage: 23_render_states [--gl-only|--d3d-only] [--smoke] [--cpu-only]") ;
+            motor::log::global_t::status("Usage: 23_render_states [--gl-only|--d3d-only] [--smoke] [--cpu-only] [--youtube-short square|vertical]") ;
             motor::log::global_t::deinit() ; return arg == "--help" ? 0 : 2 ;
         }
     }

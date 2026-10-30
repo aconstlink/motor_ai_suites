@@ -1,3 +1,5 @@
+#include "capture_options.hpp"
+
 #include <motor/platform/global.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>
 #include <motor/graphics/object/geometry_object.h>
@@ -23,6 +25,7 @@ namespace sample
 
     struct options
     {
+        sample_support::capture_options capture ;
         bool_t dual = false ;
         bool_t d3d_only = false ;
         bool_t smoke = false ;
@@ -149,6 +152,7 @@ namespace sample
             info.y = 60 ;
             info.w = _options.dual ? 660 : 1920 ;
             info.h = _options.dual ? 560 : 1080 ;
+            _options.capture.apply( info ) ;
             info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 :
                 motor::application::graphics_generation::gen4_gl4 ;
             _windows[w].aspect = float_t( info.w ) / float_t( info.h ) ;
@@ -597,9 +601,10 @@ int main( int argc, char ** argv )
         else if( arg == "--dual" ) { opts.dual = true ; opts.d3d_only = false ; }
         else if( arg == "--smoke" ) opts.smoke = true ;
         else if( arg == "--still" ) opts.still = true ;
+        else if( arg == "--youtube-short" && i + 1 < argc && opts.capture.parse( argv[i+1] ) ) ++i ;
         else
         {
-            motor::log::global_t::status( "Usage: 10_transform_feedback [--gl-only|--d3d-only|--dual] [--smoke] [--still]" ) ;
+            motor::log::global_t::status( "Usage: 10_transform_feedback [--gl-only|--d3d-only|--dual] [--smoke] [--still] [--youtube-short square|vertical]" ) ;
             motor::log::global_t::deinit() ;
             return arg == "--help" ? 0 : 2 ;
         }

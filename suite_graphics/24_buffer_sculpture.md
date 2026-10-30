@@ -12,6 +12,9 @@ There are no engine changes, compute shaders or external assets.
 
 ## Run
 
+For square or portrait recordings, use `--youtube-short square|vertical`.
+See [Short Video Capture](../README.md#short-video-capture) for dimensions and examples.
+
 ```powershell
 cmake --build build --config Release --target 24_buffer_sculpture -- /m:2
 build/bin/Release/24_buffer_sculpture.exe

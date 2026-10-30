@@ -39,6 +39,13 @@ endforeach()
 target_link_libraries( 05_scene_benchmark PRIVATE motor::scene motor::gfx )
 # Match physical render dimensions when comparing with DPI-aware frameworks.
 set_property( TARGET 05_scene_benchmark PROPERTY VS_DPI_AWARE "PerMonitor" )
+
+# Capture dimensions must be physical pixels, not DPI-scaled window coordinates.
+set( capture_apps 07_vertex_pulling_field 10_transform_feedback 15_village
+    20_noise_playground 23_render_states 24_buffer_sculpture 25_gpu_sculpture )
+foreach( app IN LISTS capture_apps )
+    set_property( TARGET ${app} PROPERTY VS_DPI_AWARE "PerMonitor" )
+endforeach()
 target_link_libraries( 03_shared_scene PRIVATE motor::gfx )
 target_link_libraries( 07_vertex_pulling_field PRIVATE motor::gfx )
 target_link_libraries( 24_buffer_sculpture PRIVATE motor::gfx )
@@ -71,6 +78,23 @@ target_link_libraries( 22_msl_manager_callbacks PRIVATE
     motor::concurrent motor::profiling motor::memory motor::log )
 set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
 if( BUILD_TESTING )
+    add_executable( graphics_capture_options "capture_options_test.cpp" "capture_options.hpp" )
+    target_link_libraries( graphics_capture_options PRIVATE motor::memory motor::log )
+    set_target_properties( graphics_capture_options PROPERTIES FOLDER "suites/suite_graphics" )
+    add_test( NAME graphics_capture_options COMMAND graphics_capture_options )
+    set_tests_properties( graphics_capture_options PROPERTIES TIMEOUT 15 LABELS "graphics;capture" )
+    foreach( app IN LISTS capture_apps )
+        foreach( format IN ITEMS square vertical )
+            add_test( NAME graphics_capture_${app}_${format}
+                COMMAND ${app} --youtube-short ${format} --help )
+            set_tests_properties( graphics_capture_${app}_${format} PROPERTIES
+                TIMEOUT 15 LABELS "graphics;capture" )
+        endforeach()
+        add_test( NAME graphics_capture_${app}_invalid COMMAND ${app} --youtube-short landscape )
+        add_test( NAME graphics_capture_${app}_missing COMMAND ${app} --youtube-short )
+        set_tests_properties( graphics_capture_${app}_invalid graphics_capture_${app}_missing PROPERTIES
+            WILL_FAIL TRUE TIMEOUT 15 LABELS "graphics;capture" )
+    endforeach()
     add_test( NAME graphics_gpu_sculpture_cpu COMMAND 25_gpu_sculpture --cpu-only )
     set_tests_properties( graphics_gpu_sculpture_cpu PROPERTIES
         TIMEOUT 30 LABELS "graphics;streamout" )
@@ -91,6 +115,16 @@ if( WIN32 )
         motor::platform motor::application motor::concurrent motor::memory motor::log )
     set_target_properties( 18_carrier_wakeup PROPERTIES FOLDER "suites/suite_graphics" )
     if( BUILD_TESTING )
+        add_executable( graphics_win32_client_size win32_client_size_test.cpp )
+        target_link_libraries( graphics_win32_client_size PRIVATE
+            motor::platform motor::application motor::concurrent motor::memory motor::log )
+        set_target_properties( graphics_win32_client_size PROPERTIES
+            FOLDER "suites/suite_graphics" VS_DPI_AWARE "PerMonitor" )
+        add_test( NAME graphics_win32_client_size COMMAND graphics_win32_client_size )
+        add_test( NAME graphics_win32_client_size_dpi_unaware COMMAND graphics_win32_client_size --dpi-unaware )
+        set_tests_properties( graphics_win32_client_size graphics_win32_client_size_dpi_unaware PROPERTIES
+            TIMEOUT 45 LABELS "graphics;window;capture" RUN_SERIAL TRUE )
+
         add_test( NAME graphics_carrier_wakeup COMMAND 18_carrier_wakeup )
         set_tests_properties( graphics_carrier_wakeup PROPERTIES TIMEOUT 15 LABELS "graphics;wakeup" RUN_SERIAL TRUE )
     endif()

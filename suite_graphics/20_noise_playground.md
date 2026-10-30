@@ -7,6 +7,10 @@ required.
 
 ## Run
 
+For square or portrait recordings, use `--youtube-short square|vertical`.
+Combine with `--demo` for the animated sequence. See
+[Short Video Capture](../README.md#short-video-capture) for dimensions and examples.
+
 ```powershell
 cmake --build build --config Release --target 20_noise_playground --parallel 4
 build/bin/Release/20_noise_playground.exe

@@ -12,6 +12,9 @@ the application. The test uses motor objects and msl, without engine changes.
 
 ## Run
 
+For square or portrait recordings, use `--youtube-short square|vertical`.
+See [Short Video Capture](../README.md#short-video-capture) for dimensions and examples.
+
 ```powershell
 cmake --build build --config Release --target 25_gpu_sculpture -- /m:2
 build/bin/Release/25_gpu_sculpture.exe

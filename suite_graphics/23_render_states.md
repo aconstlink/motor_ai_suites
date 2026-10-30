@@ -9,6 +9,10 @@ differences. The two winding variants use separate geometry links.
 
 ## Run
 
+For square or portrait recordings, use `--youtube-short square|vertical`.
+Add `--gl-only` or `--d3d-only` for a single window. See
+[Short Video Capture](../README.md#short-video-capture) for dimensions and examples.
+
 ```powershell
 cmake --build build --config Release --target 23_render_states --parallel 2
 build/bin/Release/23_render_states.exe

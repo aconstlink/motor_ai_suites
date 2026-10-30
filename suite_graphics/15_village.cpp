@@ -1,3 +1,5 @@
+#include "capture_options.hpp"
+
 #include <motor/platform/global.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>
 #include <motor/graphics/object/geometry_object.h>
@@ -80,6 +82,7 @@ namespace village
 
     struct options
     {
+        sample_support::capture_options capture ;
         bool_t dual = false, d3d = false, smoke = false, still = false ;
         bool_t benchmark = false, vsync = true ;
         bool_t sleep_probe = false ;
@@ -637,6 +640,8 @@ namespace village
                 " | "+motor::to_string(_opts.tiles)+" tiles | "+(_opts.detail == 0 ? "low" : _opts.detail == 1 ? "high" : "ultra")+
                 (_opts.benchmark ? " | benchmark" : "")+" | "+motor::to_string(_triangles)+" triangles | "+motor::to_string(particle_count())+" particles" ;
             info.x = int_t(40+w*70) ; info.y = int_t(40+w*50) ; info.w = 1280 ; info.h = 800 ;
+            _opts.capture.apply( info ) ;
+            _windows[w].dimensions = motor::math::vec2ui_t( uint_t( info.w ), uint_t( info.h ) ) ;
             info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 : motor::application::graphics_generation::gen4_gl4 ;
             _windows[w].id = create_window(info) ;
             send_window_message(_windows[w].id,[vsync = _opts.vsync]( auto & window )
@@ -656,6 +661,8 @@ namespace village
         void_t on_init( void_t ) noexcept override
         {
             _started = std::chrono::steady_clock::now() ;
+            int_t post_width = 1920, post_height = 1080 ;
+            _opts.capture.apply( post_width, post_height ) ;
             if( _opts.benchmark )
             {
                 _timings.reserve(_opts.frames) ;
@@ -792,7 +799,8 @@ namespace village
                 s.clear_s.ss.do_color_clear = true ; s.clear_s.ss.do_depth_clear = true ;
                 s.clear_s.ss.clear_color = vec4(0.06f,0.10f,0.15f,1) ;
                 _opaque_state = motor::graphics::state_object_t("village_opaque") ; _opaque_state.add_render_state_set(s) ;
-                s.view_s.do_change = true ; s.view_s.ss.do_activate = true ; s.view_s.ss.vp = motor::math::vec4ui_t(0,0,1920,1080) ;
+                s.view_s.do_change = true ; s.view_s.ss.do_activate = true ;
+                s.view_s.ss.vp = motor::math::vec4ui_t(0,0,uint_t(post_width),uint_t(post_height)) ;
                 _hdr_state = motor::graphics::state_object_t("village_hdr") ; _hdr_state.add_render_state_set(s) ;
             }
             {
@@ -813,11 +821,13 @@ namespace village
                 s.polygon_s.do_change = true ; s.polygon_s.ss.do_activate = false ;
                 s.blend_s.do_change = true ; s.blend_s.ss.do_activate = false ;
                 s.clear_s.do_change = true ; s.clear_s.ss.do_activate = false ;
-                s.view_s.do_change = true ; s.view_s.ss.do_activate = true ; s.view_s.ss.vp = motor::math::vec4ui_t(0,0,1280,800) ;
+                s.view_s.do_change = true ; s.view_s.ss.do_activate = true ;
+                s.view_s.ss.vp = motor::math::vec4ui_t(0,0,_windows[w].dimensions.x(),_windows[w].dimensions.y()) ;
                 _windows[w].present = motor::graphics::state_object_t("village_present_"+motor::to_string(w)) ;
                 _windows[w].present.add_render_state_set(s) ;
             }
-            _post = motor::memory::global_t::create<motor::gfx::hdr_postprocess_pipeline_t>() ;
+            _post = new( motor::memory::global_t::create( sizeof( motor::gfx::hdr_postprocess_pipeline_t ) ) )
+                motor::gfx::hdr_postprocess_pipeline_t( uint_t( post_width ), uint_t( post_height ) ) ;
             _post->init() ;
             {
                 auto properties = _post->property_sheets() ;
@@ -1132,6 +1142,7 @@ int main( int argc, char ** argv )
     {
         motor::string_t const arg(argv[i]) ;
         if( arg == "--gl-only" ) { opts.dual = false ; opts.d3d = false ; }
+        else if( arg == "--youtube-short" && i + 1 < argc && opts.capture.parse( argv[i+1] ) ) ++i ;
         else if( arg == "--d3d-only" ) { opts.dual = false ; opts.d3d = true ; }
         else if( arg == "--dual" ) { opts.dual = true ; opts.d3d = false ; }
         else if( arg == "--smoke" ) opts.smoke = true ;
@@ -1170,7 +1181,7 @@ int main( int argc, char ** argv )
         }
         else
         {
-            motor::log::global_t::status("Usage: 15_village [--gl-only|--d3d-only|--dual] [--detail low|high|ultra] [--tiles 1|4] [--particles 256..65536] [--total-particles 1024..262144 (multiple of 4)] [--still] [--smoke] [--no-vsync] [--benchmark] [--warmup 10..10000] [--frames 10..10000] [--cpu-sleep-us 0..30] [--sleep-probe (benchmark only)]") ;
+            motor::log::global_t::status("Usage: 15_village [--gl-only|--d3d-only|--dual] [--detail low|high|ultra] [--tiles 1|4] [--particles 256..65536] [--total-particles 1024..262144 (multiple of 4)] [--still] [--smoke] [--no-vsync] [--benchmark] [--warmup 10..10000] [--frames 10..10000] [--cpu-sleep-us 0..30] [--sleep-probe (benchmark only)] [--youtube-short square|vertical]") ;
             motor::log::global_t::deinit() ; return arg == "--help" ? 0 : 2 ;
         }
     }

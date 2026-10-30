@@ -14,6 +14,9 @@ index buffer and unused dummy VB still grow with the maximum cube count.
 
 ## Run
 
+For square or portrait recordings, use `--youtube-short square|vertical`.
+See [Short Video Capture](../README.md#short-video-capture) for dimensions and examples.
+
 ```powershell
 cmake --build build --config Release --target 07_vertex_pulling_field --parallel 4
 build/bin/Release/07_vertex_pulling_field.exe

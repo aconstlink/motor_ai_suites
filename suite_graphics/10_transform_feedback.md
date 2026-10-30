@@ -7,6 +7,9 @@ two 660x560 GL4/D3D11 windows. No changes to motor are required.
 
 ## Run
 
+For square or portrait recordings, use `--youtube-short square|vertical`.
+See [Short Video Capture](../README.md#short-video-capture) for dimensions and examples.
+
 ```powershell
 cmake -S . -B build
 cmake --build build --config Release --target 10_transform_feedback --parallel 4

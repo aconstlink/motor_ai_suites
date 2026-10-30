@@ -1,3 +1,5 @@
+#include "capture_options.hpp"
+
 #include <motor/platform/global.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>
 #include <motor/graphics/object/array_object.h>
@@ -24,6 +26,7 @@ namespace sample
 
     struct options
     {
+        sample_support::capture_options capture ;
         bool_t dual = false ;
         bool_t d3d_only = false ;
         bool_t smoke = false ;
@@ -142,6 +145,7 @@ namespace sample
             info.y = 80 ;
             info.w = _options.dual ? 680 : 1920 ;
             info.h = _options.dual ? 600 : 1080 ;
+            _options.capture.apply( info ) ;
             info.gen = d3d ? motor::application::graphics_generation::gen4_d3d11 :
                 motor::application::graphics_generation::gen4_gl4 ;
             _windows[index].aspect = float_t( info.w ) / float_t( info.h ) ;
@@ -508,6 +512,7 @@ int main( int argc, char ** argv )
         else if( arg == "--smoke" ) opts.smoke = true ;
         else if( arg == "--still" ) opts.still = true ;
         else if( arg == "--no-vsync" ) opts.vsync = false ;
+        else if( arg == "--youtube-short" && i + 1 < argc && opts.capture.parse( argv[i+1] ) ) ++i ;
         else if( ( arg == "--side" || arg == "--subdivisions" ) && i + 1 < argc )
         {
             char * end = nullptr ;
@@ -526,7 +531,7 @@ int main( int argc, char ** argv )
         }
         else
         {
-            motor::log::global_t::status( "Usage: 07_vertex_pulling_field [--gl-only|--d3d-only|--dual] [--side 4..96] [--subdivisions 1..16] [--no-vsync] [--smoke] [--still]" ) ;
+            motor::log::global_t::status( "Usage: 07_vertex_pulling_field [--gl-only|--d3d-only|--dual] [--side 4..96] [--subdivisions 1..16] [--no-vsync] [--smoke] [--still] [--youtube-short square|vertical]" ) ;
             motor::log::global_t::deinit() ;
             return arg == "--help" ? 0 : 2 ;
         }

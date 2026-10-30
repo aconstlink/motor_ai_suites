@@ -11,6 +11,10 @@ a stepped stone pedestal. Both centerpieces are procedural geometry, not assets.
 
 ## Build and Run
 
+For square or portrait recordings, use `--youtube-short square|vertical`.
+The HDR targets use the same capture resolution. See
+[Short Video Capture](../README.md#short-video-capture) for dimensions and examples.
+
 Light colors use RGB `vec3`. The frame synchronizes component inputs and runs
 `trafo_visitor` before publishing transformed light directions/positions through
 wire. Surface shader inputs are synchronized again after that publication. The

@@ -110,6 +110,50 @@ and scene-level integration. Most later samples support `--gl-only`,
 `--d3d-only`, `--still` and `--smoke`; consult the linked guide or source for the
 options of each application. D3D11 requires Windows.
 
+### Short Video Capture
+
+The demos `07_vertex_pulling_field`, `10_transform_feedback`, `15_village`,
+`20_noise_playground`, `23_render_states`, `24_buffer_sculpture` and
+`25_gpu_sculpture` accept a shared capture-format argument:
+
+| Argument | Requested window area | Aspect ratio |
+| --- | --- | --- |
+| `--youtube-short square` | 1080 x 1080 | 1:1 |
+| `--youtube-short vertical` | 1080 x 1920 | 9:16 |
+| Omitted | Existing demo default | Unchanged |
+
+Capture presets request borderless windows, not fullscreen. A subsequent motor
+show message can enable the frame again; use OBS client-area capture in that case.
+Close the focused window with Alt+F4 on Windows. Visual Studio builds of these demos
+are per-monitor DPI-aware, so Windows display scaling does not enlarge the
+requested dimensions (for example, 1920 logical pixels would otherwise occupy
+2880 physical pixels at 150% scaling). This applies to their normal window mode
+as well; regenerate CMake and rebuild after updating the capture support.
+The full-height vertical preset may still extend beyond a monitor with fewer
+than 1920 available pixels in height; it is not automatically scaled to fit.
+Existing camera/resize handling uses the selected aspect ratio. Village also
+uses the selected resolution for its HDR targets and scene viewport.
+
+```sh
+25_gpu_sculpture --gl-only --count 500000 --youtube-short vertical --no-ui
+10_transform_feedback --gl-only --youtube-short square
+20_noise_playground --d3d-only --demo --youtube-short vertical
+23_render_states --gl-only --youtube-short square
+```
+
+The flag does not select a backend, disable UI, enable animation, or start a
+recording. Use `--gl-only` or `--d3d-only` for a single capture window; where
+supported, `--dual` keeps both windows and applies the format to each.
+Invalid or missing format values exit with code 2 before opening any window.
+
+`ctest -C Release -L capture --output-on-failure` checks the shared dimensions
+and each demo's command-line parsing without opening graphics windows. On Windows,
+it also runs `graphics_win32_client_size` with and without DPI awareness. These
+tests use the real carrier with hidden, non-rendering windows and verify
+`GetClientRect` after creation, resize, movement and frame-style changes. Requested
+sizes refer to the client area; frame/title-bar dimensions are added by the carrier.
+Rendered output is not checked by these tests.
+
 ### 00 Triangle
 
 A minimal geometry and msl shader example. The optional second window renders

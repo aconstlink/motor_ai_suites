@@ -1,3 +1,5 @@
+#include "capture_options.hpp"
+
 #include <motor/platform/global.h>
 #include <motor/graphics/frontend/gen4/frontend.hpp>
 #include <motor/graphics/object/geometry_object.h>
@@ -22,6 +24,7 @@ namespace sample
 
     struct options
     {
+        sample_support::capture_options capture ;
         bool_t d3d = false ;
         bool_t smoke = false ;
         bool_t still = false ;
@@ -297,11 +300,13 @@ namespace sample
             }
             if( _options.smoke ) { _mode = 1 ; _selected = 0 ; }
             if( _demo ) animate_demo() ;
-            update_variables() ;
             {
                 motor::application::window_info_t info ;
                 info.window_name = _options.d3d ? "motor | noise playground | D3D11" : "motor | noise playground | GL4" ;
                 info.x = 20 ; info.y = 40 ; info.w = 1920 ; info.h = 1080 ;
+                _options.capture.apply( info ) ;
+                _width = float_t( info.w ) ; _height = float_t( info.h ) ;
+                update_variables() ;
                 info.gen = _options.d3d ? motor::application::graphics_generation::gen4_d3d11 :
                     motor::application::graphics_generation::gen4_gl4 ;
                 send_window_message( create_window( info ), []( auto & window )
@@ -498,9 +503,10 @@ int main( int argc, char ** argv )
         else if( arg == "--still" ) opts.still = true ;
         else if( arg == "--compare" ) opts.compare = true ;
         else if( arg == "--demo" ) opts.demo = true ;
+        else if( arg == "--youtube-short" && i + 1 < argc && opts.capture.parse( argv[i+1] ) ) ++i ;
         else
         {
-            motor::log::global_t::status( "Usage: 20_noise_playground [--gl-only|--d3d-only] [--smoke] [--still] [--compare] [--demo]" ) ;
+            motor::log::global_t::status( "Usage: 20_noise_playground [--gl-only|--d3d-only] [--smoke] [--still] [--compare] [--demo] [--youtube-short square|vertical]" ) ;
             motor::log::global_t::deinit() ;
             return arg == "--help" ? 0 : 2 ;
         }
