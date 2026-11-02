@@ -64,6 +64,8 @@ the historical column.
 
 ## Start Here
 
+- [Frustum Intersections](suite_graphics/27_frustum_intersections.md): two camera views share one culling result; sphere/AABB/OBB/ray/point checks, animated demo and Shorts capture layouts.
+- [Debug Labels](suite_graphics/26_debug_labels.md): project 3D primitive anchors into screen space and label them with motor's text renderer; includes windowless projection/font checks.
 - [GPU Sculpture](suite_graphics/25_gpu_sculpture.md): 100,000 GPU-simulated elements with persistent position/velocity, transform feedback / stream output, pause and reset.
 - [Buffer Sculpture](suite_graphics/24_buffer_sculpture.md): CPU-animated cube formations with continuous array-buffer uploads, gl4/d3d11 and a bounded lifecycle smoke test.
 - [Render States](suite_graphics/23_render_states.md): depth, blending, culling, wireframe, scissor, viewport and nested push/pop, with reconfigure and release/configure smoke tests.
@@ -113,8 +115,8 @@ options of each application. D3D11 requires Windows.
 ### Short Video Capture
 
 The demos `07_vertex_pulling_field`, `10_transform_feedback`, `15_village`,
-`20_noise_playground`, `23_render_states`, `24_buffer_sculpture` and
-`25_gpu_sculpture` accept a shared capture-format argument:
+`20_noise_playground`, `23_render_states`, `24_buffer_sculpture`,
+`25_gpu_sculpture` and `27_frustum_intersections` accept a shared capture-format argument:
 
 | Argument | Requested window area | Aspect ratio |
 | --- | --- | --- |
@@ -139,6 +141,7 @@ uses the selected resolution for its HDR targets and scene viewport.
 10_transform_feedback --gl-only --youtube-short square
 20_noise_playground --d3d-only --demo --youtube-short vertical
 23_render_states --gl-only --youtube-short square
+27_frustum_intersections --gl-only --demo --youtube-short vertical
 ```
 
 The flag does not select a backend, disable UI, enable animation, or start a
@@ -376,6 +379,25 @@ output on d3d11 feed a geometry-shader cube display. Includes pause/reset,
 formation and force controls, and a bounded dual-backend smoke test.
 
 [Source](suite_graphics/25_gpu_sculpture.cpp) | [Guide and verification](suite_graphics/25_gpu_sculpture.md)
+
+### 26 Debug Labels
+
+Six colored debug objects with screen-space labels rendered by
+`motor::gfx::text_render_2d`. Moving objects, an orbit camera, resize-aware
+projection, anchor markers and two text groups exercise the 3D-to-2D handoff.
+GL4 by default, optional D3D11 or both windows. No ImGui object labels.
+
+[Source](suite_graphics/26_debug_labels.cpp) | [Guide and text renderer findings](suite_graphics/26_debug_labels.md)
+
+### 27 Frustum Intersections
+
+An animated field of 63 primitives viewed through the actual culling camera
+and an independent observer. Both views submit the same accepted objects;
+rejected objects disappear in both. The observer also draws the tested frustum.
+Includes six display modes, perspective/orthographic projections, a timed demo,
+square/vertical capture and windowless intersection/layout regression checks.
+
+[Source](suite_graphics/27_frustum_intersections.cpp) | [Guide and verification](suite_graphics/27_frustum_intersections.md)
 
 ## Console Tests
 

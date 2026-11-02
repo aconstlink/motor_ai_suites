@@ -23,6 +23,8 @@ set( sources
     "23_render_states.cpp"
     "24_buffer_sculpture.cpp"
     "25_gpu_sculpture.cpp"
+    "26_debug_labels.cpp"
+    "27_frustum_intersections.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -42,7 +44,7 @@ set_property( TARGET 05_scene_benchmark PROPERTY VS_DPI_AWARE "PerMonitor" )
 
 # Capture dimensions must be physical pixels, not DPI-scaled window coordinates.
 set( capture_apps 07_vertex_pulling_field 10_transform_feedback 15_village
-    20_noise_playground 23_render_states 24_buffer_sculpture 25_gpu_sculpture )
+    20_noise_playground 23_render_states 24_buffer_sculpture 25_gpu_sculpture 27_frustum_intersections )
 foreach( app IN LISTS capture_apps )
     set_property( TARGET ${app} PROPERTY VS_DPI_AWARE "PerMonitor" )
 endforeach()
@@ -65,11 +67,20 @@ target_compile_definitions( 16_async_assets PRIVATE MOTOR_ASYNC_ASSETS="${CMAKE_
 
 target_link_libraries( 17_debug_primitives PRIVATE motor::gfx )
 
+target_link_libraries( 27_frustum_intersections PRIVATE motor::gfx )
+target_sources( 27_frustum_intersections PRIVATE
+    frustum_intersections.hpp frustum_intersections_checks.hpp capture_options.hpp )
+
 target_link_libraries( 20_noise_playground PRIVATE motor::gfx )
 
 target_link_libraries( 21_font_renderer PRIVATE motor::gfx motor::format motor::io motor::font )
 target_compile_definitions( 21_font_renderer PRIVATE
     MOTOR_FONT_ASSETS="${PROJECT_SOURCE_DIR}/motor/externals/ocornut/imgui/misc/fonts" )
+
+target_link_libraries( 26_debug_labels PRIVATE motor::gfx motor::format motor::io motor::font )
+target_compile_definitions( 26_debug_labels PRIVATE
+    MOTOR_FONT_ASSETS="${PROJECT_SOURCE_DIR}/motor/externals/ocornut/imgui/misc/fonts" )
+set_property( TARGET 26_debug_labels PROPERTY VS_DPI_AWARE "PerMonitor" )
 
 add_executable( 22_msl_manager_callbacks
     "22_msl_manager_callbacks.cpp" "22_msl_manager_windows.cpp" )
@@ -78,6 +89,12 @@ target_link_libraries( 22_msl_manager_callbacks PRIVATE
     motor::concurrent motor::profiling motor::memory motor::log )
 set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
 if( BUILD_TESTING )
+    add_test( NAME graphics_frustum_intersections_cpu COMMAND 27_frustum_intersections --cpu-only )
+    set_tests_properties( graphics_frustum_intersections_cpu PROPERTIES
+        TIMEOUT 30 LABELS "graphics;collide;frustum" )
+    add_test( NAME graphics_debug_labels_cpu COMMAND 26_debug_labels --cpu-only )
+    set_tests_properties( graphics_debug_labels_cpu PROPERTIES
+        TIMEOUT 30 LABELS "graphics;labels;font" )
     add_executable( graphics_capture_options "capture_options_test.cpp" "capture_options.hpp" )
     target_link_libraries( graphics_capture_options PRIVATE motor::memory motor::log )
     set_target_properties( graphics_capture_options PROPERTIES FOLDER "suites/suite_graphics" )

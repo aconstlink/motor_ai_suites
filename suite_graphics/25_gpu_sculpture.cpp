@@ -39,7 +39,7 @@ namespace sample
         bool_t smoke = false ;
         bool_t cpu_only = false ;
         bool_t still = false ;
-        bool_t ui = true ;
+        bool_t ui = false ;
         bool_t vsync = true ;
     } ;
 
