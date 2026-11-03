@@ -20,7 +20,8 @@ namespace intersection_sample
     using result_t = motor::collide::hit_test_type ;
     using corners_t = std::array<vec3_t, 8> ;
     enum class shape { sphere, aabb, obb, ray, point } ;
-    inline constexpr char const * modes[] = { "Mixed volumes", "Spheres", "AABBs", "OBBs", "Rays", "Points" } ;
+    inline constexpr char const * modes[] = { "Mixed volumes", "Spheres", "AABBs", "OBBs", "Rays", "Points", "Scene bounds" } ;
+    inline constexpr int_t mode_count = 7 ;
     inline constexpr size_t object_count = 63 ;
     inline constexpr float_t pi = 3.14159265359f ;
 

@@ -64,7 +64,7 @@ the historical column.
 
 ## Start Here
 
-- [Frustum Intersections](suite_graphics/27_frustum_intersections.md): two camera views share one culling result; sphere/AABB/OBB/ray/point checks, animated demo and Shorts capture layouts.
+- [Frustum Intersections](suite_graphics/27_frustum_intersections.md): two camera views share one culling result; intersection checks, scene-graph bounds bubble-up, animated demo and Shorts layouts.
 - [Debug Labels](suite_graphics/26_debug_labels.md): project 3D primitive anchors into screen space and label them with motor's text renderer; includes windowless projection/font checks.
 - [GPU Sculpture](suite_graphics/25_gpu_sculpture.md): 100,000 GPU-simulated elements with persistent position/velocity, transform feedback / stream output, pause and reset.
 - [Buffer Sculpture](suite_graphics/24_buffer_sculpture.md): CPU-animated cube formations with continuous array-buffer uploads, gl4/d3d11 and a bounded lifecycle smoke test.
@@ -394,8 +394,10 @@ GL4 by default, optional D3D11 or both windows. No ImGui object labels.
 An animated field of 63 primitives viewed through the actual culling camera
 and an independent observer. Both views submit the same accepted objects;
 rejected objects disappear in both. The observer also draws the tested frustum.
-Includes six display modes, perspective/orthographic projections, a timed demo,
+Includes seven display modes, perspective/orthographic projections, a timed demo,
 square/vertical capture and windowless intersection/layout regression checks.
+The **Scene bounds** mode (`--scene-bounds`) animates a nested motor scene graph,
+visualizes leaf/group AABBs and uses the aggregated bounds for hierarchical culling.
 
 [Source](suite_graphics/27_frustum_intersections.cpp) | [Guide and verification](suite_graphics/27_frustum_intersections.md)
 
@@ -407,6 +409,7 @@ diagnostics and, where applicable, benchmark measurements.
 | Area | Application | Purpose | Documentation |
 | --- | --- | --- | --- |
 | Graphics | [22_msl_manager_callbacks](suite_graphics/22_msl_manager_callbacks.cpp) | Callback regression checks; optional GL4/D3D11 second-window close/reopen test | [Callback and window tests](suite_graphics/22_msl_manager_callbacks.md) |
+| Scene / Collide | [28_scene_bounds](suite_graphics/28_scene_bounds.cpp) | AABB transforms, nested bubble-up, shrinking/empty subtrees and hierarchical culling | [Scene-graph bounds](suite_graphics/27_frustum_intersections.md#scene-graph-bounds) |
 | Concurrency | [00_threads_parallel_for](suite_concurrent/00_threads_parallel_for.cpp) | Native threads, motor's pool, ranges and nested parallel work | [Concurrent tests](BUILDING.md#concurrent-console-tests) |
 | Concurrency | [01_sync_primitives](suite_concurrent/01_sync_primitives.cpp) | Semaphore, signals, shared readers and writer exclusion | [Synchronization tests](suite_concurrent/README.md) |
 | Concurrency | [02_task_graph](suite_concurrent/02_task_graph.cpp) | Chain, diamond and fan-out graphs with both schedulers | [Task-graph tests](suite_concurrent/README.md) |
@@ -430,7 +433,7 @@ Build all targets, then run the console suites:
 
 ```sh
 cmake --build build --config Release --parallel 4
-ctest --test-dir build -C Release -L "concurrent|wire|core|math|memory" --output-on-failure --no-tests=error
+ctest --test-dir build -C Release -L "concurrent|wire|core|math|memory|scene" --output-on-failure --no-tests=error
 ```
 
 The [Windows build](.github/workflows/cmake-win32-dx11.yml) and
