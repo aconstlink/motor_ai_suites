@@ -1,6 +1,7 @@
 #include "capture_options.hpp"
 #include "frustum_intersections_checks.hpp"
 #include "scene_bounds.hpp"
+#include "frustum_stress.hpp"
 #include <motor/platform/global.h>
 #include <motor/gfx/primitive/primitive_render_3d.h>
 #include <motor/tool/imgui/imgui.h>
@@ -428,6 +429,8 @@ namespace intersection_sample
 
 int main( int argc, char ** argv )
 {
+    for( int i = 1 ; i < argc ; ++i )
+        if( motor::string_t( argv[i] ) == "--stress" ) return run_culling_stress( argc, argv ) ;
     intersection_sample::options opts ;
     for( int i = 1 ; i < argc ; ++i )
     {

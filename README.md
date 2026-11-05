@@ -64,7 +64,7 @@ the historical column.
 
 ## Start Here
 
-- [Frustum Intersections](suite_graphics/27_frustum_intersections.md): two camera views share one culling result; intersection checks, scene-graph bounds bubble-up, animated demo and Shorts layouts.
+- [Frustum Intersections](suite_graphics/27_frustum_intersections.md): two camera views share one culling result; intersection checks, scene-graph bounds bubble-up, animated demo and Shorts layouts. Includes a [10k-200k object stress mode](suite_graphics/27_frustum_intersections.md#culling-stress-mode) comparing no culling, per-object and hierarchical AABB tests.
 - [Debug Labels](suite_graphics/26_debug_labels.md): project 3D primitive anchors into screen space and label them with motor's text renderer; includes windowless projection/font checks.
 - [GPU Sculpture](suite_graphics/25_gpu_sculpture.md): 100,000 GPU-simulated elements with persistent position/velocity, transform feedback / stream output, pause and reset.
 - [Buffer Sculpture](suite_graphics/24_buffer_sculpture.md): CPU-animated cube formations with continuous array-buffer uploads, gl4/d3d11 and a bounded lifecycle smoke test.

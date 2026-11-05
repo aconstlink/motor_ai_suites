@@ -69,7 +69,8 @@ target_link_libraries( 17_debug_primitives PRIVATE motor::gfx )
 
 target_link_libraries( 27_frustum_intersections PRIVATE motor::gfx motor::scene )
 target_sources( 27_frustum_intersections PRIVATE
-    frustum_intersections.hpp frustum_intersections_checks.hpp scene_bounds.hpp capture_options.hpp )
+    frustum_intersections.hpp frustum_intersections_checks.hpp scene_bounds.hpp capture_options.hpp
+    frustum_stress.hpp frustum_stress.cpp )
 
 add_executable( 28_scene_bounds "28_scene_bounds.cpp" "scene_bounds.hpp" )
 target_link_libraries( 28_scene_bounds PRIVATE motor::scene motor::gfx motor::memory motor::log )
@@ -93,6 +94,16 @@ target_link_libraries( 22_msl_manager_callbacks PRIVATE
     motor::concurrent motor::profiling motor::memory motor::log )
 set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
 if( BUILD_TESTING )
+    add_test( NAME graphics_culling_stress_cpu COMMAND 27_frustum_intersections --stress --cpu-only )
+    set_tests_properties( graphics_culling_stress_cpu PROPERTIES TIMEOUT 90 LABELS "graphics;collide;bounds;stress" )
+    foreach( format IN ITEMS square vertical )
+        add_test( NAME graphics_culling_stress_capture_${format}
+            COMMAND 27_frustum_intersections --stress --youtube-short ${format} --help )
+    endforeach()
+    add_test( NAME graphics_culling_stress_invalid_count COMMAND 27_frustum_intersections --stress --objects 0 )
+    add_test( NAME graphics_culling_stress_invalid_mode COMMAND 27_frustum_intersections --stress --culling invalid )
+    set_tests_properties( graphics_culling_stress_invalid_count graphics_culling_stress_invalid_mode
+        PROPERTIES WILL_FAIL TRUE TIMEOUT 15 LABELS "graphics;stress" )
     add_test( NAME scene_bounds_bubble_up COMMAND 28_scene_bounds )
     set_tests_properties( scene_bounds_bubble_up PROPERTIES
         TIMEOUT 30 LABELS "scene;collide;bounds" )

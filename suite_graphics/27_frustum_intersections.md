@@ -36,6 +36,9 @@ Sphere tests require the normalized outward planes produced by motor's frustum.
 
 ## Run
 
+For large scenes, see [Culling Stress Mode](#culling-stress-mode): 10k to 200k
+scene nodes, three culling strategies and individual cube draw calls.
+
 ```powershell
 cmake --build build --config Release --target 27_frustum_intersections --parallel 2
 .\build\bin\Release\27_frustum_intersections.exe --gl-only
@@ -181,3 +184,139 @@ pointer, while the available overloads require `mtr_safe`. This test does not
 change engine code or instantiate that broken API. Child detachment/removal and
 late bounds attachment are tested instead; component removal needs a follow-up
 regression once the engine API is fixed.
+
+## Culling Stress Mode
+
+`--stress` selects a separate large-scene path in this executable. The original
+intersection and scene-bounds modes are unchanged. No engine changes are needed.
+
+```powershell
+27_frustum_intersections --stress --objects 10000 --gl-only --no-vsync
+27_frustum_intersections --stress --objects 100000 --d3d-only --no-vsync
+27_frustum_intersections --stress --objects 200000 --culling hierarchy --demo --youtube-short vertical
+27_frustum_intersections --stress --objects 10000 --animate-percent 25 --dual
+27_frustum_intersections --stress --cpu-only --objects 100000
+```
+
+Start with **10k in Release**. The UI offers 10k, 50k, 100k and 200k objects;
+`--objects` accepts any count from 1 to 200000. Larger scenes intentionally put
+pressure on node allocation, variable sets and individual draws. No-culling at
+200k means **400k cube draws per window** across the two views, not instancing.
+It can be very slow and memory-intensive. This is not a promised real-time limit.
+
+### Scene and Culling
+
+Every cube is a real scene leaf with a `trafo3d_component` and `bounds_component`.
+Spatial chunks contain up to 64 leaves (4 x 4 x 4); sectors contain up to 16
+chunks. The real `trafo_visitor` computes world transforms and bubbles bounds up
+to the root. Test-side records borrow component pointers and child ranges from
+this fixed graph; they do not replace the engine's bounds calculations.
+
+Choose `--culling none|flat|hierarchy` or use the UI:
+
+- **No culling:** retain all objects without any frustum tests.
+- **Per-object AABB:** test every leaf's world AABB.
+- **Hierarchical AABB:** test root, sectors and chunks; skip outside subtrees.
+  Fully contained groups append their leaf ranges without further plane tests.
+
+All modes use the same deterministic field and camera path. The culling camera
+moves through the field; the observer fits the scene and culling frustum to its
+own viewport. Both views consume the exact same ordered visible-ID list. The
+observer does not independently cull objects. Guides and optional bounds are
+debug context and are not part of the culled geometry count.
+
+Objects are static by default: bounds are calculated once, while the camera
+continues moving. `--animate-percent` or the UI animates a prefix of the objects
+with vertical motion. In that mode the full transform/bounds visitor runs again;
+the displayed time includes both pose changes and traversal. Returning to zero
+restores the original poses and updates bounds once more. No dirty-subtree
+optimization is implied.
+
+### Rendering and Timings
+
+One shared cube mesh and one msl shader per window render the retained objects
+with simple directional shading. There are no shadows, textures or postprocessing.
+Rendering uses explicit per-object frontend commands, **not** the scene's
+`render_visitor` or msl component bridges. The stress path isolates hierarchical
+bounds/culling plus individual graphics submissions; it is not the full scene
+material/lighting pipeline.
+
+Each view has independent draw-variable slots containing MVP and color. Slots
+grow to the largest retained count and are reused afterwards, including across
+mode/count changes. They are not allocated anew each frame. Initial growth and
+backend linking are warm-up costs; wait before comparing steady-state values.
+Memory can remain at the previous high-water mark until the application exits.
+
+The controls report:
+
+- Group/leaf tests, rejected/fully accepted groups and objects submitted per view.
+- Cube draw commands across both views, excluding debug guides and ImGui.
+- Scene construction, animated transforms/bounds, culling, draw-variable filling,
+  debug-geometry preparation and frontend command-recording times.
+- Rolling median/p95 of the last 240 `on_graphics` intervals, measured on the CPU.
+  These are not GPU timings or display-present intervals. Async phases overlap,
+  so the individual timings must not be added to predict the frame interval.
+
+Use one backend at a time, Release, `--no-vsync`, the same object count and
+camera pose, and disabled bounds overlays for comparisons. Pause the camera and
+set animation to zero to compare modes on identical data.
+
+- Enable **Group bounds**, then choose **Limited (256)** or **All**. This displays
+  chunk-group bounds in the observer, including rejected chunks in gray.
+- Enable **Leaf bounds**, then choose **Limited (128)** or **All visible**. This
+  displays retained objects' bounds in both views, never rejected leaf objects.
+- Limited selections are evenly distributed across the complete chunk or visible
+  leaf index range, including its first and last entry. The UI reports shown/total
+  counts. Culling itself always uses the complete hierarchy.
+- **All** can add substantial debug-geometry work and is intended for inspection,
+  not clean performance measurements. The default remains **Limited**.
+
+**Cube draws (both views)** counts cube render commands per window across the two
+views: 6,086 retained objects mean 12,172 cube draws when the shader is ready.
+Debug bounds, guides and ImGui are excluded; this is not a total draw-call counter
+or a count of objects that actually produce visible pixels.
+
+`--demo` provides a clean capture presentation with controls hidden in square
+or vertical format; the camera already moves automatically. It does not cycle
+into the expensive no-culling mode. `--no-ui` hides sample overlays entirely.
+
+### Stress Verification
+
+```powershell
+ctest --test-dir build -C Release -R "graphics_culling_stress" --output-on-failure
+27_frustum_intersections --stress --cpu-only --objects 200000
+```
+
+Windowless checks compare exact visible-ID lists across flat and hierarchical
+culling at multiple camera poses, viewport aspects and animation states. They
+also check partial chunks/sectors, child-bound containment, full-root acceptance,
+empty visibility, restoration and no-culling ordering. Both all/limited group and
+leaf selections are checked for correct counts, full index-range coverage and
+absence of duplicate or out-of-range entries, including empty inputs and 200k entries.
+The CPU run logs median
+and p95 for 30 warmed-up culling iterations; this excludes rendering and upload.
+
+Optional `--stress --smoke` opens graphics windows and runs all three modes at
+1025 objects unless a count is explicitly supplied. It checks shader readiness
+and execute fences, not pixel correctness. It is not registered as an automatic
+CTest test. No visual tests are required for the windowless regression suite.
+
+Verified on Windows on 2026-11-05: Debug and Release builds succeeded, with all
+six selected stress/frustum CTests passing in each configuration. A separate
+Release `--cpu-only --objects 200000` run passed all checks and ended with zero
+memory-manager entries. No graphics windows were opened: runtime shader
+compilation and the rendered appearance on gl4/d3d11 remain to be checked manually.
+
+That single local CPU run measured the following fixed-camera case (5 warm-up
+iterations, 30 measured iterations, no rendering or uploads):
+
+| Mode | Retained IDs | Leaf tests | Group tests | Median | p95 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| No culling | 200,000 | 0 | 0 | 0.281 ms | 0.328 ms |
+| Per-object AABB | 4,866 | 200,000 | 0 | 8.673 ms | 9.341 ms |
+| Hierarchical AABB | 4,866 | 9,088 | 1,589 | 0.373 ms | 0.577 ms |
+
+Flat and hierarchical paths returned identical ordered IDs. No-culling measures
+only filling the full ID list, not the substantial cost of drawing that list.
+These are diagnostic CPU measurements for this layout and pose, not end-to-end
+frame times or a general performance guarantee.
