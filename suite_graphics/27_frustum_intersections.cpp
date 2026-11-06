@@ -2,6 +2,7 @@
 #include "frustum_intersections_checks.hpp"
 #include "scene_bounds.hpp"
 #include "frustum_stress.hpp"
+#include "frustum_obj_models.hpp"
 #include <motor/platform/global.h>
 #include <motor/gfx/primitive/primitive_render_3d.h>
 #include <motor/tool/imgui/imgui.h>
@@ -17,12 +18,16 @@ namespace intersection_sample
 {
     using frontend_t = motor::graphics::gen4::frontend_ptr_t ;
     using primitives_t = motor::gfx::primitive_render_3d_t ;
+    constexpr int_t obj_mode = 7 ;
+    char const * const display_modes[] = { "Mixed volumes", "Spheres", "AABBs", "OBBs", "Rays", "Points", "Scene bounds", "OBJ models" } ;
 
     struct options
     {
         sample_support::capture_options capture ;
         bool_t d3d = false, dual = false, cpu = false, demo = false, still = false ;
         bool_t ui = true, vsync = true, smoke = false, scene_bounds = false ;
+        bool_t models = false ;
+        motor::string_t assets = MOTOR_CULLING_OBJ_ASSETS ;
     } ;
 
     vec4_t color_for( result_t const result ) noexcept
@@ -120,12 +125,15 @@ namespace intersection_sample
             view_data views[2] ;
             scene data ;
             bounds_scene hierarchy ;
+            obj_renderer scans ;
+            std::array<result_t, obj_instance_count> model_results ;
             primitives_t guide ;
             motor::graphics::state_object_t clear, overlay ;
             std::atomic_size_t completed { 0 } ;
             bool_t dirty = true, prepared = false ;
         } ;
         options _opts ;
+        obj_models _models ;
         bool_t * _passed ;
         window_data _windows[2] ;
         bool_t _demo = false, _paused = false, _bounds = true, _ortho = false, _quitting = false ;
@@ -185,6 +193,12 @@ namespace intersection_sample
                 // Both views consume exactly this list. The observer never culls independently.
                 for( size_t const index : w.data.visible )
                 {
+                    if( _active_mode == obj_mode )
+                    {
+                        if( _bounds ) lines.draw_wire_cube( _models.instances[index].bounds.points(), color_for( w.model_results[index] ) ) ;
+                        view.submitted.emplace_back( index ) ;
+                        continue ;
+                    }
                     bool_t const scene_mode = _active_mode == 6 ;
                     draw_object( s, lines, w.data.objects[index], _bounds && !scene_mode ) ;
                     if( scene_mode && _bounds )
@@ -221,7 +235,7 @@ namespace intersection_sample
 
     public:
         intersection_app( options const & opts, bool_t * passed ) noexcept : _opts( opts ), _passed( passed ), _demo( opts.demo ), _paused( opts.still )
-        { _mode = opts.scene_bounds ? 6 : 0 ; }
+        { _mode = opts.models ? obj_mode : opts.scene_bounds ? 6 : 0 ; }
         intersection_app( intersection_app const & ) = delete ;
         intersection_app( intersection_app && rhs ) noexcept : intersection_app( rhs._opts, rhs._passed )
         { assert( rhs._windows[0].id == window_id_t( -1 ) && rhs._windows[1].id == window_id_t( -1 ) ) ; }
@@ -259,10 +273,15 @@ namespace intersection_sample
         {
             if( _quitting ) return ;
             if( !_paused ) _time += data.sec_dt * _speed ;
-            _active_mode = _opts.smoke ? int_t( _phase % mode_count ) :
-                ( _demo && !_opts.scene_bounds ? int_t( _time / 8 ) % mode_count : _mode ) ;
-            bool_t const ortho = _opts.smoke ? _phase >= size_t( mode_count ) :
+            _active_mode = _opts.smoke ? ( _opts.models ? obj_mode : int_t( _phase % mode_count ) ) :
+                ( _demo && !_opts.scene_bounds && _mode != obj_mode ? int_t( _time / 8 ) % mode_count : _mode ) ;
+            bool_t const ortho = _opts.smoke ? _phase >= size_t( _opts.models ? 1 : mode_count ) :
                 ( _demo ? int_t( _time / ( 8 * mode_count ) ) % 2 != 0 : _ortho ) ;
+            if( _active_mode == obj_mode && !_models.load( _opts.assets ) )
+            {
+                motor::log::global_t::error( "[frustum OBJ] could not load model assets" ) ;
+                _quitting = true ; close() ; return ;
+            }
             for( size_t i = 0 ; i < count() ; ++i )
             {
                 auto & w = _windows[i] ; w.prepared = false ;
@@ -273,7 +292,19 @@ namespace intersection_sample
                     _fov + ( _demo ? .1f * std::sin( _time * .2f ) : 0 ), _far, ortho ) ;
                 auto const & frustum = w.views[0].camera.get_frustum() ;
                 make_observer( w.views[1].camera, areas[1], frustum ) ;
-                if( _active_mode == 6 )
+                if( _active_mode == obj_mode )
+                {
+                    _models.cull( frustum, w.data.visible, w.model_results ) ;
+                    w.data.inside = w.data.touching = 0 ;
+                    for( auto const r : w.model_results )
+                    {
+                        if( r == result_t::inside ) ++w.data.inside ;
+                        else if( r == result_t::intersect ) ++w.data.touching ;
+                    }
+                    w.scans.init( _models, "ai_suites.frustum.scans." + motor::to_string( i ) ) ;
+                    for( size_t v = 0 ; v < 2 ; ++v ) w.scans.prepare( v, w.views[v].camera, w.model_results ) ;
+                }
+                else if( _active_mode == 6 )
                 {
                     w.hierarchy.animate( _time, w.data ) ;
                     w.hierarchy.cull( frustum, w.data ) ;
@@ -300,6 +331,7 @@ namespace intersection_sample
         {
             auto & w = window( id ) ;
             if( _quitting || !w.prepared ) return ;
+            if( _active_mode == obj_mode ) w.scans.configure( fe, _models ) ;
             if( w.dirty )
             {
                 w.clear.access_render_state( 0, [&]( auto & s )
@@ -319,7 +351,9 @@ namespace intersection_sample
             for( size_t index = 0 ; index < 2 ; ++index )
             {
                 auto & v = w.views[index] ; fe->push( &v.state ) ;
-                v.solid.render( fe ) ; v.wire.render( fe ) ;
+                v.solid.render( fe ) ;
+                if( _active_mode == obj_mode ) w.scans.render( fe, index, w.data.visible ) ;
+                v.wire.render( fe ) ;
                 if( index == 1 )
                 {
                     fe->push( &w.overlay ) ; w.guide.render( fe ) ;
@@ -328,7 +362,7 @@ namespace intersection_sample
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
             }
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
-            fe->fence( [&w]( motor::graphics::gen4::frontend::fence_phase const phase )
+            if( _active_mode != obj_mode || w.scans.ready ) fe->fence( [&w]( motor::graphics::gen4::frontend::fence_phase const phase )
             { if( phase == motor::graphics::gen4::frontend::fence_phase::execute ) ++w.completed ; } ) ;
         }
 
@@ -337,7 +371,8 @@ namespace intersection_sample
             if( !_opts.ui || _quitting || _opts.smoke ) return false ;
             auto const & w = window( id ) ; if( !w.prepared || w.width < 480 ) return false ;
             auto * draw = ImGui::GetForegroundDrawList() ;
-            draw->AddText( ImVec2( 18, 38 ), IM_COL32( 235, 239, 241, 255 ), modes[_active_mode] ) ;
+            size_t const total = _active_mode == obj_mode ? obj_instance_count : object_count ;
+            draw->AddText( ImVec2( 18, 38 ), IM_COL32( 235, 239, 241, 255 ), display_modes[_active_mode] ) ;
             for( size_t i = 0 ; i < 2 ; ++i )
             {
                 auto const & r = w.views[i].area ;
@@ -345,11 +380,11 @@ namespace intersection_sample
                 draw->AddRect( a, b, IM_COL32( 75, 82, 86, 255 ) ) ;
                 draw->AddRectFilled( a, ImVec2( b.x, a.y + 34 ), IM_COL32( 20, 23, 25, 235 ) ) ;
                 auto const title = motor::string_t( i == 0 ? "CULLING CAMERA" : "OBSERVER" ) +
-                    "  |  " + motor::to_string( w.data.visible.size() ) + " / " + motor::to_string( object_count ) ;
+                    "  |  " + motor::to_string( w.data.visible.size() ) + " / " + motor::to_string( total ) ;
                 draw->AddText( ImVec2( a.x + 12, a.y + 10 ), IM_COL32( 235, 239, 241, 255 ), title.c_str() ) ;
             }
             auto const counts = motor::to_string( w.data.inside ) + " inside   " + motor::to_string( w.data.touching ) +
-                " intersect   " + motor::to_string( object_count - w.data.visible.size() ) + " outside" ;
+                " intersect   " + motor::to_string( total - w.data.visible.size() ) + " outside" ;
             auto const text_size = ImGui::CalcTextSize( counts.c_str() ) ;
             draw->AddText( ImVec2( float_t( w.width ) - text_size.x - 18, 38 ), IM_COL32( 180, 198, 190, 255 ), counts.c_str() ) ;
             if( id == _windows[0].id && !( _demo && _opts.capture.output != sample_support::capture_options::format::original ) )
@@ -362,10 +397,16 @@ namespace intersection_sample
                     ImGui::BeginDisabled( _demo ) ;
                     int_t mode = _demo ? _active_mode : _mode ;
                     bool_t ortho = _demo ? w.views[0].camera.is_orthographic() : _ortho ;
-                    if( ImGui::Combo( "Test", &mode, modes, mode_count ) ) _mode = mode ;
+                    if( ImGui::Combo( "Test", &mode, display_modes, obj_mode + 1 ) ) _mode = mode ;
                     if( ImGui::Checkbox( "Orthographic", &ortho ) ) _ortho = ortho ;
                     ImGui::EndDisabled() ;
                     ImGui::Checkbox( "Bounds", &_bounds ) ;
+                    if( _active_mode == obj_mode )
+                    {
+                        ImGui::Text( "Shader: %s", w.scans.ready ? "ready" : "compiling" ) ;
+                        for( size_t i = 0 ; i < obj_model_count ; ++i )
+                            ImGui::Text( "%s: %u triangles", obj_names[i], unsigned( _models.models[i].triangles ) ) ;
+                    }
                     if( _active_mode == 6 )
                     {
                         ImGui::Checkbox( "Group bounds", &_group_bounds ) ;
@@ -399,7 +440,7 @@ namespace intersection_sample
             if( !_opts.smoke || _quitting ) return ;
             for( size_t i = 0 ; i < count() ; ++i ) if( _windows[i].completed.load() < 15 ) return ;
             motor::log::global_t::test( "[frustum] submitted both views, phase " + motor::to_string( _phase ), true ) ;
-            if( ++_phase == size_t( mode_count * 2 ) ) { *_passed = true ; _quitting = true ; close() ; return ; }
+            if( ++_phase == size_t( _opts.models ? 2 : mode_count * 2 ) ) { *_passed = true ; _quitting = true ; close() ; return ; }
             for( size_t i = 0 ; i < count() ; ++i ) _windows[i].completed.store( 0 ) ;
         }
         void_t on_update( motor::application::app::update_data_in_t ) noexcept override
@@ -412,6 +453,7 @@ namespace intersection_sample
         void_t on_last_frame( window_id_t const id, frontend_t fe, motor::application::app::render_data_in_t ) noexcept override
         {
             auto & w = window( id ) ;
+            w.scans.release_backend( fe, _models ) ;
             fe->release<motor::graphics::state_object_t>( &w.clear ) ; fe->release<motor::graphics::state_object_t>( &w.overlay ) ;
             for( auto & v : w.views ) fe->release<motor::graphics::state_object_t>( &v.state ) ;
             // Renderer resources remain alive until backend/window teardown.
@@ -422,15 +464,14 @@ namespace intersection_sample
             {
                 for( auto & v : _windows[i].views ) { v.solid.release() ; v.wire.release() ; }
                 _windows[i].guide.release() ;
+                _windows[i].scans.release() ;
             }
         }
     } ;
 }
 
-int main( int argc, char ** argv )
+int run_intersections( int argc, char ** argv )
 {
-    for( int i = 1 ; i < argc ; ++i )
-        if( motor::string_t( argv[i] ) == "--stress" ) return run_culling_stress( argc, argv ) ;
     intersection_sample::options opts ;
     for( int i = 1 ; i < argc ; ++i )
     {
@@ -441,6 +482,8 @@ int main( int argc, char ** argv )
         else if( arg == "--cpu-only" ) opts.cpu = true ;
         else if( arg == "--demo" ) opts.demo = true ;
         else if( arg == "--scene-bounds" ) opts.scene_bounds = true ;
+        else if( arg == "--obj-models" ) opts.models = true ;
+        else if( arg == "--obj-assets" && i+1 < argc ) opts.assets = argv[++i] ;
         else if( arg == "--still" ) opts.still = true ;
         else if( arg == "--smoke" ) opts.smoke = true ;
         else if( arg == "--no-ui" ) opts.ui = false ;
@@ -448,7 +491,7 @@ int main( int argc, char ** argv )
         else if( arg == "--youtube-short" && i+1 < argc && opts.capture.parse( argv[i+1] ) ) ++i ;
         else
         {
-            motor::log::global_t::status( "Usage: 27_frustum_intersections [--gl-only|--d3d-only|--dual] [--scene-bounds] [--demo] [--still] [--no-ui] [--no-vsync] [--youtube-short square|vertical] [--cpu-only|--smoke]" ) ;
+            motor::log::global_t::status( "Usage: 27_frustum_intersections [--gl-only|--d3d-only|--dual] [--scene-bounds|--obj-models] [--obj-assets DIRECTORY] [--demo] [--still] [--no-ui] [--no-vsync] [--youtube-short square|vertical] [--cpu-only|--smoke]" ) ;
             motor::log::global_t::deinit() ; return arg == "--help" ? 0 : 2 ;
         }
     }
@@ -458,7 +501,12 @@ int main( int argc, char ** argv )
         motor::log::global_t::error( "d3d11 requires Windows." ) ; motor::log::global_t::deinit() ; return 2 ;
     }
 #endif
-    bool const cpu_ok = intersection_sample::cpu_checks() ;
+    bool cpu_ok = intersection_sample::cpu_checks() ;
+    if( opts.cpu && opts.models )
+    {
+        intersection_sample::obj_models assets ;
+        cpu_ok &= assets.load( opts.assets ) && assets.checks() ;
+    }
     bool passed = false ; int result = 0 ;
     if( cpu_ok && !opts.cpu )
     {
@@ -466,8 +514,16 @@ int main( int argc, char ** argv )
             motor::shared( intersection_sample::intersection_app( opts, &passed ) ) ) ;
         result = carrier->exec() ; motor::release( motor::move( carrier ) ) ;
     }
+    return result != 0 ? result : ( !cpu_ok || ( opts.smoke && !opts.cpu && !passed ) ? 1 : 0 ) ;
+}
+
+int main( int argc, char ** argv )
+{
+    for( int i = 1 ; i < argc ; ++i )
+        if( motor::string_t( argv[i] ) == "--stress" ) return run_culling_stress( argc, argv ) ;
+    int const result = run_intersections( argc, argv ) ;
     motor::concurrent::global_t::deinit() ; motor::io::global_t::deinit() ;
     motor::profiling::global_t::deinit() ; motor::log::global_t::deinit() ;
     bool const clean = motor::memory::global_t::dump_to_std() == 0 ;
-    return result != 0 ? result : ( !cpu_ok || !clean || ( opts.smoke && !opts.cpu && !passed ) ? 1 : 0 ) ;
+    return result != 0 ? result : ( !clean ? 1 : 0 ) ;
 }

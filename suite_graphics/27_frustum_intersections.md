@@ -2,7 +2,8 @@
 
 `27_frustum_intersections` exercises motor's frustum/sphere, frustum/AABB,
 frustum/OBB, frustum/ray and frustum/point tests with `generic_camera` and
-`primitive_render_3d`. No external models, custom backend code or engine edits
+`primitive_render_3d`. The optional OBJ mode adds four bundled scientific scans;
+the primitive modes need no model assets. No custom backend code or engine edits
 are needed. Requires the motor version containing these intersection functions
 and `primitive_render_3d::draw_frustum(math::frustum3f)`. For d3d11, it also
 requires the clip-depth conversion in the engine's 3D triangle and line shaders.
@@ -51,7 +52,7 @@ each with both camera views. d3d11 requires Windows.
 
 The initially collapsed controls expose test selection, perspective/orthographic
 projection, pause, demo, bounds, animation speed, camera aim, field of view and
-far plane. Geometry is filled and shaded on the CPU for readability, with optional
+far plane. Primitive geometry is filled and shaded on the CPU for readability, with optional
 wire bounds; this is an intersection/debug-renderer test, not a lighting benchmark.
 
 ## Automatic Demo and Shorts
@@ -120,6 +121,63 @@ No visual verification was performed when adding this test. For a manual check,
 watch an object cross a side or far plane: its classification may turn orange,
 then it must disappear in both views. Resizing must keep the observer's frustum
 and the first view's actual projection consistent on both backends.
+
+## OBJ Models
+
+Select **OBJ models** in the Test dropdown, or launch:
+
+```powershell
+27_frustum_intersections --obj-models --gl-only
+27_frustum_intersections --obj-models --d3d-only
+27_frustum_intersections --obj-models --demo --youtube-short vertical
+27_frustum_intersections --obj-models --cpu-only
+```
+
+This extends the normal two-camera test, **not the stress test**. Happy Buddha,
+Dragon, Lucy and Thai Statue are arranged as twelve static sculptures in three
+staggered rows (three instances of each model). Four meshes are shared by all
+instances; no mesh data is duplicated for placement. Lucy is rotated -90 degrees
+around X, then 180 degrees around Z, followed by another 180 degrees around X
+to put her feet down. This happens before local bounds are computed.
+The reduced OBJ files total approximately 14 MB, around 100k triangles per model.
+See [asset attribution and usage restrictions](../assets/frustum_models/ATTRIBUTION.md).
+
+Models load once on first entering this mode, through motor's IO database and OBJ
+importer. `polygon_mesh::flatten(flat_tri_mesh)` performs triangulation and builds
+a shared vertex index for positions, normals and UVs. The test copies that mesh
+into graphics buffers, retaining imported normals or generating smooth normals
+when they are absent (as in the bundled scans).
+The initial load can briefly pause the application. Geometry and
+area-weighted smooth normals are uploaded once per backend; subsequent frames
+update camera/color variables and issue one mesh draw per visible instance per view.
+The simple msl shader provides two-direction diffuse shading, not PBR or shadows.
+
+Bounds are calculated from referenced mesh positions, after uniform scaling and
+placement. One AABB test per instance supplies **the same visible-ID list to both
+cameras**. Rejected models and their bounds disappear in both views; retained
+meshes intersecting a frustum plane turn orange. Fully contained meshes retain
+their individual colors, while their bounds are green. The observer does not
+perform independent culling. The sculptures remain static; the camera moves.
+
+`--obj-models --demo` stays in this mode and works with the existing square/vertical
+capture presets. `--still` freezes camera motion. `--obj-assets DIRECTORY` overrides
+the CMake-configured asset directory; it must contain `buddha.obj`, `dragon.obj`,
+`lucy.obj` and `thai_statue.obj`. No runtime download occurs.
+
+`graphics_frustum_obj_models_cpu` imports all four real files and checks visibility
+against an independent eight-corner plane reference across perspective/orthographic
+camera sweeps and different viewport aspects. It opens no windows. Additional
+checks cover Lucy's Y-up extent, three instances per mesh, translated bounds
+against local corners, and ground contact. Optional
+`--obj-models --smoke` opens windows and checks shader readiness plus execution
+fences in both projections; it is not part of CTest and is not a pixel test.
+
+Verified on Windows on 2026-11-06: Debug and Release builds succeeded; all seven
+selected frustum/stress/OBJ CTests passed in both configurations. All four real
+OBJ imports succeeded, with 98,601 / 100,000 / 99,970 / 100,000 triangles in the
+order listed above. The memory-manager dump was empty after the CPU tests.
+No graphics windows were opened: runtime shader compilation and rendered results
+on gl4/d3d11 still require a manual check.
 
 ## Scene-Graph Bounds
 

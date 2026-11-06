@@ -394,10 +394,13 @@ GL4 by default, optional D3D11 or both windows. No ImGui object labels.
 An animated field of 63 primitives viewed through the actual culling camera
 and an independent observer. Both views submit the same accepted objects;
 rejected objects disappear in both. The observer also draws the tested frustum.
-Includes seven display modes, perspective/orthographic projections, a timed demo,
+Includes eight display modes, perspective/orthographic projections, a timed demo,
 square/vertical capture and windowless intersection/layout regression checks.
 The **Scene bounds** mode (`--scene-bounds`) animates a nested motor scene graph,
 visualizes leaf/group AABBs and uses the aggregated bounds for hierarchical culling.
+The **OBJ models** mode (`--obj-models`) loads reduced Buddha, Dragon, Lucy and Thai
+Statue scans through motor's OBJ importer and IO database, with shared AABB culling
+for both cameras. See the [model credits and terms](assets/frustum_models/ATTRIBUTION.md).
 
 [Source](suite_graphics/27_frustum_intersections.cpp) | [Guide and verification](suite_graphics/27_frustum_intersections.md)
 

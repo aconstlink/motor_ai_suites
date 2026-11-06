@@ -67,10 +67,12 @@ target_compile_definitions( 16_async_assets PRIVATE MOTOR_ASYNC_ASSETS="${CMAKE_
 
 target_link_libraries( 17_debug_primitives PRIVATE motor::gfx )
 
-target_link_libraries( 27_frustum_intersections PRIVATE motor::gfx motor::scene )
+target_link_libraries( 27_frustum_intersections PRIVATE motor::gfx motor::scene motor::format motor::io )
+target_compile_definitions( 27_frustum_intersections PRIVATE
+    MOTOR_CULLING_OBJ_ASSETS="${CMAKE_CURRENT_LIST_DIR}/../assets/frustum_models" )
 target_sources( 27_frustum_intersections PRIVATE
     frustum_intersections.hpp frustum_intersections_checks.hpp scene_bounds.hpp capture_options.hpp
-    frustum_stress.hpp frustum_stress.cpp )
+    frustum_stress.hpp frustum_stress.cpp frustum_obj_models.hpp frustum_obj_models.cpp )
 
 add_executable( 28_scene_bounds "28_scene_bounds.cpp" "scene_bounds.hpp" )
 target_link_libraries( 28_scene_bounds PRIVATE motor::scene motor::gfx motor::memory motor::log )
@@ -108,6 +110,8 @@ if( BUILD_TESTING )
     set_tests_properties( scene_bounds_bubble_up PROPERTIES
         TIMEOUT 30 LABELS "scene;collide;bounds" )
     add_test( NAME graphics_frustum_intersections_cpu COMMAND 27_frustum_intersections --cpu-only )
+    add_test( NAME graphics_frustum_obj_models_cpu COMMAND 27_frustum_intersections --obj-models --cpu-only )
+    set_tests_properties( graphics_frustum_obj_models_cpu PROPERTIES LABELS "graphics;cpu;import" TIMEOUT 120 )
     set_tests_properties( graphics_frustum_intersections_cpu PROPERTIES
         TIMEOUT 30 LABELS "graphics;collide;frustum" )
     add_test( NAME graphics_debug_labels_cpu COMMAND 26_debug_labels --cpu-only )
