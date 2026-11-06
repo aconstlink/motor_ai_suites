@@ -116,7 +116,8 @@ options of each application. D3D11 requires Windows.
 
 The demos `07_vertex_pulling_field`, `10_transform_feedback`, `15_village`,
 `20_noise_playground`, `23_render_states`, `24_buffer_sculpture`,
-`25_gpu_sculpture` and `27_frustum_intersections` accept a shared capture-format argument:
+`25_gpu_sculpture`, `27_frustum_intersections` and `29_camera_fit_shadow_mapping`
+accept a shared capture-format argument:
 
 | Argument | Requested window area | Aspect ratio |
 | --- | --- | --- |
@@ -403,6 +404,16 @@ Statue scans through motor's OBJ importer and IO database, with shared AABB cull
 for both cameras. See the [model credits and terms](assets/frustum_models/ATTRIBUTION.md).
 
 [Source](suite_graphics/27_frustum_intersections.cpp) | [Guide and verification](suite_graphics/27_frustum_intersections.md)
+
+### 29 Camera-Fit Shadow Mapping
+
+Sponza with an automatic 40-second courtyard camera flight, using the existing
+bundled glTF. Aggregated scene bounds fit a directional-light shadow camera.
+Includes a rising courtyard camera, a slowly moving sun, PCF shadows, HDR postprocessing,
+bounds/frustum and render-target previews,
+plus single-window square/vertical YouTube Shorts capture and a clean demo mode.
+
+[Source](suite_graphics/29_camera_fit_shadow_mapping.cpp) | [Guide and verification](suite_graphics/29_camera_fit_shadow_mapping.md)
 
 ## Console Tests
 

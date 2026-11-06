@@ -1,0 +1,44 @@
+// rendered from the lights' point of view
+// and renders out the depth value of the
+// geometry rendered.
+// this shader can be used by any light source
+config shadow_depth_pass
+{
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+        mat4_t world : world ;
+
+        in vec3_t pos : position ;
+        out vec4_t pos : position ;
+
+        out float_t depth ;
+
+        void main()
+        {
+            out.pos = proj * view * world * vec4_t( in.pos, 1.0 ) ;
+
+            // writing the depth value ourselfs. In the future,
+            // we may write a linear depth value.
+            out.depth = (out.pos.z/out.pos.w)*0.5+0.5 ;
+        }
+    }
+
+    pixel_shader
+    {
+        out float_t depth : depth ;
+
+        in float_t depth ;
+
+        void main()
+        {
+            // write the depth value outselfs, because the apis
+            // write the automatic values shifted. D3D does no shift,
+            // openGL on the other hand, writes a *0.5+0.5.
+            // so with this line here, the depth buffer is
+            // written equally across apis.
+            out.depth = in.depth;
+        }
+    }
+}

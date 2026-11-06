@@ -1,0 +1,29 @@
+config depth_pass
+{
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+        mat4_t world : world ;
+
+        in vec3_t pos : position ;
+        out vec4_t pos : position ;
+
+        void main()
+        {
+            out.pos = proj * view * world * vec4_t( in.pos, 1.0 ) ;
+        }
+    }
+
+    pixel_shader
+    {
+        in vec4_t pos : position ;
+        out float_t depth : depth ;
+
+        void main()
+        {
+            out.depth = in.pos.z  ;
+            //out.depth = linear_depth( in.pos.z, 0.0, 1000.0 )/1000.0 ;
+        }
+    }
+}

@@ -1,0 +1,61 @@
+config shadow29_normals
+{
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+        mat4_t world : world ;
+
+
+
+        in vec3_t pos : position ;
+        in vec3_t nrm : normal ;
+        in vec2_t tx : texcoord ;
+
+        out vec4_t pos : position ;
+        out vec2_t tx : texcoord ;
+        out vec3_t nrm : normal ;
+
+
+
+        void main()
+        {
+
+            vec3_t pos = in.pos ;
+            out.tx = in.tx ;
+            out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
+            out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
+        }
+    }
+
+    pixel_shader
+    {
+        vec4_t color( 100.0,0.0,0.0,1.0);
+
+        in vec2_t tx : texcoord ;
+        in vec3_t nrm : normal ;
+
+
+
+        out vec4_t color0 : color0 ;
+        out vec4_t color1 : color1 ;
+        out vec4_t color2 : color2 ;
+        out vec4_t color3 : color3 ;
+
+        void main()
+        {
+
+            out.color0 = vec4_t( normalize(in.nrm)*0.5+0.5, 1.0 ) ;
+            out.color1 = vec4_t(0.0,0.0,0.0,1.0) ;
+            out.color2 = vec4_t(0.0,0.0,0.0,1.0) ;
+            out.color3 = vec4_t(0.0,0.0,0.0,1.0) ;
+            //out.color0 = vec4_t( 1.0,0.0,0.0,1.0 ) ;
+            //out.color0 = out.color0*0.0001 + vec4_t(1.0,1.0,1.0,1.0) ;
+            //out.color0 = vec4_t( n, 1.0 ) ;
+            //out.color1 = vec4_t( light, light, light, 1.0 ) ;
+            //out.color1 = vec4_t( in.nrm, 1.0 ) ;
+            //out.color2 = vec4_t( light, light, light , 1.0 ) ;
+            //out.color0 = vec4_t(1.0,0.0,0.0,1.0) ;
+        }
+    }
+}

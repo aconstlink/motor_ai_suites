@@ -1,0 +1,59 @@
+// rendered from the lights' point of view
+// and renders out the depth value of the
+// geometry rendered.
+// this shader can be used by any light source
+config rsm_pass
+{
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+        mat4_t world : world ;
+
+        in vec3_t pos : position ;
+        in vec3_t nrm : normal ;
+        out vec4_t pos : position ;
+
+        out vec3_t wpos ;
+        out vec3_t wnrm ;
+
+        out float_t depth ;
+
+        void main()
+        {
+            out.pos = proj * view * world * vec4_t( in.pos, 1.0 ) ;
+
+            out.wpos = (world * vec4_t( in.pos, 1.0 )).xyz ;
+            out.wnrm = (world * vec4_t( in.nrm, 0.0 )).xyz ;
+
+            // writing the depth value ourselfs. In the future,
+            // we may write a linear depth value.
+            out.depth = (out.pos.z/out.pos.w)*0.5+0.5 ;
+        }
+    }
+
+    pixel_shader
+    {
+        out vec4_t positions : color0 ;
+        out vec4_t normals : color1 ;
+        out float_t depth : depth ;
+
+        in vec3_t wpos ;
+        in vec3_t wnrm ;
+        in float_t depth ;
+
+        void main()
+        {
+            // output test color if color target is bound
+            out.positions = vec4_t(in.wpos,1.0) ;
+            out.normals = vec4_t(normalize( in.wnrm),1.0) ;
+
+            // write the depth value outselfs, because the apis
+            // write the automatic values shifted. D3D does no shift,
+            // openGL on the other hand, writes a *0.5+0.5.
+            // so with this line here, the depth buffer is
+            // written equally across apis.
+            out.depth = in.depth;
+        }
+    }
+}

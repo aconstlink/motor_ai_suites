@@ -25,6 +25,7 @@ set( sources
     "25_gpu_sculpture.cpp"
     "26_debug_labels.cpp"
     "27_frustum_intersections.cpp"
+    "29_camera_fit_shadow_mapping.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -44,7 +45,8 @@ set_property( TARGET 05_scene_benchmark PROPERTY VS_DPI_AWARE "PerMonitor" )
 
 # Capture dimensions must be physical pixels, not DPI-scaled window coordinates.
 set( capture_apps 07_vertex_pulling_field 10_transform_feedback 15_village
-    20_noise_playground 23_render_states 24_buffer_sculpture 25_gpu_sculpture 27_frustum_intersections )
+    20_noise_playground 23_render_states 24_buffer_sculpture 25_gpu_sculpture 27_frustum_intersections
+    29_camera_fit_shadow_mapping )
 foreach( app IN LISTS capture_apps )
     set_property( TARGET ${app} PROPERTY VS_DPI_AWARE "PerMonitor" )
 endforeach()
@@ -60,6 +62,16 @@ target_link_libraries( 12_scene_wire_lighting PRIVATE motor::scene motor::gfx mo
 target_link_libraries( 14_light_components PRIVATE motor::scene motor::gfx )
 
 target_link_libraries( 15_village PRIVATE motor::scene motor::gfx motor::wire )
+
+target_link_libraries( 29_camera_fit_shadow_mapping PRIVATE motor::scene motor::gfx motor::wire motor::format motor::io motor::msl )
+target_sources( 29_camera_fit_shadow_mapping PRIVATE shadow_camera_fit.hpp shadow_checks.hpp capture_options.hpp )
+if( WIN32 )
+    target_link_libraries( 29_camera_fit_shadow_mapping PRIVATE d3dcompiler )
+endif()
+target_compile_definitions( 29_camera_fit_shadow_mapping PRIVATE
+    MOTOR_SHADOW_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/assets/camera_fit_shadow_mapping" )
+target_compile_definitions( 29_camera_fit_shadow_mapping PRIVATE
+    MOTOR_SPONZA_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/assets/async_loading" )
 target_sources( 15_village PRIVATE village/geometry.hpp village/dragon.hpp village/shaders.hpp )
 
 target_link_libraries( 16_async_assets PRIVATE motor::format motor::io motor::scene motor::gfx motor::wire )
@@ -96,6 +108,8 @@ target_link_libraries( 22_msl_manager_callbacks PRIVATE
     motor::concurrent motor::profiling motor::memory motor::log )
 set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
 if( BUILD_TESTING )
+    add_test( NAME graphics_shadow_camera_fit_cpu COMMAND 29_camera_fit_shadow_mapping --cpu-only )
+    set_tests_properties( graphics_shadow_camera_fit_cpu PROPERTIES TIMEOUT 30 LABELS "graphics;camera;bounds" )
     add_test( NAME graphics_culling_stress_cpu COMMAND 27_frustum_intersections --stress --cpu-only )
     set_tests_properties( graphics_culling_stress_cpu PROPERTIES TIMEOUT 90 LABELS "graphics;collide;bounds;stress" )
     foreach( format IN ITEMS square vertical )

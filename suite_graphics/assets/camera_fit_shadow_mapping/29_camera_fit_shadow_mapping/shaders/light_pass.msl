@@ -1,0 +1,156 @@
+
+config light_pass
+{
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+        mat4_t world : world ;
+
+        // shadows and light
+        vec3_t cam_pos : camera_position ;
+        vec3_t light_dir : light_direction ;
+        mat4_t proj_light : light_projection ;
+        mat4_t view_light : light_view ;
+        ////////////////////////////////////
+
+        in vec3_t pos : position ;
+        in vec3_t nrm : normal ;
+        in vec2_t tx : texcoord ;
+
+        out vec4_t pos : position ;
+        out vec2_t tx : texcoord ;
+        out vec3_t nrm : normal ;
+
+        out vec3_t to_cam ;
+        out vec3_t to_light ;
+
+        // shadow/light out
+        out vec4_t light_pos ;
+        out vec3_t nrm_wrl ;
+        out vec3_t light_dir ;
+        ///////////////////////////////////
+
+        void main()
+        {
+            out.to_cam = cam_pos - (world * vec4_t(in.pos, 1.0)).xyz ;
+            out.to_light = -light_dir ;
+
+            out.tx = in.tx ;
+            out.pos = proj * view * world * vec4_t( in.pos, 1.0 ) ;
+            out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
+
+            out.light_pos = proj_light * view_light * world * vec4_t( in.pos, 1.0 ) ;
+            out.nrm_wrl = (world * vec4_t( in.nrm, 0.0 )).xyz ;
+            out.light_dir = -light_dir ;
+        }
+    }
+
+
+
+    pixel_shader
+    {
+        in vec2_t tx : texcoord ;
+        in vec3_t nrm : normal ;
+
+        in vec3_t to_cam ;
+        in vec3_t to_light ;
+        in vec4_t light_pos ;
+        in vec3_t nrm_wrl ;
+        in vec3_t light_dir ;
+
+        float_t specular_strength(20.0) ;
+        float_t shininess(40.0);
+        float_t light_intensity(3.0);
+        vec3_t light_color(1.0,1.1,1.0) ;
+
+        vec3_t hemi_top_color( 0.0,0.0, 10.0 ) ;
+        vec3_t hemi_bottom_color( .8,.8, .8 ) ;
+
+        tex2d_t shadow_light : light_shadow_map ;
+
+        out vec4_t color0 : color0 ;
+        out vec4_t color1 : color1 ;
+        out vec4_t color2 : color2 ;
+        out vec4_t color4 : color3 ;
+
+
+        // debug
+        float_t bias(0.005) ;
+
+        void main()
+        {
+            /// shadow section
+            ///
+            vec3_t light_pos =  in.light_pos.xyz  *0.5 + 0.5 ;
+
+            float_t light_bias = max(0.05*(1.0-dot(
+                    normalize(in.nrm_wrl), normalize(in.to_light))),0.005 ) ;
+
+            float_t shadow_depth_stored = rt_texture( shadow_light, light_pos.xy).r;
+            //float_t in_shadow = (light_pos.z - light_depth) >= (0.000) ? 1.0 : 0.0 ;
+            //float_t in_shadow = (shadow_depth_stored) >= light_pos.z ? 0.0 : 1.0 ;
+            float_t in_shadow =  (light_pos.z - shadow_depth_stored) > bias ? 1.0 : 0.0 ;
+
+
+            float_t shadow = 0.0 ;
+            vec2_t txs = 1.0/texture_dims( shadow_light ) ;
+            for( int_t x = -1; x<= 1; ++x )
+            {
+                for( int_t y = -1; y<=1; ++y )
+                {
+                    vec2_t tx = light_pos.xy + vec2_t(x,y) ' txs;
+                    float_t pcf = rt_texture( shadow_light, tx).r;
+                    shadow += (light_pos.z-bias) > pcf ? 1.0 : 0.0 ; ;
+                }
+            }
+            shadow = shadow / 9.0 ;
+            in_shadow = shadow ;
+
+            /// shadow section end
+            //////////////////////////////////////
+
+            vec3_t n = normalize( in.nrm ) ;
+            vec3_t l = normalize( in.to_light ) ;
+            vec3_t v = normalize( in.to_cam ) ;
+
+            vec3_t h = normalize( l + v ) ;
+
+            float_t ndl = max( 0.0, dot( n, l ) ) ;
+            //float_t ndl = dot( n, l ) * 0.5 + 0.5 ;
+            float_t spec = pow( max(dot(n,h), 0.0 ), shininess ) ;
+            float_t fresnel = pow( 1.0-max( dot(n,v), 0.0), 5.0 ) ;
+            spec *= mix( 0.2, 1.0, fresnel ) ;
+            spec *= specular_strength ;
+
+            vec3_t hemi_color = mix( hemi_bottom_color, hemi_top_color, ndl ) ;
+
+            // albedo * light_color * light_intensity * ndotl
+            vec3_t diffuse =
+                   vec3_t(1.0,1.0,1.0) ' hemi_color '
+                   as_vec3(light_intensity) ;
+
+            // specular color ' light_color * light_intensity * spec
+            vec3_t specular = vec3_t(10.,10.0,10.0) ' light_color '
+                   as_vec3(light_intensity) ' as_vec3(spec) ;
+
+            //specular = light_color ' vec3_t(1.4,10.4,11.4) ' vec3_t(spec,spec,spec) ;
+
+            out.color0 = vec4_t(specular + diffuse,1.0) ;
+            //out.color0 *= vec4_t( as_vec3(1.0-in_shadow), 1.0 ) ;
+            //out.color1 = vec4_t( as_vec3( light_pos.z*10.0), 1.0 ) ;
+            //out.color0 = vec4_t( light_pos, 1.0 ) ;
+            //out.color0 = vec4_t( normalize(in.nrm_wrl), 1.0 ) ;
+            out.color1 = vec4_t( vec3_t( 1.0-in_shadow, 0.0, 0.0), 1.0 ) ;
+            //out.color0 = vec4_t( as_vec3( ndl), 1.0 ) ;
+            //out.color0 = vec4_t( as_vec3( light_bias), 1.0 ) ;
+            //out.color0 = vec4_t(in.light_dir, 1.0 ) ;
+            //out.color0 = out.color0*0.0001 + vec4_t(1.0,1.0,1.0,1.0) ;
+            //out.color0 = vec4_t( n, 1.0 ) ;
+            //out.color1 = vec4_t( light, light, light, 1.0 ) ;
+            //out.color1 = vec4_t( in.nrm, 1.0 ) ;
+            //out.color2 = vec4_t( light, light, light , 1.0 ) ;
+            //out.color0 = vec4_t(1.0,0.0,0.0,1.0) ;
+        }
+    }
+}

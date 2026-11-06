@@ -1,0 +1,78 @@
+config shadow29_lighting
+{
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+        mat4_t world : world ;
+        mat4_t proj_light : light_projection ;
+        mat4_t view_light : light_view ;
+        vec3_t cam_pos : camera_position ;
+        vec3_t light_dir : light_direction ;
+        in vec3_t pos : position ;
+        in vec3_t nrm : normal ;
+        out vec4_t pos : position ;
+        out vec4_t light_pos ;
+        out vec3_t nrm ;
+        out vec3_t to_cam ;
+        out vec3_t to_light ;
+        void main()
+        {
+            vec4_t wp = world * vec4_t( in.pos, 1.0 ) ;
+            out.pos = proj * view * wp ;
+            out.light_pos = proj_light * view_light * wp ;
+            out.nrm = normalize( (world * vec4_t( in.nrm, 0.0 )).xyz ) ;
+            out.to_cam = cam_pos - wp.xyz ;
+            out.to_light = -light_dir ;
+        }
+    }
+    pixel_shader
+    {
+        in vec4_t light_pos ;
+        in vec3_t nrm ;
+        in vec3_t to_cam ;
+        in vec3_t to_light ;
+        tex2d_t shadow_light : light_shadow_map ;
+        vec4_t color( 0.72, 0.76, 0.82, 1.0 ) ;
+        vec3_t hemi_top_color( 0.24, 0.28, 0.36 ) ;
+        float_t shininess( 80.0 ) ;
+        float_t specular_strength( 0.3 ) ;
+        float_t light_intensity( 2.0 ) ;
+        float_t bias( 0.001 ) ;
+        out vec4_t color0 : color0 ;
+        out vec4_t color1 : color1 ;
+        out vec4_t color2 : color2 ;
+        out vec4_t color3 : color3 ;
+        void main()
+        {
+            vec3_t lp = (in.light_pos.xyz / in.light_pos.w) * 0.5 + 0.5 ;
+            vec3_t n = normalize( in.nrm ) ;
+            vec3_t l = normalize( in.to_light ) ;
+            float_t ndl = max( dot( n, l ), 0.0 ) ;
+            float_t shadow = 0.0 ;
+            vec2_t texel = 1.0 / texture_dims( shadow_light ) ;
+            float_t depth_bias = bias * (1.0 + 2.0 * (1.0 - ndl)) ;
+            if( lp.x >= 0.0 && lp.x <= 1.0 && lp.y >= 0.0 && lp.y <= 1.0 && lp.z >= 0.0 && lp.z <= 1.0 )
+            {
+                for( int_t x = -1; x <= 1; ++x )
+                {
+                    for( int_t y = -1; y <= 1; ++y )
+                    {
+                        vec2_t uv = clamp( lp.xy + vec2_t( x, y ) ' texel, texel * 0.5, vec2_t(1.0,1.0) - texel * 0.5 ) ;
+                        float_t depth = rt_texture( shadow_light, uv ).r ;
+                        shadow += lp.z - depth_bias > depth ? 1.0 : 0.0 ;
+                    }
+                }
+                shadow = shadow / 9.0 ;
+            }
+            vec3_t h = normalize( l + normalize( in.to_cam ) ) ;
+            float_t spec = pow( max( dot(n,h), 0.0 ), shininess ) * specular_strength ;
+            vec3_t ambient = mix( vec3_t(0.10,0.09,0.08), hemi_top_color, n.y * 0.5 + 0.5 ) ;
+            vec3_t direct = (color.xyz * ndl + as_vec3(spec * ndl)) ' vec3_t(1.0,0.92,0.80) ;
+            out.color0 = vec4_t( color.xyz ' ambient + direct * light_intensity * (1.0-shadow), 1.0 ) ;
+            out.color1 = vec4_t( as_vec3(1.0-shadow), 1.0 ) ;
+            out.color2 = vec4_t(0.0,0.0,0.0,1.0) ;
+            out.color3 = vec4_t(0.0,0.0,0.0,1.0) ;
+        }
+    }
+}
