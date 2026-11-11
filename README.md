@@ -116,7 +116,7 @@ options of each application. D3D11 requires Windows.
 
 The demos `07_vertex_pulling_field`, `10_transform_feedback`, `15_village`,
 `20_noise_playground`, `23_render_states`, `24_buffer_sculpture`,
-`25_gpu_sculpture`, `27_frustum_intersections` and `29_camera_fit_shadow_mapping`
+`25_gpu_sculpture`, `27_frustum_intersections`, `29_camera_fit_shadow_mapping` and `30_audio_onset`
 accept a shared capture-format argument:
 
 | Argument | Requested window area | Aspect ratio |
@@ -415,7 +415,20 @@ plus single-window square/vertical YouTube Shorts capture and a clean demo mode.
 
 [Source](suite_graphics/29_camera_fit_shadow_mapping.cpp) | [Guide and verification](suite_graphics/29_camera_fit_shadow_mapping.md)
 
+### 30 Audio Onset
+
+Three colored cube-and-ring sculptures react to low, mid and high onsets from
+system audio. Pulses decay independently of sustained band energy. Includes
+editable motor onset meters, synthetic input, gl4/d3d11 and Shorts capture.
+
+[Source](suite_graphics/30_audio_onset.cpp) | [Usage and verification](suite_graphics/30_audio_onset.md)
+
+### 31. Trigger sculptures
+
+[31_trigger_rings](suite_graphics/31_trigger_rings.cpp) displays three cube sculptures driven by the same synthetic kick, without audio capture. Orange rises and settles over two seconds, mint lights up for half a second, and violet tilts by the strength sampled at onset. Change the strength during a pulse: the violet block and its segmented meter hold their values until the pulse ends. Use **Kick**, or run `31_trigger_rings --demo` for automatic kicks without the control panel. The stations stack vertically in portrait mode. Supports `--d3d-only` on Windows and `--youtube-short square|vertical`.
+
 ## Console Tests
+
 
 These applications do not render a scene. Their output consists of checks,
 diagnostics and, where applicable, benchmark measurements.
@@ -431,6 +444,7 @@ diagnostics and, where applicable, benchmark measurements.
 | Memory | [01_memory_allocations](suite_memory/01_memory_allocations.cpp) | Allocation accounting, array destruction, containers and malloc guards | [Memory tests](suite_memory/README.md) |
 | Wire | [00_wire_slots](suite_wire/00_wire_slots.cpp) | Fan-out, exchange, type checks and connection lifetime | [Wire tests](BUILDING.md#wire-console-tests) |
 | Wire | [01_wire_bridges](suite_wire/01_wire_bridges.cpp) | Input/output bridges, rebinding and variable-set replacement | [Wire tests](BUILDING.md#wire-console-tests) |
+| Wire | [02_trigger_filters](suite_wire/02_trigger_filters.cpp) | Connected ring outputs on pause, exact endpoint retrigger, and skipped endpoint | CTest: `wire_trigger_filter_boundaries` |
 | Core | [00_document](suite_core/00_document.cpp) | Token correctness and comparison with standard-library approaches | [Document tests](suite_core/README.md) |
 | Core / IO | [01_document_obj](suite_core/01_document_obj.cpp) | Load OBJ text through motor's database and compare tokenization | [OBJ benchmark](suite_core/README.md#sponza-obj-via-motor-io) |
 | Core | [03_component_search](suite_core/03_component_search.cpp) | Compare RTTI, type-ID lookup and single-pass dispatch with 1-5 components | [Component lookup](suite_core/README.md#component-lookup) |

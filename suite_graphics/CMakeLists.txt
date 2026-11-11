@@ -26,6 +26,8 @@ set( sources
     "26_debug_labels.cpp"
     "27_frustum_intersections.cpp"
     "29_camera_fit_shadow_mapping.cpp"
+    "30_audio_onset.cpp"
+    "31_trigger_rings.cpp"
 )
 
 foreach( source IN LISTS sources )
@@ -46,11 +48,14 @@ set_property( TARGET 05_scene_benchmark PROPERTY VS_DPI_AWARE "PerMonitor" )
 # Capture dimensions must be physical pixels, not DPI-scaled window coordinates.
 set( capture_apps 07_vertex_pulling_field 10_transform_feedback 15_village
     20_noise_playground 23_render_states 24_buffer_sculpture 25_gpu_sculpture 27_frustum_intersections
-    29_camera_fit_shadow_mapping )
+    29_camera_fit_shadow_mapping 30_audio_onset 31_trigger_rings )
 foreach( app IN LISTS capture_apps )
     set_property( TARGET ${app} PROPERTY VS_DPI_AWARE "PerMonitor" )
 endforeach()
 target_link_libraries( 03_shared_scene PRIVATE motor::gfx )
+target_link_libraries( 30_audio_onset PRIVATE motor::gfx motor::audio motor::tool )
+target_link_libraries( 31_trigger_rings PRIVATE motor::gfx motor::wire motor::tool )
+target_sources( 30_audio_onset PRIVATE onset_signals.hpp onset_meter.hpp capture_options.hpp )
 target_link_libraries( 07_vertex_pulling_field PRIVATE motor::gfx )
 target_link_libraries( 24_buffer_sculpture PRIVATE motor::gfx )
 target_link_libraries( 25_gpu_sculpture PRIVATE motor::gfx )
@@ -108,6 +113,8 @@ target_link_libraries( 22_msl_manager_callbacks PRIVATE
     motor::concurrent motor::profiling motor::memory motor::log )
 set_target_properties( 22_msl_manager_callbacks PROPERTIES FOLDER "suites/suite_graphics" )
 if( BUILD_TESTING )
+    add_test( NAME graphics_audio_onset_cpu COMMAND 30_audio_onset --cpu-only )
+    set_tests_properties( graphics_audio_onset_cpu PROPERTIES TIMEOUT 15 LABELS "graphics;audio;onset" )
     add_test( NAME graphics_shadow_camera_fit_cpu COMMAND 29_camera_fit_shadow_mapping --cpu-only )
     set_tests_properties( graphics_shadow_camera_fit_cpu PROPERTIES TIMEOUT 30 LABELS "graphics;camera;bounds" )
     add_test( NAME graphics_culling_stress_cpu COMMAND 27_frustum_intersections --stress --cpu-only )
