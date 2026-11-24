@@ -445,6 +445,7 @@ diagnostics and, where applicable, benchmark measurements.
 | Wire | [00_wire_slots](suite_wire/00_wire_slots.cpp) | Fan-out, exchange, type checks and connection lifetime | [Wire tests](BUILDING.md#wire-console-tests) |
 | Wire | [01_wire_bridges](suite_wire/01_wire_bridges.cpp) | Input/output bridges, rebinding and variable-set replacement | [Wire tests](BUILDING.md#wire-console-tests) |
 | Wire | [02_trigger_filters](suite_wire/02_trigger_filters.cpp) | Connected ring outputs on pause, exact endpoint retrigger, and skipped endpoint | CTest: `wire_trigger_filter_boundaries` |
+| Wire | [03_wire_graph_reuse](suite_wire/03_wire_graph_reuse.cpp) | Same two-branch graph scheduled 1000 times, one merge per tick, live clock rebind between runs | CTest: `wire_graph_reuse` |
 | Core | [00_document](suite_core/00_document.cpp) | Token correctness and comparison with standard-library approaches | [Document tests](suite_core/README.md) |
 | Core / IO | [01_document_obj](suite_core/01_document_obj.cpp) | Load OBJ text through motor's database and compare tokenization | [OBJ benchmark](suite_core/README.md#sponza-obj-via-motor-io) |
 | Core | [03_component_search](suite_core/03_component_search.cpp) | Compare RTTI, type-ID lookup and single-pass dispatch with 1-5 components | [Component lookup](suite_core/README.md#component-lookup) |

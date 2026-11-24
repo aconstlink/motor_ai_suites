@@ -16,10 +16,19 @@ namespace ring_sample
         node_t _node ;
         bool _valid = true ;
 
+        // motor at the suites' pinned revision still has the misspelled time-slot API.
+        template< typename Node >
+        static bool connect_clock( Node & node, output * clock )
+        {
+            if constexpr( requires { node.connect_time_is( motor::share(clock) ); } )
+                return node.connect_time_is( motor::share(clock) ) ;
+            else return node.conenct_time_is( motor::share(clock) ) ;
+        }
+
     public:
         filters()
         {
-            _valid = _node.conenct_time_is(motor::share(_clock)) ;
+            _valid = connect_clock( _node, _clock ) ;
             auto bind = [&](size_t index, float duration, node_t::filter_kernel_t curve)
             {
                 auto id = _node.add_filter(std::move(curve)) ;

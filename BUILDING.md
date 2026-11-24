@@ -10,11 +10,14 @@ are used. Other frameworks have their own opt-in flags; see the
 
 ## Wire console tests
 
-Build targets `00_wire_slots` and `01_wire_bridges`, then run:
+Build targets `00_wire_slots`, `01_wire_bridges`, `02_trigger_filters` and `03_wire_graph_reuse`, then run:
 
 ```sh
 ctest --test-dir build -C Release -L wire --output-on-failure --no-tests=error
 ```
+
+To run only the scheduled graph test (no graphics or assets), replace `-L wire`
+with `-R "^wire_graph_reuse$"`. It switches from timeline ticks to clip-local ticks after 500 runs.
 
 The slot test covers initial values, fan-out, explicit exchange, independent
 change flags, disconnect/reconnect, type rejection and release. The bridge
